@@ -1,6 +1,6 @@
 ---
 title: "Bond & Bondage"
-subtitle: "This semi-autobiographical essay takes you through the intertwined narratives of four women's wedding days and the author's own journey into and out of wedding photography."
+subtitle: "Journey through the intertwined narratives of four women's wedding days and the author's own journey into and out of wedding photography."
 author: "Mahesh Shantaram"
 metaDescription: "A wedding photographer's tale of four women navigating patriarchy, class, and arranged marriage in India's wedding-industrial complex."
 status: published

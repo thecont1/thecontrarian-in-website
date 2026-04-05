@@ -319,8 +319,29 @@ body {
 .post-body hr {
   margin: 5rem auto;
   border: none;
-  border-top: 1px solid var(--hairline);
+  position: relative;
   width: 280px;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    var(--accent, #d04b36) 20%, 
+    var(--accent, #d04b36) 80%, 
+    transparent 100%
+  );
+  opacity: 0.6;
+}
+
+.post-body hr::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--accent, #d04b36);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--paper, #fff), 0 0 0 4px var(--accent, #d04b36);
 }
 
 /* Editorial Elements */
