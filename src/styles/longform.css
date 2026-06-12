@@ -96,8 +96,8 @@
 
 .post-body {
   font-family: "Fraunces", serif;
-  font-size: 1.4rem;
-  line-height: 1.8;
+  font-size: 1.2rem;
+  line-height: 1.65;
   color: var(--ink);
   max-width: 720px;
   width: 100%;
@@ -115,6 +115,8 @@
   display: grid;
   grid-template-columns: 3fr 2fr;
   width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
   min-height: 80vh;
   gap: 0;
 }
