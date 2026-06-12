@@ -55,7 +55,6 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
     <div class="post-meta-top">
       <span class="collection-type">Longform</span>
       {(post.data as any).category && <span class="category">{(post.data as any).category}</span>}
-      {formattedDate && <time datetime={post.data.date?.toISOString()}>{formattedDate}</time>}
     </div>
     
     <h1 class="post-title">{post.data.title}</h1>
@@ -67,6 +66,12 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
       <span class="author-name">{post.data.author}</span>
     </div>
 
+    {formattedDate && (
+      <div class="post-date-line">
+        <time datetime={post.data.date?.toISOString()}>{formattedDate}</time>
+      </div>
+    )}
+
     {post.data.showhero !== false && post.data.heroImage && (
       <figure class="post-hero">
         <img src={post.data.heroImage} alt={post.data.title} />
@@ -77,7 +82,7 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
   <div class="longform-layout-container">
     {post.data.toc !== false && tocStructure.length > 0 && (
       <ContentsToggle title={post.data.title} label="Chapters">
-        <ul>
+        <ul class="longform-toc">
           {tocStructure.map((chapter, idx) => (
             <li class={idx === 0 ? 'active' : ''} data-chapter={chapter.slug}>
               <a href={`#${chapter.slug}`}>{chapter.text}</a>

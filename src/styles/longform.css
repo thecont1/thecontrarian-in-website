@@ -534,6 +534,16 @@
   }
 }
 
+/* ─── Date line (below author) ─── */
+
+.post-date-line {
+  font-family: "Inter", sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
 /* ─── Section list (H3s in TOC) ─── */
 
 .section-list {
@@ -556,4 +566,29 @@
 
 .section-item a:hover {
   color: var(--accent);
+}
+
+/* ─── Longform TOC overrides: no chapter numbers, roman numeral sections ─── */
+
+.sticky-toc .longform-toc > li > a::before {
+  content: none !important;
+}
+
+.longform-toc .section-list {
+  counter-reset: section;
+}
+
+.longform-toc .section-item {
+  counter-increment: section;
+}
+
+.sticky-toc .longform-toc .section-item a::before {
+  content: counter(section, lower-roman) ". " !important;
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  margin-right: 0.4rem;
+  display: inline-block;
+  vertical-align: middle;
 }
