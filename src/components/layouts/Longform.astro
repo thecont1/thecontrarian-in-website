@@ -247,26 +247,25 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
 
         ch.steps = steps;
       } else if (hasFigures) {
-        // Figure-based steps (continuous section with images)
+        // Figure-based chapter: create steps for each figure
         const steps: ScrollyStep[] = [];
-        let buf: HTMLElement[] = [];
+        let cur: ScrollyStep = { elements: [], mediaId: -1 };
 
         ch.elements.forEach(el => {
           if (isExtractable(el)) {
+            // Finish current step if it has content
+            if (cur.elements.length > 0) {
+              steps.push(cur);
+            }
+            // Create new step with this figure
             const mId = nextMediaId++;
             allMedia.push({ id: mId, figure: el });
-            steps.push({ elements: buf, mediaId: mId });
-            buf = [];
+            cur = { elements: [el], mediaId: mId };
           } else {
-            buf.push(el);
+            cur.elements.push(el);
           }
         });
-        if (buf.length > 0) {
-          steps.push({
-            elements: buf,
-            mediaId: steps.length > 0 ? steps[steps.length - 1].mediaId : -1,
-          });
-        }
+        if (cur.elements.length > 0) steps.push(cur);
 
         ch.steps = steps;
       } else {
@@ -323,8 +322,12 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
         if (sIdx === 0) stepDiv.appendChild(ch.heading);
         // H3 heading if present
         if (step.h3) stepDiv.appendChild(step.h3);
-        // Step content
-        step.elements.forEach(el => stepDiv.appendChild(el));
+        // Step content - filter out extractable elements (figures go to right column only)
+        step.elements.forEach(el => {
+          if (!isExtractable(el)) {
+            stepDiv.appendChild(el);
+          }
+        });
 
         section.appendChild(stepDiv);
         stepIdx++;
@@ -345,10 +348,13 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
     function updateLightboxTargets() {
       const isDesktop = mq.matches;
 
-      // Narrative inline images: disable lightbox on desktop (ghost images)
+      // Narrative inline images: disable lightbox on desktop only if
+      // there are duplicate frames in the sticky pane (H3-based chapters).
+      // For inline-only chapters (figure-based), keep lightbox active.
+      const hasStickyFrames = mediaPane.querySelectorAll('.scrolly-media-frame').length > 0;
       postBody.querySelectorAll('.scrolly-step figure img').forEach(img => {
         const el = img as HTMLImageElement;
-        if (isDesktop) {
+        if (isDesktop && hasStickyFrames) {
           el.classList.add('no-lightbox');
           el.onclick = null;
           el.style.cursor = '';
@@ -381,20 +387,76 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
     // Defer initial call so Lightbox has time to initialize
     requestAnimationFrame(() => updateLightboxTargets());
 
-    // 5. Scroll observation
-    setupScrollObserver(mediaPane, postBody);
+    // 5. Scroll sync - position media frames to align with text steps
+    setupScrollSync(mediaPane, postBody);
   }
 
-  /* ─── Scroll Observer ─── */
+  /* ─── Scroll Sync Setup ─── */
 
-  function setupScrollObserver(mediaPane: HTMLElement, content: HTMLElement) {
+  function setupScrollSync(mediaPane: HTMLElement, content: HTMLElement) {
     const steps = content.querySelectorAll('.scrolly-step');
     const frames = mediaPane.querySelectorAll('.scrolly-media-frame');
     const tocItems = document.querySelectorAll('.sticky-toc ul > li[data-chapter]');
 
-    let activeMediaId = -2; // -2 = nothing yet, -1 = step has no media
-    const intersecting = new Map<Element, number>();
+    // Map mediaId to frame element
+    const frameMap = new Map<number, HTMLElement>();
+    frames.forEach(f => {
+      const id = parseInt((f as HTMLElement).dataset.mediaId ?? '-1');
+      if (id >= 0) frameMap.set(id, f as HTMLElement);
+    });
 
+    // Position each frame to align with its associated paragraph content
+    function syncMediaPositions() {
+      const minSpacing = window.innerHeight * 0.9; // Minimum 90vh between images
+      const framePositions: { frame: HTMLElement; desiredTop: number }[] = [];
+
+      // First pass: calculate desired positions based on first paragraph in step
+      steps.forEach(step => {
+        const mId = parseInt((step as HTMLElement).dataset.mediaId ?? '-1');
+        if (mId >= 0) {
+          const frame = frameMap.get(mId);
+          if (frame) {
+            const wrapper = mediaPane.parentElement;
+            if (wrapper) {
+              // Find first paragraph/content element in the step (not heading)
+              const contentEl = step.querySelector('p, ul, ol, blockquote');
+              const targetEl = contentEl || step;
+              const targetRect = (targetEl as HTMLElement).getBoundingClientRect();
+              const wrapperRect = wrapper.getBoundingClientRect();
+              const desiredTop = targetRect.top - wrapperRect.top + wrapper.scrollTop;
+              framePositions.push({ frame, desiredTop });
+            }
+          }
+        }
+      });
+
+      // Sort by desired position
+      framePositions.sort((a, b) => a.desiredTop - b.desiredTop);
+
+      // Second pass: adjust positions to prevent overlaps
+      let lastBottom = -Infinity;
+      framePositions.forEach(({ frame, desiredTop }) => {
+        const actualTop = Math.max(desiredTop, lastBottom + minSpacing);
+        frame.style.top = `${actualTop}px`;
+        lastBottom = actualTop;
+      });
+
+      // Set media pane height to match narrative height
+      const narrative = content.parentElement;
+      if (narrative) {
+        const narrativeHeight = narrative.scrollHeight;
+        mediaPane.style.height = `${narrativeHeight}px`;
+      }
+    }
+
+    // Initial positioning
+    syncMediaPositions();
+
+    // Re-position on resize
+    window.addEventListener('resize', syncMediaPositions);
+
+    // Set up intersection observer for TOC highlighting
+    const intersecting = new Map<Element, number>();
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -404,7 +466,7 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
         }
       });
 
-      // Find the step closest to the reading position (mid-viewport)
+      // Find the step closest to the reading position
       let bestStep: Element | null = null;
       let bestDist = Infinity;
       const readY = window.innerHeight * 0.45;
@@ -421,17 +483,6 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
 
       if (!bestStep) return;
 
-      const mId = parseInt((bestStep as HTMLElement).dataset.mediaId ?? '-1');
-
-      // Update sticky pane media
-      if (mId >= 0 && mId !== activeMediaId) {
-        frames.forEach(f => {
-          const fId = parseInt((f as HTMLElement).dataset.mediaId ?? '-1');
-          f.classList.toggle('active', fId === mId);
-        });
-        activeMediaId = mId;
-      }
-
       // Update TOC active chapter
       const chapter = (bestStep as HTMLElement).closest('.scrolly-chapter');
       if (chapter) {
@@ -443,18 +494,36 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
         }
       }
     }, {
-      // Trigger zone: middle 20% of viewport (40% from top, 50% from bottom)
       rootMargin: '-40% 0px -50% 0px',
       threshold: [0, 0.25, 0.5, 0.75],
     });
 
     steps.forEach(s => observer.observe(s));
+  }
 
-    // Activate first frame on load so the sticky pane isn't blank
-    if (frames.length > 0) {
-      frames[0].classList.add('active');
-      activeMediaId = parseInt((frames[0] as HTMLElement).dataset.mediaId ?? '0');
-    }
+  /* ─── Inline Image Reveals ─── */
+
+  function setupInlineReveals() {
+    const narrative = document.querySelector('.scrolly-narrative');
+    if (!narrative) return;
+
+    const blocks = narrative.querySelectorAll('.scrolly-step, .scrolly-intro');
+    if (blocks.length === 0) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('figure').forEach(fig => {
+            fig.classList.add('revealed');
+          });
+        }
+      });
+    }, {
+      rootMargin: '0px 0px -10% 0px',
+      threshold: 0,
+    });
+
+    blocks.forEach(block => observer.observe(block));
   }
 
   /* ─── Initialization ─── */
