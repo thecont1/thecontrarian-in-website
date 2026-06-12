@@ -14,7 +14,7 @@
 
 .post-header {
   width: 100%;
-  max-width: 900px;
+  max-width: 1400px;
   margin: 0 auto 6rem;
   text-align: center;
   padding: 0 2rem;
@@ -113,7 +113,7 @@
 
 .scrolly-wrapper {
   display: grid;
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: 2fr 3fr;
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
@@ -121,7 +121,7 @@
   gap: 0;
 }
 
-/* Sticky media pane (left side on desktop) */
+/* Sticky media pane (right side on desktop) */
 .scrolly-media {
   position: sticky;
   top: 0;
@@ -280,52 +280,7 @@
   }
 }
 
-/* ─── Over-the-top Dropcaps ─── */
-
-.post-body .dropcap {
-  position: relative;
-  z-index: 1;
-  margin-top: 8rem;
-  margin-bottom: 6rem;
-  padding-left: 10%;
-}
-
-.post-body .dropcap::before {
-  content: attr(data-letter);
-  position: absolute;
-  top: -10rem;
-  left: -2rem;
-  font-family: "Fraunces", serif;
-  font-size: 60rem;
-  line-height: 1;
-  font-weight: 100;
-  color: var(--accent);
-  opacity: 0.08;
-  z-index: -1;
-  pointer-events: none;
-  text-transform: uppercase;
-  transition: all 0.5s ease;
-}
-
-@media (max-width: 768px) {
-  .post-body .dropcap {
-    padding-left: 0;
-    margin-top: 4rem;
-  }
-  .post-body .dropcap::before {
-    font-size: 30rem;
-    top: -5rem;
-  }
-}
-
-.post-body .dropcap::first-letter {
-  initial-letter: normal;
-  float: none;
-  font-size: inherit;
-  color: inherit;
-  margin: 0;
-  padding: 0;
-}
+/* ─── Dropcaps ─── */
 
 .post-body p.dropcap::first-letter {
   -webkit-initial-letter: 4;
@@ -335,28 +290,6 @@
   margin-right: 0.75rem;
   padding-top: 0.5rem;
   color: var(--accent);
-}
-
-@media (min-width: 769px) {
-  .post-body p.dropcap {
-    position: relative;
-  }
-
-  .post-body p.dropcap::before {
-    content: attr(data-letter);
-    position: absolute;
-    top: -10rem;
-    left: -2rem;
-    font-family: "Fraunces", serif;
-    font-size: 60rem;
-    line-height: 1;
-    font-weight: 100;
-    color: var(--ink);
-    opacity: 0.06;
-    z-index: -1;
-    pointer-events: none;
-    text-transform: uppercase;
-  }
 }
 
 /* ─── Image styling ─── */
@@ -548,26 +481,27 @@
 
 /* ─── Section list (H3s in TOC) ─── */
 
-.section-list {
+.sticky-toc .longform-toc .section-list {
   list-style: none;
-  padding: 1.2rem 0 0 3rem;
+  padding: 0.8rem 0 0 2.5rem;
   margin: 0;
 }
 
-.section-item {
+.sticky-toc .longform-toc .section-item {
   margin-bottom: 0.5rem;
 }
 
-.section-item a {
+.sticky-toc .longform-toc .section-item a {
   font-family: "Inter", sans-serif;
   font-size: 0.85rem;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.6) !important;
   text-decoration: none;
   transition: color 0.2s ease;
+  line-height: 1.4;
 }
 
-.section-item a:hover {
-  color: var(--accent);
+.sticky-toc .longform-toc .section-item a:hover {
+  color: var(--accent) !important;
 }
 
 /* ─── Longform TOC overrides: no chapter numbers, roman numeral sections ─── */

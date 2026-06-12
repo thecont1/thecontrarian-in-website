@@ -136,26 +136,26 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
     content.querySelectorAll('img').forEach(img => {
       const imgEl = img as HTMLImageElement;
       if (imgEl.alt && !imgEl.closest('figure')?.querySelector('figcaption')) {
-        const figure = imgEl.closest('figure') || document.createElement('figure');
-        if (!imgEl.closest('figure')) {
-          imgEl.parentNode?.insertBefore(figure, imgEl);
+        const existingFigure = imgEl.closest('figure');
+        const figure = existingFigure || document.createElement('figure');
+        if (!existingFigure) {
+          const parent = imgEl.parentNode as HTMLElement | null;
+          const nextSibling = imgEl.nextSibling;
           figure.appendChild(imgEl);
+          if (parent && parent.tagName === 'P') {
+            if (parent.textContent?.trim() === '') {
+              parent.parentNode?.replaceChild(figure, parent);
+            } else {
+              parent.parentNode?.insertBefore(figure, parent);
+            }
+          } else if (parent) {
+            parent.insertBefore(figure, nextSibling);
+          }
         }
         const caption = document.createElement('figcaption');
         caption.className = 'image-caption';
         caption.textContent = imgEl.alt;
         figure.appendChild(caption);
-      }
-    });
-  }
-
-  function setupDropcaps() {
-    const content = document.getElementById('longform-content');
-    if (!content) return;
-    content.querySelectorAll('.dropcap').forEach(p => {
-      const text = (p as HTMLElement).textContent || "";
-      if (text.length > 0) {
-        (p as HTMLElement).setAttribute('data-letter', text.charAt(0));
       }
     });
   }
@@ -335,8 +335,8 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
 
     // Assemble: move content into narrative pane, add wrapper to layout container
     narrativePane.appendChild(postBody);
-    wrapper.appendChild(mediaPane);
     wrapper.appendChild(narrativePane);
+    wrapper.appendChild(mediaPane);
     layoutContainer.appendChild(wrapper);
 
     // 4. Lightbox target management: avoid duplicates between sticky and narrative
@@ -463,7 +463,6 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
     document.body.classList.add('no-snow');
     autoCaptions();
     setupScrollytelling();
-    setupDropcaps();
     syncHeaderBg();
   }
 
