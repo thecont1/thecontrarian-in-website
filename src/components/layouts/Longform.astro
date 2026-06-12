@@ -449,6 +449,12 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
     });
 
     steps.forEach(s => observer.observe(s));
+
+    // Activate first frame on load so the sticky pane isn't blank
+    if (frames.length > 0) {
+      frames[0].classList.add('active');
+      activeMediaId = parseInt((frames[0] as HTMLElement).dataset.mediaId ?? '0');
+    }
   }
 
   /* ─── Initialization ─── */

@@ -217,7 +217,7 @@
 /* ─── Desktop: minimize inline figures (shown in sticky pane) ─── */
 @media (min-width: 1025px) {
   .scrolly-step figure {
-    opacity: 0.08;
+    opacity: 0;
     pointer-events: none;
     margin: 2rem 0;
     transition: opacity 0.3s ease;
