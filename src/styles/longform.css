@@ -1,4 +1,7 @@
-/* Longform.astro styles */
+/* Longform.astro styles — Scrollytelling Visual Essay */
+
+/* ─── Post Structure ─── */
+
 .longform-post {
   width: 100%;
   margin: 0;
@@ -78,7 +81,8 @@
   box-shadow: 0 20px 60px rgba(0,0,0,0.1);
 }
 
-/* Layout Structure - DEFINITIVE CENTERING */
+/* ─── Layout Container ─── */
+
 .longform-layout-container {
   width: 100%;
   max-width: 100%;
@@ -88,13 +92,200 @@
   display: block;
 }
 
-/* Over-the-top Dropcaps - Refined for "Inside" effect */
+/* ─── Post Body (prose) ─── */
+
+.post-body {
+  font-family: "Fraunces", serif;
+  font-size: 1.4rem;
+  line-height: 1.8;
+  color: var(--ink);
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 2rem;
+  box-sizing: border-box;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Scrollytelling Layout ─── */
+
+.scrolly-wrapper {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  width: 100%;
+  min-height: 80vh;
+  gap: 0;
+}
+
+/* Sticky media pane (left side on desktop) */
+.scrolly-media {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--page-bg, #fff);
+}
+
+.scrolly-media-frame {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.scrolly-media-frame.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.scrolly-media-frame figure {
+  margin: 0;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scrolly-media-frame img {
+  display: block;
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border: none;
+  box-shadow: none;
+  cursor: zoom-in;
+}
+
+.scrolly-media-frame figcaption,
+.scrolly-media-frame .image-caption {
+  position: absolute;
+  bottom: 2rem;
+  left: 3rem;
+  right: 3rem;
+  text-align: center;
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.scrolly-media-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Narrative pane (right side on desktop) */
+.scrolly-narrative {
+  padding: 2rem 0;
+  min-width: 0;
+}
+
+/* Narrower prose width within scrolly narrative */
+.scrolly-narrative .post-body {
+  max-width: 580px;
+  padding: 0 2rem;
+}
+
+.scrolly-intro {
+  margin-bottom: 2rem;
+}
+
+.scrolly-chapter {
+  margin-bottom: 2rem;
+}
+
+.scrolly-step {
+  margin-bottom: 0;
+}
+
+/* ─── Desktop: minimize inline figures (shown in sticky pane) ─── */
+@media (min-width: 1025px) {
+  .scrolly-step figure {
+    opacity: 0.08;
+    pointer-events: none;
+    margin: 2rem 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .scrolly-step figure figcaption,
+  .scrolly-step figure .image-caption {
+    opacity: 0;
+  }
+
+  /* Notes: inline in narrow narrative pane */
+  .scrolly-narrative .post-body blockquote.note-aside,
+  .scrolly-narrative .post-body note {
+    float: none;
+    clear: none;
+    width: auto;
+    margin: 2rem 0;
+  }
+
+  /* Pull quotes: no negative margins in narrow pane */
+  .scrolly-narrative .post-body blockquote.pull-quote {
+    margin: 3rem 0;
+  }
+}
+
+/* ─── Mobile/Tablet: single column, inline figures ─── */
+@media (max-width: 1024px) {
+  .scrolly-wrapper {
+    display: block;
+  }
+
+  .scrolly-media {
+    display: none;
+  }
+
+  .scrolly-narrative .post-body {
+    max-width: 720px;
+  }
+
+  .scrolly-step figure {
+    opacity: 1;
+    pointer-events: auto;
+    margin: 3rem auto;
+  }
+
+  .scrolly-step figure figcaption,
+  .scrolly-step figure .image-caption {
+    opacity: 1;
+  }
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .scrolly-media-frame {
+    transition: none;
+  }
+
+  .scrolly-step figure {
+    transition: none;
+  }
+}
+
+/* ─── Over-the-top Dropcaps ─── */
+
 .post-body .dropcap {
   position: relative;
   z-index: 1;
   margin-top: 8rem;
   margin-bottom: 6rem;
-  padding-left: 10%; /* More generous nudge */
+  padding-left: 10%;
 }
 
 .post-body .dropcap::before {
@@ -103,11 +294,11 @@
   top: -10rem;
   left: -2rem;
   font-family: "Fraunces", serif;
-  font-size: 60rem; /* Truly over-the-top */
+  font-size: 60rem;
   line-height: 1;
   font-weight: 100;
   color: var(--accent);
-  opacity: 0.08; /* Even fainter for better legibility */
+  opacity: 0.08;
   z-index: -1;
   pointer-events: none;
   text-transform: uppercase;
@@ -132,208 +323,6 @@
   color: inherit;
   margin: 0;
   padding: 0;
-}
-
-.post-body {
-  font-family: "Fraunces", serif;
-  font-size: 1.4rem;
-  line-height: 1.8;
-  color: var(--ink);
-  max-width: 720px;
-  width: 100%;
-  margin: 0 auto; /* Horizontal centering */
-  padding: 0 2rem;
-  box-sizing: border-box;
-  display: block;
-  position: relative;
-  z-index: 1;
-}
-
-/* Chapter Pages - Pagination */
-.chapter-page {
-  display: none;
-}
-
-.chapter-page.active {
-  display: block;
-  animation: chapterFadeIn 0.4s ease;
-}
-
-@keyframes chapterFadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Chapter List in TOC */
-.chapter-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.chapter-item {
-  margin-bottom: 1rem;
-}
-
-.chapter-link {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  text-decoration: none;
-  color: var(--ink);
-  transition: color 0.2s ease;
-}
-
-.chapter-link:hover {
-  color: var(--accent);
-}
-
-.chapter-number {
-  font-family: "Inter", sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted);
-  min-width: 1.5rem;
-}
-
-.chapter-title {
-  font-family: "Fraunces", serif;
-  font-size: 1.1rem;
-  font-weight: 400;
-}
-
-.chapter-item.active .chapter-link {
-  color: var(--accent);
-}
-
-.chapter-item.active .chapter-number {
-  color: var(--accent);
-}
-
-/* Section list (H3s within chapters) */
-.section-list {
-  list-style: none;
-  padding: 0.5rem 0 0 2.25rem;
-  margin: 0;
-}
-
-.section-item {
-  margin-bottom: 0.5rem;
-}
-
-.section-item a {
-  font-family: "Inter", sans-serif;
-  font-size: 0.85rem;
-  color: var(--muted);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.section-item a:hover {
-  color: var(--accent);
-}
-
-/* Chapter Navigation Bar */
-.chapter-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 720px;
-  margin: 4rem auto 2rem;
-  padding: 1.5rem 2rem;
-  background: rgba(0,0,0,0.03);
-  border-radius: 8px;
-}
-
-.chapter-nav-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: transparent;
-  border: 1px solid var(--hairline);
-  border-radius: 4px;
-  font-family: "Inter", sans-serif;
-  font-size: 0.85rem;
-  color: var(--ink);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.chapter-nav-btn:hover:not(:disabled) {
-  background: var(--ink);
-  color: white;
-  border-color: var(--ink);
-}
-
-.chapter-nav-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.chapter-nav-btn svg {
-  flex-shrink: 0;
-}
-
-.chapter-progress {
-  font-family: "Inter", sans-serif;
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-
-.chapter-progress .current-chapter {
-  font-weight: 600;
-  color: var(--ink);
-}
-
-@media (max-width: 600px) {
-  .chapter-nav {
-    padding: 1rem;
-  }
-  
-  .nav-label {
-    display: none;
-  }
-  
-  .chapter-nav-btn {
-    padding: 0.5rem;
-  }
-}
-
-/* Image styling */
-.post-body img {
-  display: block;
-  margin: 3rem auto;
-  max-width: 100%;
-  width: 100%;
-  height: auto;
-  border: 10px solid white;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  box-sizing: border-box;
-}
-
-.post-body figcaption,
-.post-body .image-caption {
-  display: block;
-  font-family: "Inter", sans-serif;
-  font-size: 0.9rem;
-  color: var(--muted);
-  text-align: center;
-  margin-top: 1rem;
-  line-height: 1.4;
-}
-
-/* Anchor targets (H2) - Now always visible as requested */
-.post-body h2 {
-  display: block !important;
-  font-family: "Fraunces", serif;
-  font-size: 2.2rem;
-  font-weight: 400;
-  margin: 4rem 0 2rem;
-  line-height: 1.2;
-  scroll-margin-top: 6rem;
-  position: relative;
-  z-index: 1;
 }
 
 .post-body p.dropcap::first-letter {
@@ -368,7 +357,45 @@
   }
 }
 
-/* Editorial Elements */
+/* ─── Image styling ─── */
+
+.post-body img {
+  display: block;
+  margin: 3rem auto;
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  border: 10px solid white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+}
+
+.post-body figcaption,
+.post-body .image-caption {
+  display: block;
+  font-family: "Inter", sans-serif;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 1rem;
+  line-height: 1.4;
+}
+
+/* ─── Headings ─── */
+
+.post-body h2 {
+  display: block !important;
+  font-family: "Fraunces", serif;
+  font-size: 2.2rem;
+  font-weight: 400;
+  margin: 4rem 0 2rem;
+  line-height: 1.2;
+  scroll-margin-top: 6rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Editorial Elements ─── */
 
 /* Blurb Style: use <p class="blurb"> in markdown */
 .post-body p.blurb {
@@ -505,4 +532,28 @@
     width: auto;
     margin: 2rem 0;
   }
+}
+
+/* ─── Section list (H3s in TOC) ─── */
+
+.section-list {
+  list-style: none;
+  padding: 0.5rem 0 0 2.25rem;
+  margin: 0;
+}
+
+.section-item {
+  margin-bottom: 0.5rem;
+}
+
+.section-item a {
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.section-item a:hover {
+  color: var(--accent);
 }

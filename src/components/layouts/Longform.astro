@@ -48,11 +48,9 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
   month: "long",
   day: "numeric",
 });
-
-const totalChapters = chapters.length;
 ---
 
-<article class="longform-post" style={`--page-bg: ${backgroundColor};`} data-total-chapters={totalChapters}>
+<article class="longform-post" style={`--page-bg: ${backgroundColor};`}>
   <header class="post-header">
     <div class="post-meta-top">
       <span class="collection-type">Longform</span>
@@ -83,6 +81,15 @@ const totalChapters = chapters.length;
           {tocStructure.map((chapter, idx) => (
             <li class={idx === 0 ? 'active' : ''} data-chapter={chapter.slug}>
               <a href={`#${chapter.slug}`}>{chapter.text}</a>
+              {chapter.sections && chapter.sections.length > 0 && (
+                <ul class="section-list">
+                  {chapter.sections.map((section) => (
+                    <li class="section-item">
+                      <a href={`#${section.slug}`}>{section.text}</a>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>
@@ -92,181 +99,65 @@ const totalChapters = chapters.length;
     <div class="post-body" id="longform-content">
       <Content components={{ Note, note: Note }} />
     </div>
-
-    <!-- Chapter Navigation -->
-    {chapters.length > 1 && (
-      <nav class="chapter-nav" aria-label="Chapter navigation">
-        <button class="chapter-nav-btn prev" disabled aria-label="Previous chapter">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          <span class="nav-label">Previous</span>
-        </button>
-        <div class="chapter-progress">
-          <span class="current-chapter">1</span> / <span class="total-chapters">{totalChapters}</span>
-        </div>
-        <button class="chapter-nav-btn next" aria-label="Next chapter">
-          <span class="nav-label">Next</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-      </nav>
-    )}
   </div>
 
   {lightboxEnabled && (
-    <Lightbox selector=".post-body" gallery={true} />
+    <Lightbox selector=".longform-post" gallery={true} />
   )}
   <ScreenToggle />
   <C2PAOverlay />
 </article>
 
 <script>
-  function setupLongformPagination() {
-    const content = document.getElementById('longform-content');
-    const article = document.querySelector('.longform-post') as HTMLElement;
-    if (!content || !article) return;
+  /* ─── Scrollytelling Visual Essay ─── */
 
-    // Check if already processed
-    if (content.querySelector('.chapter-page')) return;
-
-    // Get all direct children as an array (before modifying DOM)
-    const children = Array.from(content.children) as HTMLElement[];
-    
-    // Find all H2s to determine chapter count
-    const h2Elements = children.filter(el => el.tagName === 'H2');
-    if (h2Elements.length === 0) return;
-
-    let currentChapterIndex = 0;
-
-    // Chapter navigation elements
-    const prevBtn = document.querySelector('.chapter-nav-btn.prev') as HTMLButtonElement;
-    const nextBtn = document.querySelector('.chapter-nav-btn.next') as HTMLButtonElement;
-    const currentChapterEl = document.querySelector('.current-chapter');
-    const chapterItems = document.querySelectorAll('.sticky-toc ul > li');
-
-    // Build chapter pages by grouping elements between H2s
-    const chapterPages: HTMLDivElement[] = [];
-    let currentChapterDiv: HTMLDivElement | null = null;
-    let introElements: HTMLElement[] = [];
-
-    children.forEach(el => {
-      if (el.tagName === 'H2') {
-        // Start a new chapter
-        currentChapterDiv = document.createElement('div');
-        currentChapterDiv.className = 'chapter-page';
-        currentChapterDiv.dataset.chapterSlug = el.id;
-        
-        // If this is the first chapter and we have intro content, add it first
-        if (chapterPages.length === 0 && introElements.length > 0) {
-          const introWrapper = document.createElement('div');
-          introWrapper.className = 'chapter-intro';
-          introElements.forEach(introEl => introWrapper.appendChild(introEl));
-          currentChapterDiv.appendChild(introWrapper);
-        }
-        
-        currentChapterDiv.appendChild(el);
-        chapterPages.push(currentChapterDiv);
-      } else if (currentChapterDiv) {
-        // Add to current chapter
-        currentChapterDiv.appendChild(el);
-      } else {
-        // Content before first H2 - store for later
-        introElements.push(el);
-      }
-    });
-
-    // Clear content and add chapter pages
-    content.innerHTML = '';
-    chapterPages.forEach(page => content.appendChild(page));
-    
-    // Dropcaps setup
-    content.querySelectorAll('.dropcap').forEach(p => {
-      const text = p.textContent || "";
-      if (text.length > 0) {
-        p.setAttribute('data-letter', text.charAt(0));
-      }
-    });
-
-    // Show only current chapter
-    function showChapter(index: number) {
-      if (index < 0 || index >= chapterPages.length) return;
-      
-      currentChapterIndex = index;
-      
-      // Hide all chapters, show current
-      chapterPages.forEach((page, idx) => {
-        if (idx === index) {
-          page.classList.add('active');
-        } else {
-          page.classList.remove('active');
-        }
-      });
-
-      // Update nav buttons
-      if (prevBtn) prevBtn.disabled = index === 0;
-      if (nextBtn) nextBtn.disabled = index >= chapterPages.length - 1;
-      if (currentChapterEl) currentChapterEl.textContent = String(index + 1);
-
-      // Update TOC active state
-      chapterItems.forEach((item, idx) => {
-        item.classList.toggle('active', idx === index);
-      });
-
-      // Update URL hash
-      const currentPage = chapterPages[index];
-      if (currentPage?.dataset.chapterSlug) {
-        history.replaceState(null, '', `#${currentPage.dataset.chapterSlug}`);
-      }
-
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // Button handlers
-    if (prevBtn) {
-      prevBtn.addEventListener('click', () => showChapter(currentChapterIndex - 1));
-    }
-    if (nextBtn) {
-      nextBtn.addEventListener('click', () => showChapter(currentChapterIndex + 1));
-    }
-
-    // TOC click handlers
-    chapterItems.forEach((item, idx) => {
-      const link = item.querySelector('a');
-      if (link) {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          showChapter(idx);
-          // Close sidebar after selection
-          const sidebar = document.getElementById('toc-sidebar');
-          const toggle = document.getElementById('toc-toggle');
-          if (sidebar) sidebar.classList.remove('is-open');
-          if (toggle) toggle.classList.remove('active');
-        });
-      }
-    });
-
-    // Initial state from hash
-    const hash = window.location.hash.replace('#', '');
-    if (hash) {
-      const targetIdx = chapterPages.findIndex(page => page.dataset.chapterSlug === hash);
-      if (targetIdx !== -1) {
-        currentChapterIndex = targetIdx;
-      }
-    }
-
-    // Show first chapter (or from hash)
-    showChapter(currentChapterIndex);
+  interface ScrollyStep {
+    elements: HTMLElement[];
+    mediaId: number;
+    h3?: HTMLElement;
   }
 
-  // Sync header background and auto-captions
-  function refineLongformContent() {
+  interface ScrollyChapter {
+    heading: HTMLElement;
+    elements: HTMLElement[];
+    steps: ScrollyStep[];
+  }
+
+  /* ─── Utilities ─── */
+
+  function autoCaptions() {
+    const content = document.getElementById('longform-content');
+    if (!content) return;
+    content.querySelectorAll('img').forEach(img => {
+      const imgEl = img as HTMLImageElement;
+      if (imgEl.alt && !imgEl.closest('figure')?.querySelector('figcaption')) {
+        const figure = imgEl.closest('figure') || document.createElement('figure');
+        if (!imgEl.closest('figure')) {
+          imgEl.parentNode?.insertBefore(figure, imgEl);
+          figure.appendChild(imgEl);
+        }
+        const caption = document.createElement('figcaption');
+        caption.className = 'image-caption';
+        caption.textContent = imgEl.alt;
+        figure.appendChild(caption);
+      }
+    });
+  }
+
+  function setupDropcaps() {
+    const content = document.getElementById('longform-content');
+    if (!content) return;
+    content.querySelectorAll('.dropcap').forEach(p => {
+      const text = (p as HTMLElement).textContent || "";
+      if (text.length > 0) {
+        (p as HTMLElement).setAttribute('data-letter', text.charAt(0));
+      }
+    });
+  }
+
+  function syncHeaderBg() {
     const article = document.querySelector('.longform-post') as HTMLElement;
     if (!article) return;
-
-    // Background Sync - ensure it reads the CSS variable correctly
     const bgColor = getComputedStyle(article).getPropertyValue('--page-bg').trim();
     const header = document.querySelector('.site-header') as HTMLElement;
     if (header && bgColor) {
@@ -275,32 +166,295 @@ const totalChapters = chapters.length;
       const headerInner = header.querySelector('.site-header-inner') as HTMLElement;
       if (headerInner) headerInner.style.backgroundColor = 'transparent';
     }
+  }
 
-    // Auto-captions from alt text
+  /* ─── Scrollytelling Setup ─── */
+
+  function setupScrollytelling() {
     const content = document.getElementById('longform-content');
-    if (content) {
-      content.querySelectorAll('img').forEach(img => {
-        const imgEl = img as HTMLImageElement;
-        if (imgEl.alt && !imgEl.closest('figure')?.querySelector('figcaption')) {
-          const figure = imgEl.closest('figure') || document.createElement('figure');
-          if (!imgEl.closest('figure')) {
-            imgEl.parentNode?.insertBefore(figure, imgEl);
-            figure.appendChild(imgEl);
+    const layoutContainer = document.querySelector('.longform-layout-container');
+    if (!content || !layoutContainer) return;
+    if (content.dataset.scrolly === 'true') return;
+
+    const children = Array.from(content.children) as HTMLElement[];
+    const h2s = children.filter(el => el.tagName === 'H2');
+    if (h2s.length === 0) return;
+
+    content.dataset.scrolly = 'true';
+    const postBody = content; // non-null after guard
+
+    // 1. Parse children into chapters
+    const introElements: HTMLElement[] = [];
+    const chapters: ScrollyChapter[] = [];
+    let current: ScrollyChapter | null = null;
+
+    children.forEach(el => {
+      if (el.tagName === 'H2') {
+        current = { heading: el, elements: [], steps: [] };
+        chapters.push(current);
+      } else if (current) {
+        current.elements.push(el);
+      } else {
+        introElements.push(el);
+      }
+    });
+
+    // 2. For each chapter, identify steps by H3s or figures
+    let nextMediaId = 0;
+    const allMedia: { id: number; figure: HTMLElement }[] = [];
+
+    function isExtractable(el: HTMLElement): boolean {
+      if (el.tagName === 'FIGURE') return true;
+      if (el.tagName === 'IMG' && !el.closest('figure')) return true;
+      return false;
+    }
+
+    chapters.forEach(ch => {
+      const h3s = ch.elements.filter(el => el.tagName === 'H3');
+      const hasFigures = ch.elements.some(el => isExtractable(el));
+
+      if (h3s.length > 0) {
+        // H3-based steps
+        const steps: ScrollyStep[] = [];
+        let cur: ScrollyStep = { elements: [], mediaId: -1 };
+
+        ch.elements.forEach(el => {
+          if (el.tagName === 'H3') {
+            if (cur.elements.length > 0 || cur.h3) steps.push(cur);
+            cur = { elements: [], mediaId: -1, h3: el };
+          } else {
+            cur.elements.push(el);
+            if (isExtractable(el) && cur.mediaId === -1) {
+              const mId = nextMediaId++;
+              allMedia.push({ id: mId, figure: el });
+              cur.mediaId = mId;
+            }
           }
-          const caption = document.createElement('figcaption');
-          caption.className = 'image-caption';
-          caption.textContent = imgEl.alt;
-          figure.appendChild(caption);
+        });
+        if (cur.elements.length > 0 || cur.h3) steps.push(cur);
+
+        // Inherit media forward for steps without their own figure
+        let lastMedia = -1;
+        steps.forEach(s => {
+          if (s.mediaId >= 0) lastMedia = s.mediaId;
+          else s.mediaId = lastMedia;
+        });
+
+        ch.steps = steps;
+      } else if (hasFigures) {
+        // Figure-based steps (continuous section with images)
+        const steps: ScrollyStep[] = [];
+        let buf: HTMLElement[] = [];
+
+        ch.elements.forEach(el => {
+          if (isExtractable(el)) {
+            const mId = nextMediaId++;
+            allMedia.push({ id: mId, figure: el });
+            steps.push({ elements: buf, mediaId: mId });
+            buf = [];
+          } else {
+            buf.push(el);
+          }
+        });
+        if (buf.length > 0) {
+          steps.push({
+            elements: buf,
+            mediaId: steps.length > 0 ? steps[steps.length - 1].mediaId : -1,
+          });
+        }
+
+        ch.steps = steps;
+      } else {
+        // No H3s and no figures → single step, no media
+        ch.steps = [{ elements: ch.elements, mediaId: -1 }];
+      }
+    });
+
+    // 3. Build the scrolly DOM
+    const wrapper = document.createElement('div');
+    wrapper.className = 'scrolly-wrapper';
+
+    const mediaPane = document.createElement('div');
+    mediaPane.className = 'scrolly-media';
+    mediaPane.setAttribute('aria-hidden', 'true');
+
+    const narrativePane = document.createElement('div');
+    narrativePane.className = 'scrolly-narrative';
+
+    // Create media frames in the sticky pane
+    allMedia.forEach(m => {
+      const frame = document.createElement('div');
+      frame.className = 'scrolly-media-frame';
+      frame.dataset.mediaId = String(m.id);
+      frame.appendChild(m.figure.cloneNode(true));
+      mediaPane.appendChild(frame);
+    });
+
+    // Rebuild post-body content into scrolly sections
+    postBody.innerHTML = '';
+
+    // Intro (content before first H2)
+    if (introElements.length > 0) {
+      const intro = document.createElement('div');
+      intro.className = 'scrolly-intro';
+      introElements.forEach(el => intro.appendChild(el));
+      postBody.appendChild(intro);
+    }
+
+    // Chapters and steps
+    let stepIdx = 0;
+    chapters.forEach(ch => {
+      const section = document.createElement('section');
+      section.className = 'scrolly-chapter';
+      section.dataset.chapterSlug = ch.heading.id;
+
+      ch.steps.forEach((step, sIdx) => {
+        const stepDiv = document.createElement('div');
+        stepDiv.className = 'scrolly-step';
+        stepDiv.dataset.stepIndex = String(stepIdx);
+        stepDiv.dataset.mediaId = String(step.mediaId);
+
+        // First step in chapter gets the H2 heading
+        if (sIdx === 0) stepDiv.appendChild(ch.heading);
+        // H3 heading if present
+        if (step.h3) stepDiv.appendChild(step.h3);
+        // Step content
+        step.elements.forEach(el => stepDiv.appendChild(el));
+
+        section.appendChild(stepDiv);
+        stepIdx++;
+      });
+
+      postBody.appendChild(section);
+    });
+
+    // Assemble: move content into narrative pane, add wrapper to layout container
+    narrativePane.appendChild(postBody);
+    wrapper.appendChild(mediaPane);
+    wrapper.appendChild(narrativePane);
+    layoutContainer.appendChild(wrapper);
+
+    // 4. Lightbox target management: avoid duplicates between sticky and narrative
+    const mq = window.matchMedia('(min-width: 1025px)');
+
+    function updateLightboxTargets() {
+      const isDesktop = mq.matches;
+
+      // Narrative inline images: disable lightbox on desktop (ghost images)
+      postBody.querySelectorAll('.scrolly-step figure img').forEach(img => {
+        const el = img as HTMLImageElement;
+        if (isDesktop) {
+          el.classList.add('no-lightbox');
+          el.onclick = null;
+          el.style.cursor = '';
+        } else {
+          el.classList.remove('no-lightbox');
+        }
+      });
+
+      // Sticky pane images: disable lightbox on mobile (pane is hidden)
+      mediaPane.querySelectorAll('img').forEach(img => {
+        const el = img as HTMLImageElement;
+        if (!isDesktop) {
+          el.classList.add('no-lightbox');
+          el.onclick = null;
+          el.style.cursor = '';
+        } else {
+          el.classList.remove('no-lightbox');
+        }
+      });
+
+      // Re-attach lightbox handlers for the active set
+      requestAnimationFrame(() => {
+        if (typeof (window as any).__attachLightboxListeners === 'function') {
+          (window as any).__attachLightboxListeners();
         }
       });
     }
+
+    mq.addEventListener('change', updateLightboxTargets);
+    // Defer initial call so Lightbox has time to initialize
+    requestAnimationFrame(() => updateLightboxTargets());
+
+    // 5. Scroll observation
+    setupScrollObserver(mediaPane, postBody);
   }
 
-  setupLongformPagination();
-  refineLongformContent();
-  
-  document.addEventListener('astro:page-load', () => {
-    setupLongformPagination();
-    refineLongformContent();
-  });
+  /* ─── Scroll Observer ─── */
+
+  function setupScrollObserver(mediaPane: HTMLElement, content: HTMLElement) {
+    const steps = content.querySelectorAll('.scrolly-step');
+    const frames = mediaPane.querySelectorAll('.scrolly-media-frame');
+    const tocItems = document.querySelectorAll('.sticky-toc ul > li[data-chapter]');
+
+    let activeMediaId = -2; // -2 = nothing yet, -1 = step has no media
+    const intersecting = new Map<Element, number>();
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          intersecting.set(entry.target, entry.intersectionRatio);
+        } else {
+          intersecting.delete(entry.target);
+        }
+      });
+
+      // Find the step closest to the reading position (upper-middle viewport)
+      let bestStep: Element | null = null;
+      let bestDist = Infinity;
+      const readY = window.innerHeight * 0.35;
+
+      intersecting.forEach((_, step) => {
+        const rect = (step as HTMLElement).getBoundingClientRect();
+        const center = rect.top + rect.height / 2;
+        const dist = Math.abs(center - readY);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestStep = step;
+        }
+      });
+
+      if (!bestStep) return;
+
+      const mId = parseInt((bestStep as HTMLElement).dataset.mediaId ?? '-1');
+
+      // Update sticky pane media
+      if (mId >= 0 && mId !== activeMediaId) {
+        frames.forEach(f => {
+          const fId = parseInt((f as HTMLElement).dataset.mediaId ?? '-1');
+          f.classList.toggle('active', fId === mId);
+        });
+        activeMediaId = mId;
+      }
+
+      // Update TOC active chapter
+      const chapter = (bestStep as HTMLElement).closest('.scrolly-chapter');
+      if (chapter) {
+        const slug = (chapter as HTMLElement).dataset.chapterSlug;
+        if (slug) {
+          tocItems.forEach(item => {
+            item.classList.toggle('active', (item as HTMLElement).dataset.chapter === slug);
+          });
+        }
+      }
+    }, {
+      // Trigger zone: middle 20% of viewport (35% from top, 55% from bottom)
+      rootMargin: '-35% 0px -55% 0px',
+      threshold: [0, 0.25, 0.5, 0.75],
+    });
+
+    steps.forEach(s => observer.observe(s));
+  }
+
+  /* ─── Initialization ─── */
+
+  function init() {
+    autoCaptions();
+    setupScrollytelling();
+    setupDropcaps();
+    syncHeaderBg();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
 </script>

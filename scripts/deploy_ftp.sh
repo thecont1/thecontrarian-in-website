@@ -72,10 +72,11 @@ set net:max-retries 3
 set net:reconnect-interval-base 5
 set ftp:passive-mode on
 open -u ${FTP_USER},${FTP_PASS} ${FTP_HOST}
-# Pass 1: Sync everything except /_astro with deletion enabled
-mirror ${MIRROR_DRYRUN_FLAG} ${MIRROR_VERBOSITY_FLAG} --reverse --delete --depth-first --parallel=3 --no-perms --exclude-glob _astro/** ${LOCAL_DIR} ${REMOTE_DIR}
-# Pass 2: Sync /_astro without deletion so old hashed files remain available for cached HTML
+# Pass 1: Sync /_astro FIRST so new hashed assets exist before HTML pages that reference them.
+# No deletion — old hashed files stay available for visitors with cached HTML from before the deploy.
 mirror ${MIRROR_DRYRUN_FLAG} ${MIRROR_VERBOSITY_FLAG} --reverse --depth-first --parallel=3 --no-perms ${LOCAL_DIR}/_astro ${REMOTE_DIR}/_astro
+# Pass 2: Sync everything except /_astro with deletion enabled (now safe: assets already uploaded).
+mirror ${MIRROR_DRYRUN_FLAG} ${MIRROR_VERBOSITY_FLAG} --reverse --delete --depth-first --parallel=3 --no-perms --exclude-glob _astro/** ${LOCAL_DIR} ${REMOTE_DIR}
 bye
 "
 echo -e "${GREEN}✓ Static site mirrored${NC}"
