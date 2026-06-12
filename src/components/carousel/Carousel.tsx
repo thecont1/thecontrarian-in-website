@@ -66,7 +66,6 @@ export default function Carousel({ images }: { images: Image[] }) {
   const programmaticNavUntilRef = useRef(0);
   const ioRef = useRef<IntersectionObserver | null>(null);
   const ioTickRef = useRef<number | null>(null);
-  const preloadTokenRef = useRef(0);
   const requestedMetadataRef = useRef(new Set<string>());
   const [resolvedMetadataBySrc, setResolvedMetadataBySrc] = useState<Record<string, ImageMetadata | undefined>>(() => {
     const initial: Record<string, ImageMetadata | undefined> = {};
@@ -244,69 +243,37 @@ export default function Carousel({ images }: { images: Image[] }) {
     return () => window.clearTimeout(timer);
   }, [userTookControl, images.length, index]);
 
-  // Ensure images begin loading in order of appearance.
-  // Rationale: in a horizontal carousel, native `loading="lazy"` can still trigger many
-  // concurrent fetches (depending on heuristics), which makes early slides compete with
-  // later ones. We instead:
-  // - Keep slide 0 as the only eager/high-priority image.
-  // - Sequentially preload images starting from the current index.
   useEffect(() => {
-    if (!images.length) return;
+    if (images.length < 2) return;
+    let cancelled = false;
 
-    const startToken = ++preloadTokenRef.current;
-    const queue = images.map((img) => img?.src ? cfImageUrl(img.src, 1920) : '').filter(Boolean);
-
-    const clamp = (i: number) => {
-      if (!queue.length) return 0;
-      const m = i % queue.length;
-      return m < 0 ? m + queue.length : m;
-    };
-
-    const run = async () => {
-      // Preload a small window ahead; if the user swipes, this effect restarts.
-      const maxAhead = Math.min(4, Math.max(0, queue.length - 1));
-      const targets: Array<{ idx: number; src: string }> = [];
-      for (let k = 1; k <= maxAhead; k++) {
-        const idx = clamp(index + k);
-        targets.push({ idx, src: queue[idx] });
-      }
-
-      for (const t of targets) {
-        if (preloadTokenRef.current !== startToken) return;
-        await new Promise<void>((resolve) => {
-          const img = new Image();
-          img.decoding = "async";
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          img.src = t.src;
-        });
-
-        if (preloadTokenRef.current !== startToken) return;
-        setRevealed((prev) => {
-          if (t.idx < 0 || t.idx >= images.length) return prev;
-          if (prev[t.idx]) return prev;
-          const next = prev.slice(0, images.length);
-          while (next.length < images.length) next.push(false);
-          next[t.idx] = true;
-          return next;
-        });
-      }
-    };
-
-    // Don't block initial paint; start preloading after the browser is idle.
-    const w = window as any;
-    const idleId = typeof w.requestIdleCallback === "function"
-      ? w.requestIdleCallback(run, { timeout: 1200 })
-      : window.setTimeout(run, 0);
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      images.forEach((img, i) => {
+        if (i === 0 || !img?.src) return;
+        const url = cfImageUrl(img.src, 1920);
+        const el = new Image();
+        el.decoding = "async";
+        const settle = () => {
+          if (cancelled) return;
+          setRevealed((prev) => {
+            if (i >= prev.length || prev[i]) return prev;
+            const next = [...prev];
+            next[i] = true;
+            return next;
+          });
+        };
+        el.onload = settle;
+        el.onerror = settle;
+        el.src = url;
+      });
+    }, 200);
 
     return () => {
-      if (typeof w.cancelIdleCallback === "function" && typeof idleId === "number") {
-        w.cancelIdleCallback(idleId);
-      } else {
-        window.clearTimeout(idleId as number);
-      }
+      cancelled = true;
+      window.clearTimeout(timer);
     };
-  }, [images, index]);
+  }, [images]);
 
   // Scroll to current slide
   useEffect(() => {
