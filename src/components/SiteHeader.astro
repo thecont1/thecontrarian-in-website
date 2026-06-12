@@ -1,6 +1,9 @@
 ---
 import IconClose from "./icons/IconClose.astro";
 import { navLinks } from "../data/nav";
+
+const currentPath = Astro.url.pathname;
+const isHome = currentPath === "/";
 ---
 
 <header class="site-header">
@@ -8,23 +11,23 @@ import { navLinks } from "../data/nav";
     <a href="/" class="site-title">thecontrarian.in</a>
 
     <!-- Desktop Navigation -->
-    <nav class="site-nav desktop-nav">
+    <nav class="site-nav desktop-nav" aria-label="Main navigation">
       {navLinks.map((l) => (
-        <a href={l.href}>{l.label}</a>
+        <a href={l.href} aria-current={isHome && l.href === "/#" ? "page" : undefined}>{l.label}</a>
       ))}
     </nav>
 
     <div class="site-actions">
-      <button id="toggle-textmode" class="icon-btn" aria-label="Text only mode" title="Text only mode">
-        <svg viewBox="0 0 24 24" class="eye-icon">
+      <button id="toggle-textmode" class="icon-btn" aria-label="Text only mode" aria-pressed="false" title="Text only mode">
+        <svg viewBox="0 0 24 24" class="eye-icon" aria-hidden="true">
           <path d="M1.5 12s4-7 10.5-7 10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/>
           <circle cx="12" cy="12" r="3.5"/>
           <line x1="3" y1="3" x2="21" y2="21" class="eye-slash"/>
         </svg>
       </button>
 
-      <button id="toggle-snow" class="icon-btn" aria-label="Toggle snow" aria-pressed="true" title="Toggle snow">
-        <svg viewBox="0 0 24 24" class="snow-icon">
+      <button id="toggle-snow" class="icon-btn" aria-label="Toggle snow" aria-pressed="false" title="Toggle snow">
+        <svg viewBox="0 0 24 24" class="snow-icon" aria-hidden="true">
           <path d="M12 2v20" />
           <path d="M4 6l16 12" />
           <path d="M20 6L4 18" />
@@ -35,18 +38,11 @@ import { navLinks } from "../data/nav";
         </svg>
       </button>
 
-      <button class="icon-btn" aria-label="Search" title="Search">
-        <svg viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="7"/>
-          <line x1="16.5" y1="16.5" x2="22" y2="22"/>
-        </svg>
-      </button>
-
-      <!-- Mobile Navigation Toggle - moved to end of site-actions -->
-      <button class="mobile-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-nav">
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
+      <!-- Mobile Navigation Toggle -->
+      <button class="mobile-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-haspopup="menu" aria-controls="mobile-nav">
+        <span class="hamburger-line" aria-hidden="true"></span>
+        <span class="hamburger-line" aria-hidden="true"></span>
+        <span class="hamburger-line" aria-hidden="true"></span>
       </button>
     </div>
 
@@ -55,10 +51,10 @@ import { navLinks } from "../data/nav";
       <div class="mobile-nav-overlay"></div>
       <div class="mobile-nav-content">
         <button class="mobile-nav-close" aria-label="Close navigation menu">
-          <IconClose class="mobile-nav-close-icon" width="24" height="24" />
+          <IconClose class="mobile-nav-close-icon" width="24" height="24" aria-hidden="true" />
         </button>
         {navLinks.map((l) => (
-          <a href={l.href}>{l.label}</a>
+          <a href={l.href} aria-current={isHome && l.href === "/#" ? "page" : undefined}>{l.label}</a>
         ))}
       </div>
     </nav>

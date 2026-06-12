@@ -109,6 +109,8 @@
 .site-nav a {
   text-decoration: none;
   font-size: 0.9rem;
+  padding: 0.3rem 0.6rem;
+  box-sizing: border-box;
 }
 
 .site-actions {
@@ -163,6 +165,20 @@
   height: 1.4rem;
   stroke-width: 1.75;
   fill: none;
+}
+
+.icon-btn:focus-visible,
+.mobile-menu-toggle:focus-visible,
+.mobile-nav-close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.site-nav a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 2px;
 }
 
 #toggle-snow[aria-pressed="false"] {
@@ -384,10 +400,6 @@ body.text-only .eye-slash {
     display: block;
   }
   
-  /* Hide search button on mobile to make room for hamburger */
-  .site-actions .icon-btn[aria-label="Search"] {
-    display: none;
-  }
 }
 
 @media (min-width: 769px) {
