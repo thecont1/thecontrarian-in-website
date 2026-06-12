@@ -1,11 +1,39 @@
 /* Longform.astro styles — Scrollytelling Visual Essay */
 
+/*
+  Body font alternatives (all loaded in Layout.astro):
+  "Spectral"      ← current
+  "EB Garamond"
+  "Crimson Text"
+  "Libre Baskerville"
+  "Alegreya"
+  To try another, replace "Spectral" below.
+*/
+
+/* Longform header override */
+.page-longform .site-title {
+  border: 1px solid black;
+  background: none !important;
+}
+
+.page-longform .site-nav a {
+  border: 0px solid black;
+  background: white;
+  color: black;
+  text-shadow: none;
+}
+
+.page-longform .site-actions .icon-btn svg {
+  color: black;
+  stroke: black;
+}
+
 /* ─── Post Structure ─── */
 
 .longform-post {
   width: 100%;
   margin: 0;
-  padding: 9rem 5rem 8rem;
+  padding: 9rem 2rem 8rem 8rem;
   background: var(--page-bg, #fff);
   min-height: 100vh;
   position: relative;
@@ -58,7 +86,7 @@
 }
 
 .post-lead {
-  font-family: "Fraunces", serif;
+  font-family: "Spectral", serif;
   font-size: 1.55rem;
   line-height: 1.45;
   font-style: italic;
@@ -108,9 +136,10 @@
 /* ─── Post Body (prose) ─── */
 
 .post-body {
-  font-family: "Fraunces", serif;
-  font-size: 1.2rem;
-  line-height: 1.65;
+  font-family: "EB Garamond", serif;
+  font-size: 1.35rem;
+  font-weight: 300;
+  line-height: 1.35;
   color: var(--ink);
   width: 100%;
   margin: 0 auto;
@@ -125,11 +154,11 @@
 
 .scrolly-wrapper {
   display: grid;
-  grid-template-columns: 45% 50%;
+  grid-template-columns: 50% 49%;
   width: 100%;
   margin: 0 auto;
   min-height: 80vh;
-  gap: 5%;
+  gap: 1%;
 }
 
 /* Sticky media pane (right side on desktop) */
@@ -150,7 +179,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem 3rem;
+  padding: 0rem;
   opacity: 0;
   transition: opacity 0.6s ease;
   pointer-events: none;
@@ -176,7 +205,7 @@
 .scrolly-media-frame img {
   display: block;
   max-width: 100%;
-  max-height: 85vh;
+  max-height: 70vh;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -298,8 +327,8 @@
 /* ─── Dropcaps ─── */
 
 .post-body p.dropcap::first-letter {
-  -webkit-initial-letter: 4;
-  initial-letter: 4;
+  -webkit-initial-letter: 5;
+  initial-letter: 5;
   float: left;
   font-family: "Fraunces", serif;
   margin-right: 0.75rem;
@@ -349,7 +378,7 @@
 
 /* Blurb Style: use <p class="blurb"> in markdown */
 .post-body p.blurb {
-  font-family: "Fraunces", serif;
+  font-family: "Spectral", serif;
   font-size: 1.5rem;
   line-height: 1.4;
   color: var(--muted);
@@ -376,7 +405,7 @@
   border-top: 1px solid var(--hairline);
   border-bottom: 1px solid var(--hairline);
   border-left: none;
-  font-family: "Fraunces", serif;
+  font-family: "Spectral", serif;
   font-size: 2.2rem;
   line-height: 1.2;
   font-style: italic;

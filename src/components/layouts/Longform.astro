@@ -404,10 +404,10 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
         }
       });
 
-      // Find the step closest to the reading position (upper-middle viewport)
+      // Find the step closest to the reading position (mid-viewport)
       let bestStep: Element | null = null;
       let bestDist = Infinity;
-      const readY = window.innerHeight * 0.35;
+      const readY = window.innerHeight * 0.45;
 
       intersecting.forEach((_, step) => {
         const rect = (step as HTMLElement).getBoundingClientRect();
@@ -443,8 +443,8 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
         }
       }
     }, {
-      // Trigger zone: middle 20% of viewport (35% from top, 55% from bottom)
-      rootMargin: '-35% 0px -55% 0px',
+      // Trigger zone: middle 20% of viewport (40% from top, 50% from bottom)
+      rootMargin: '-40% 0px -50% 0px',
       threshold: [0, 0.25, 0.5, 0.75],
     });
 
@@ -461,6 +461,7 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
 
   function init() {
     document.body.classList.add('no-snow');
+    document.body.classList.add('page-longform');
     autoCaptions();
     setupScrollytelling();
     syncHeaderBg();
