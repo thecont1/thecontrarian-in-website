@@ -1,6 +1,55 @@
 # robots.txt for thecontrarian.in
 # https://thecontrarian.in
 
+# --- Google crawlers (explicit, highest priority) ---
+# Googlebot: main web search crawler
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+
+# Mediapartners-Google: AdSense crawler (needed for ads.txt verification)
+User-agent: Mediapartners-Google
+Allow: /
+
+# AdsBot-Google: AdWords landing page quality crawler
+User-agent: AdsBot-Google
+Allow: /
+
+# --- AI/LLM crawlers to block ---
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+# --- All other crawlers ---
+User-agent: *
+Allow: /
+Disallow: /api/
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://thecontrarian.in/sitemap-index.xml# robots.txt for thecontrarian.in
+# https://thecontrarian.in
+
 User-agent: *
 Allow: /
 
