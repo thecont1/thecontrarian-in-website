@@ -26,12 +26,44 @@
   gap: 1.5rem;
 }
 
-/* Mobile spacing optimization for touch targets */
+/* Mobile: smaller sizes but maintain >44px touch targets */
 @media (max-width: 768px) {
+  .site-footer {
+    font-size: 1rem;
+    padding: 0.75rem 3vw;
+  }
+
+  .site-footer p {
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
   .footer-socials {
-    gap: 0.75rem; /* Slightly tighter gap to accommodate larger touch targets */
-    flex-wrap: wrap; /* Allow wrapping if needed */
+    gap: 0.5rem;
+    flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .footer-socials a {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .footer-socials a svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Mobile touch feedback */
+  .footer-socials a:active {
+    transform: scale(0.95) translateY(-1px);
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
   }
 }
 
@@ -66,15 +98,4 @@
   color: var(--muted);
   margin: 0;
   text-align: right;
-}
-
-@media (max-width: 768px) {
-  .footer-inner {
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-  
-  .site-footer p {
-    text-align: center;
-  }
 }
