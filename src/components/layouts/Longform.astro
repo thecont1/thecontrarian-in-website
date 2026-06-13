@@ -3,7 +3,6 @@ import { render, type CollectionEntry } from "astro:content";
 import Lightbox from "../ui/Lightbox.astro";
 import ContentsToggle from "../ui/ContentsToggle.astro";
 import ScreenToggle from "../ui/ScreenToggle.astro";
-import C2PAOverlay from "../ui/C2PAOverlay.astro";
 import Note from "../ui/Note.astro";
 import "../../styles/longform.css";
 
@@ -110,7 +109,6 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
     <Lightbox selector=".longform-post" gallery={true} />
   )}
   <ScreenToggle />
-  <C2PAOverlay />
 </article>
 
 <script>
