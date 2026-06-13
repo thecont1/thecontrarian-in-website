@@ -262,28 +262,63 @@
   .scrolly-narrative .post-body blockquote.pull-quote {
     margin: 3rem 0;
   }
+
+  /* Hide inline figures in narrative - they're shown in right column */
+  .scrolly-intro figure,
+  .scrolly-step figure {
+    display: none;
+  }
 }
 
 /* ─── Mobile/Tablet: single column, inline figures ─── */
 @media (max-width: 1024px) {
+  .longform-post {
+    padding: 6rem 1rem 2rem 1rem;
+  }
+
   .scrolly-wrapper {
     display: block;
+    width: 100%;
   }
 
   .scrolly-media {
     display: none;
   }
 
-  .scrolly-narrative .post-body {
-    padding: 0 3rem;
+  .scrolly-narrative {
+    width: 100%;
+    max-width: 100%;
   }
 
+  .scrolly-narrative .post-body {
+    padding: 0 1rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .scrolly-intro,
+  .scrolly-step {
+    width: 100%;
+  }
+
+  .scrolly-intro figure,
   .scrolly-step figure {
     opacity: 1;
     pointer-events: auto;
-    margin: 3rem auto;
+    margin: 2rem auto;
+    width: 100%;
+    max-width: 100%;
   }
 
+  .scrolly-intro figure img,
+  .scrolly-step figure img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .scrolly-intro figure figcaption,
+  .scrolly-intro figure .image-caption,
   .scrolly-step figure figcaption,
   .scrolly-step figure .image-caption {
     opacity: 1;

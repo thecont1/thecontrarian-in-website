@@ -320,11 +320,9 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
         if (sIdx === 0) stepDiv.appendChild(ch.heading);
         // H3 heading if present
         if (step.h3) stepDiv.appendChild(step.h3);
-        // Step content - filter out extractable elements (figures go to right column only)
+        // Step content - keep all elements including figures (hidden on desktop via CSS)
         step.elements.forEach(el => {
-          if (!isExtractable(el)) {
-            stepDiv.appendChild(el);
-          }
+          stepDiv.appendChild(el);
         });
 
         section.appendChild(stepDiv);
