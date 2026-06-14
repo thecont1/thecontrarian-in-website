@@ -24,8 +24,19 @@
 /* Mobile header adjustments */
 @media (max-width: 768px) {
   .site-header-inner {
-    padding: 0 1rem 0 1rem; /* Reduced left padding, minimal right padding for hamburger */
-    padding-right: 0.5rem; /* Move hamburger closer to right edge */
+    padding: 0 0 0 1rem; /* Left padding only — actions flush to right edge */
+  }
+
+  .site-actions {
+    margin-left: 0;
+    gap: 2px;
+  }
+
+  .site-actions .icon-btn,
+  .site-actions .mobile-menu-toggle {
+    padding: 0.25rem;
+    min-width: 40px;
+    min-height: 40px;
   }
 }
 
@@ -125,9 +136,9 @@
 /* Mobile adjustments to prevent overflow */
 @media (max-width: 768px) {
   .site-actions {
-    gap: 0.5rem; /* 8px spacing to meet accessibility requirements */
-    margin-left: 0.5rem; /* Reduced margin to save space */
-    justify-content: flex-end; /* Ensure right alignment on mobile */
+    gap: 2px;
+    margin-left: 0;
+    justify-content: flex-end;
   }
 }
 

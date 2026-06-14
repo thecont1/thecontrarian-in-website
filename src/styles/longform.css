@@ -442,6 +442,14 @@
   padding-right: 0;
 }
 
+.post-body h3 {
+  font-family: "Fraunces", serif;
+  font-size: 1.7rem;
+  font-weight: 400;
+  margin: 3rem 0 1.25rem;
+  line-height: 1.25;
+}
+
 /* ─── Mobile/Tablet: single column ─── */
 @media (max-width: 1024px) {
   .longform-post {
@@ -454,7 +462,22 @@
 
   .post-body {
     display: block;
-    padding: 0 1rem;
+    padding: 0 0.5rem;
+  }
+
+  /* Remove desktop left offset on mobile so text spans full width */
+  .post-body > p,
+  .post-body > h2,
+  .post-body > h3,
+  .post-body > h4,
+  .post-body > blockquote,
+  .post-body > ul,
+  .post-body > ol,
+  .post-body > div,
+  .post-body > span,
+  .post-body > figure:not(.right),
+  .post-body > img:not(.right) {
+    margin-left: 0;
   }
 
   .post-body > .right-stack {
@@ -483,6 +506,82 @@
   .post-body > .right-stack img {
     width: 100%;
     height: auto;
+  }
+
+  /* Mobile: cap every image at its container width, no exceptions */
+  .post-body img {
+    max-width: 100% !important;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+    box-sizing: border-box;
+  }
+
+  /* Mobile: left-column figures must not exceed container */
+  .post-body > figure:not(.right),
+  .post-body > figure:not(.right).center,
+  .post-body > figure.size-sm,
+  .post-body > figure.size-md,
+  .post-body > figure.size-lg,
+  .post-body > figure.size-xl,
+  .post-body > figure.size-full {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .post-body > figure:not(.right).center img,
+  .post-body > figure.size-sm img,
+  .post-body > figure.size-md img,
+  .post-body > figure.size-lg img,
+  .post-body > figure.size-xl img,
+  .post-body > figure.size-full img {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Scale down special elements on mobile */
+  .post-title {
+    font-size: 2.4rem;
+    line-height: 1.1;
+  }
+
+  .post-body h2 {
+    font-size: 1.6rem !important;
+  }
+
+  .post-lead {
+    font-size: 1.2rem;
+  }
+
+  .post-body h3 {
+    font-size: 1.3rem;
+  }
+
+  .post-body p.dropcap::first-letter {
+    -webkit-initial-letter: 3;
+    initial-letter: 3;
+  }
+
+  .post-body blockquote.pull-quote {
+    font-size: 1.4rem !important;
+    margin: 2rem 0 !important;
+    padding: 1.5rem 0 !important;
+  }
+
+  .post-body figcaption,
+  .post-body .image-caption {
+    margin-top: 0.5rem !important;
+  }
+
+  .site-footer {
+    font-size: 0.85rem;
+    padding: 0.5rem 2vw;
+  }
+
+  .site-footer p {
+    font-size: 0.8rem;
   }
 }
 
@@ -557,6 +656,12 @@
     font-size: 8.5rem;
     line-height: 0.7;
     margin-top: 0.1em;
+  }
+
+  @media (max-width: 1024px) {
+    .post-body p.dropcap::first-letter {
+      font-size: 5.5rem;
+    }
   }
 }
 
@@ -685,7 +790,9 @@
   .post-body blockquote:not(.pull-quote):not(.note-aside) {
     margin: 2rem 0;
     padding-left: 1rem;
-    padding-right: 1rem;
+    padding-right: 0;
+    font-size: 1.1rem;
+    line-height: 1.3;
   }
 }
 
