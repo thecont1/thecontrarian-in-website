@@ -33,7 +33,7 @@
 .longform-post {
   width: 100%;
   margin: 0;
-  padding: 9rem 2rem 2rem 8rem;
+  padding: 9rem 1rem 2rem 4rem;
   background: var(--page-bg, #fff);
   min-height: 100vh;
   position: relative;
@@ -142,197 +142,347 @@
   line-height: 1.35;
   color: var(--ink);
   width: 100%;
-  margin: 0 auto;
-  padding: 0 2rem;
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: 0;
   box-sizing: border-box;
-  display: block;
   position: relative;
   z-index: 1;
+  padding: 0 2rem;
 }
 
-/* ─── Scrollytelling Layout ─── */
-
-.scrolly-wrapper {
-  display: grid;
-  grid-template-columns: 50% 49%;
-  width: 100%;
-  margin: 0 auto;
-  min-height: 80vh;
-  gap: 1%;
+/* Left column content wrapper - must stay left-aligned to make room for right images */
+.post-body > p,
+.post-body > h2,
+.post-body > h3,
+.post-body > h4,
+.post-body > blockquote,
+.post-body > ul,
+.post-body > ol,
+.post-body > div,
+.post-body > span,
+.post-body > figure:not(.right),
+.post-body > img:not(.right) {
+  max-width: 610px;
+  margin-left: 20px;
+  margin-right: auto;
+  padding-left: 0;
+  padding-right: 0;
+  margin-bottom: 1.5rem;
 }
 
-/* Scroll-synced media pane (right side on desktop) */
-.scrolly-media {
-  position: relative;
-  height: 100%;
-  overflow: visible;
-  background: var(--page-bg, #fff);
+/* Left-column figures (default) */
+.post-body > figure:not(.right),
+.post-body > img:not(.right) {
+  padding-left: 0;
+  padding-right: 0;
 }
 
-.scrolly-media-frame {
+/* Right-column figures and image stacks - absolutely positioned */
+.post-body > figure.right,
+.post-body > img.right,
+.post-body > .right-stack {
   position: absolute;
-  left: 0;
-  right: 0;
-  height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 0;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.scrolly-media-frame figure {
-  margin: 0;
-  width: 100%;
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
+  left: 720px;
+  right: 40px;
+  top: 0;
+  max-width: 580px;
+  width: auto;
+  padding-left: 0;
+  padding-right: 0;
+  margin: 0 auto;
   box-sizing: border-box;
 }
 
-.scrolly-media-frame img {
-  display: block;
+/* Stack of consecutive right figures */
+.post-body > .right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+/* Reset figure margins so prose rhythm controls spacing */
+.post-body > figure {
+  margin: 0;
+}
+
+/* Left-column images: bottom margin only so top aligns with right figures */
+.post-body > figure:not(.right),
+.post-body > img:not(.right) {
+  margin: 0 0 2.5rem 0;
+}
+
+/* Center a left-column image */
+.post-body > figure:not(.right).center {
+  width: 610px;
+  max-width: 610px;
+  margin-left: 20px;
+  text-align: center;
+}
+
+.post-body > figure:not(.right).center img {
+  width: auto;
   max-width: 100%;
-  max-height: 75vh;
+  display: inline-block;
+}
+
+/* Preserve size classes for centered figures */
+.post-body > figure.size-sm.center img { max-width: 340px; }
+.post-body > figure.size-md.center img { max-width: 420px; }
+.post-body > figure.size-lg.center img { max-width: 500px; }
+.post-body > figure.size-xl.center img { max-width: 580px; }
+
+
+/* Right-column figure captions */
+.post-body > figure.right figcaption,
+.post-body > figure.right .image-caption,
+.post-body > .right-stack figcaption,
+.post-body > .right-stack .image-caption {
+  font-family: "Inter", sans-serif;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.4;
+  max-width: 100%;
+  margin-top: 0.75rem;
+}
+
+/* Images inside figures: let the figure margin control rhythm */
+.post-body > figure img,
+.post-body > .right-stack figure img {
+  margin: 0;
+}
+
+/* Right-column images: centered, thin border, no shadow */
+.post-body > figure.right img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto !important;
+  border: 0.5px solid var(--ink);
+  box-shadow: none;
+}
+
+/* ─── Figure sizing utilities (work on left and right) ─── */
+
+.post-body > figure.size-sm,
+.post-body > .right-stack figure.size-sm { max-width: 340px; }
+
+.post-body > figure.size-md,
+.post-body > .right-stack figure.size-md { max-width: 420px; }
+
+.post-body > figure.size-lg,
+.post-body > .right-stack figure.size-lg { max-width: 500px; }
+
+.post-body > figure.size-xl,
+.post-body > .right-stack figure.size-xl { max-width: 580px; }
+
+.post-body > figure.size-full,
+.post-body > .right-stack figure.size-full { max-width: 100%; }
+
+/* Height constraints */
+.post-body > figure.short img,
+.post-body > .right-stack figure.short img { max-height: 320px; }
+
+.post-body > figure.tall img,
+.post-body > .right-stack figure.tall img { max-height: 520px; }
+
+/* ─── Visual treatment utilities ─── */
+
+/* .frame — gives left-style treatment (10px white border + shadow) to any figure */
+.post-body > figure.frame img,
+.post-body > .right-stack figure.frame img {
+  border: 10px solid white;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+/* .shadow — adds deep shadow to any figure */
+.post-body > figure.shadow img,
+.post-body > .right-stack figure.shadow img {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+}
+
+/* .no-frame — removes border from any figure */
+.post-body > figure.no-frame img,
+.post-body > .right-stack figure.no-frame img {
+  border: none;
+}
+
+/* .no-shadow — removes shadow from any figure */
+.post-body > figure.no-shadow img,
+.post-body > .right-stack figure.no-shadow img {
+  box-shadow: none;
+}
+
+/* Pull image closer to preceding paragraph */
+.post-body > figure.pull-up,
+.post-body > .right-stack figure.pull-up {
+  margin-top: -5rem;
+}
+
+.post-body > figure.push-down,
+.post-body > .right-stack figure.push-down {
+  margin-top: 5rem;
+}
+
+/* Bleed slightly outside left column (left figures only) */
+.post-body > figure:not(.right).bleed {
+  margin-left: -1.5rem;
+  max-width: calc(100% + 1.5rem);
+}
+
+/* Caption below image only (no side spacing) */
+.post-body > figure.flush figcaption,
+.post-body > .right-stack figure.flush figcaption {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* No caption visible (alt text still accessible) */
+.post-body > figure.no-caption figcaption,
+.post-body > .right-stack figure.no-caption figcaption {
+  display: none;
+}
+
+/* ─── Inline float images ─── */
+/* These float within text in the LEFT COLUMN only */
+
+/* Case 1: Image inline inside a paragraph */
+.post-body p img.inline-left,
+.post-body p img.inline-right {
+  display: block;
   width: auto;
   height: auto;
-  object-fit: contain;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border: none;
   box-shadow: none;
-  cursor: zoom-in;
+  margin: 0.25rem 0;
+  max-width: 280px;
 }
 
-.scrolly-media-frame figcaption,
-.scrolly-media-frame .image-caption {
-  margin-top: 1rem;
-  text-align: center;
-  font-family: "Inter", sans-serif;
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.4;
-  max-width: 80%;
+/* Case 2: Image as direct child - must stay in left column */
+.post-body > img.inline-left,
+.post-body > img.inline-right {
+  grid-column: 1;
+  display: inline;
+  width: auto;
+  height: auto;
+  border: none;
+  box-shadow: none;
+  max-width: 280px;
+  margin: 0.25rem 0 1rem 0;
+  vertical-align: middle;
 }
 
-.scrolly-media-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.post-body > img.inline-right,
+.post-body p img.inline-right {
+  float: right;
+  margin-left: 1.5rem;
+  margin-right: 0;
+  margin-bottom: 1rem;
 }
 
-/* Narrative pane (right side on desktop) */
-.scrolly-narrative {
-  padding: 2rem 0;
-  min-width: 0;
+.post-body > img.inline-left,
+.post-body p img.inline-left {
+  float: left;
+  margin-right: 1.5rem;
+  margin-left: 0;
+  margin-bottom: 1rem;
 }
 
-/* Prose within scrolly narrative */
-.scrolly-narrative .post-body {
-  padding: 0 2rem 0 0;
+/* Wrapper paragraph for direct-child inline floats (created by JS) */
+.post-body > p.inline-float-wrap {
+  grid-column: 1;
 }
 
-.scrolly-intro {
-  margin-bottom: 2rem;
+/* Allow following paragraph to flow up alongside floated image */
+.post-body p:has(img.inline-left, img.inline-right) + p {
+  clear: none;
+  margin-top: 0;
 }
 
-.scrolly-chapter {
-  margin-bottom: 2rem;
+/* Prevent following headings from colliding with the float */
+.post-body p:has(img.inline-left, img.inline-right) + h2,
+.post-body p:has(img.inline-left, img.inline-right) + h3,
+.post-body p:has(img.inline-left, img.inline-right) + h4,
+.post-body > img.inline-left + p + h2,
+.post-body > img.inline-left + p + h3,
+.post-body > img.inline-left + p + h4,
+.post-body > img.inline-right + p + h2,
+.post-body > img.inline-right + p + h3,
+.post-body > img.inline-right + p + h4 {
+  clear: both;
 }
 
-.scrolly-step {
-  margin-bottom: 0;
+/* Size overrides for inline floats */
+.post-body p img.inline-left.size-sm,
+.post-body p img.inline-right.size-sm,
+.post-body > img.inline-left.size-sm,
+.post-body > img.inline-right.size-sm { max-width: 200px; }
+
+.post-body p img.inline-left.size-md,
+.post-body p img.inline-right.size-md,
+.post-body > img.inline-left.size-md,
+.post-body > img.inline-right.size-md { max-width: 260px; }
+
+.post-body p img.inline-left.size-lg,
+.post-body p img.inline-right.size-lg,
+.post-body > img.inline-left.size-lg,
+.post-body > img.inline-right.size-lg { max-width: 340px; }
+
+.post-body p img.inline-left.size-xl,
+.post-body p img.inline-right.size-xl,
+.post-body > img.inline-left.size-xl,
+.post-body > img.inline-right.size-xl { max-width: 440px; }
+
+/* Pull quotes stay in left column */
+.post-body > blockquote.pull-quote {
+  grid-column: 1;
+  padding-left: 0;
+  padding-right: 0;
 }
 
-/* ─── Desktop: notes and pull quotes in narrow narrative pane ─── */
-@media (min-width: 1025px) {
-  /* Notes: inline in narrow narrative pane */
-  .scrolly-narrative .post-body blockquote.note-aside,
-  .scrolly-narrative .post-body note {
-    float: none;
-    clear: none;
-    width: auto;
-    margin: 2rem 0;
-  }
-
-  /* Pull quotes: no negative margins in narrow pane */
-  .scrolly-narrative .post-body blockquote.pull-quote {
-    margin: 3rem 0;
-  }
-
-  /* Hide inline figures in narrative - they're shown in right column */
-  .scrolly-intro figure,
-  .scrolly-step figure {
-    display: none;
-  }
-}
-
-/* ─── Mobile/Tablet: single column, inline figures ─── */
+/* ─── Mobile/Tablet: single column ─── */
 @media (max-width: 1024px) {
   .longform-post {
-    padding: 6rem 1rem 2rem 1rem;
+    padding: 6rem 0 2rem 0;
   }
 
-  .scrolly-wrapper {
-    display: block;
-    width: 100%;
-  }
-
-  .scrolly-media {
-    display: none;
-  }
-
-  .scrolly-narrative {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .scrolly-narrative .post-body {
+  .post-header {
     padding: 0 1rem;
-    width: 100%;
+  }
+
+  .post-body {
+    display: block;
+    padding: 0 1rem;
+  }
+
+  .post-body > .right-stack {
+    display: block;
     max-width: 100%;
   }
 
-  .scrolly-intro,
-  .scrolly-step {
-    width: 100%;
+  .post-body > .right-stack figure + figure {
+    margin-top: 2rem;
   }
 
-  .scrolly-intro figure,
-  .scrolly-step figure {
-    opacity: 1;
-    pointer-events: auto;
+  .post-body > figure.right,
+  .post-body > img.right,
+  .post-body > .right-stack {
+    position: static;
+    left: auto;
+    width: 100%;
+    max-width: 100%;
     margin: 2rem auto;
-    width: 100%;
-    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
   }
 
-  .scrolly-intro figure img,
-  .scrolly-step figure img {
+  .post-body > figure.right img,
+  .post-body > img.right,
+  .post-body > .right-stack img {
     width: 100%;
-    max-width: 100%;
     height: auto;
-  }
-
-  .scrolly-intro figure figcaption,
-  .scrolly-intro figure .image-caption,
-  .scrolly-step figure figcaption,
-  .scrolly-step figure .image-caption {
-    opacity: 1;
-  }
-}
-
-/* ─── Reduced Motion ─── */
-@media (prefers-reduced-motion: reduce) {
-  .scrolly-media-frame {
-    transition: none;
-  }
-
-  .scrolly-step figure {
-    transition: none;
   }
 }
 
@@ -412,7 +562,8 @@
 
 /* Pull Quotes (Markdown blockquote with .pull-quote class) */
 .post-body blockquote.pull-quote {
-  margin: 4rem -4rem;
+  margin: 4rem 0;
+  margin-left: 20px;
   padding: 3rem 0;
   border-top: 1px solid var(--hairline);
   border-bottom: 1px solid var(--hairline);
@@ -424,8 +575,8 @@
   color: var(--ink);
   text-align: center;
   position: relative;
-  max-width: none;
-  width: auto;
+  max-width: 610px;
+  width: 100%;
 }
 
 .post-body blockquote.pull-quote::before {
@@ -435,17 +586,19 @@
 /* Default blockquote still supported */
 .post-body blockquote:not(.pull-quote):not(.note-aside) {
   border-left: 2px solid var(--accent);
-  padding-left: 1.5rem;
+  padding-left: 0;
+  padding-right: 0;
   margin: 2rem 0;
+  margin-left: 20px;
   font-style: italic;
   color: var(--muted);
+  max-width: 610px;
 }
 
 /* Note callout styling */
 .post-body blockquote.note-aside {
   --note-gutter: 360px;
-  float: right;
-  clear: right;
+  grid-column: 1;
   width: 280px;
   margin: 0.5rem 0 1.5rem 2rem;
   padding: 1.25rem;
@@ -517,11 +670,22 @@
     width: auto;
     margin: 2rem 0;
   }
-  
+
   .post-body note {
     float: none;
     width: auto;
     margin: 2rem 0;
+  }
+
+  .post-body blockquote.pull-quote {
+    margin: 3rem 0;
+    padding: 2rem 1rem;
+  }
+
+  .post-body blockquote:not(.pull-quote):not(.note-aside) {
+    margin: 2rem 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 

@@ -112,31 +112,56 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
 </article>
 
 <script>
-  /* ─── Scrollytelling Visual Essay ─── */
+  /* ─── Longform Grid Layout ─── */
 
-  interface ScrollyStep {
-    elements: HTMLElement[];
-    mediaId: number;
-    h3?: HTMLElement;
+  function stackRightFigures() {
+    const content = document.getElementById('longform-content');
+    if (!content) return;
+
+    const children = Array.from(content.children);
+    let i = 0;
+    while (i < children.length) {
+      const el = children[i];
+      if (el.classList.contains('right') && el.tagName === 'FIGURE') {
+        // Look ahead for consecutive right figures
+        let j = i + 1;
+        while (j < children.length && children[j].classList.contains('right') && children[j].tagName === 'FIGURE') {
+          j++;
+        }
+        if (j > i + 1) {
+          // Wrap [i .. j-1] in a stack
+          const stack = document.createElement('div');
+          stack.className = 'right-stack';
+          const first = children[i];
+          content.insertBefore(stack, first);
+          for (let k = i; k < j; k++) {
+            stack.appendChild(children[k]);
+          }
+        }
+        i = j;
+      } else {
+        i++;
+      }
+    }
   }
-
-  interface ScrollyChapter {
-    heading: HTMLElement;
-    elements: HTMLElement[];
-    steps: ScrollyStep[];
-  }
-
-  /* ─── Utilities ─── */
 
   function autoCaptions() {
     const content = document.getElementById('longform-content');
     if (!content) return;
     content.querySelectorAll('img').forEach(img => {
       const imgEl = img as HTMLImageElement;
+      // Skip inline-float images — they stay inside their paragraph for text wrapping
+      if (imgEl.classList.contains('inline-left') || imgEl.classList.contains('inline-right')) {
+        return;
+      }
       if (imgEl.alt && !imgEl.closest('figure')?.querySelector('figcaption')) {
         const existingFigure = imgEl.closest('figure');
         const figure = existingFigure || document.createElement('figure');
         if (!existingFigure) {
+          // Preserve any class on the <img> (e.g. .right from Markdown {right})
+          if (imgEl.className) {
+            figure.className = imgEl.className;
+          }
           const parent = imgEl.parentNode as HTMLElement | null;
           const nextSibling = imgEl.nextSibling;
           figure.appendChild(imgEl);
@@ -158,6 +183,80 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
     });
   }
 
+  // Wrap inline-float images that are direct children of post-body
+  // This groups the image with its following text so float wrapping works
+  function wrapInlineFloats() {
+    const content = document.getElementById('longform-content');
+    if (!content) return;
+
+    const inlineImages = content.querySelectorAll(':scope > img.inline-left, :scope > img.inline-right');
+    inlineImages.forEach(img => {
+      const parent = img.parentNode as HTMLElement;
+      if (!parent || !parent.classList.contains('post-body')) return;
+
+      // Collect all sibling nodes after the image until we hit a block element
+      const nodesToWrap: Node[] = [];
+      let sibling = img.nextSibling;
+      while (sibling) {
+        // Stop at block-level elements (paragraphs, headings, figures, etc.)
+        if (sibling.nodeType === Node.ELEMENT_NODE) {
+          const tagName = (sibling as HTMLElement).tagName.toLowerCase();
+          if (['p', 'h2', 'h3', 'h4', 'blockquote', 'figure', 'ul', 'ol', 'div', 'img'].includes(tagName)) {
+            break;
+          }
+        }
+        // Also stop if we hit a <p> or other block element
+        if (sibling.nodeType === Node.ELEMENT_NODE && (sibling as HTMLElement).matches?.('p, h2, h3, h4, blockquote, figure, ul, ol')) {
+          break;
+        }
+        nodesToWrap.push(sibling);
+        sibling = sibling.nextSibling;
+      }
+
+      // Only wrap if there's text content
+      const hasText = nodesToWrap.some(n => 
+        n.nodeType === Node.TEXT_NODE && n.textContent?.trim()
+      ) || nodesToWrap.length > 0;
+
+      if (hasText) {
+        const wrapper = document.createElement('p');
+        wrapper.className = 'inline-float-wrap';
+        
+        // Move image into wrapper
+        wrapper.appendChild(img);
+        
+        // Move all collected nodes into wrapper
+        nodesToWrap.forEach(node => wrapper.appendChild(node));
+        
+        // Insert wrapper where the image was
+        parent.insertBefore(wrapper, img.nextSibling);
+      }
+    });
+  }
+
+  function positionRightImages() {
+    const content = document.getElementById('longform-content');
+    if (!content) return;
+
+    const rightElements = content.querySelectorAll('.right, .right-stack');
+
+    rightElements.forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      
+      // Find first non-right preceding sibling
+      let sibling = htmlEl.previousElementSibling;
+      while (sibling && (sibling.classList.contains('right') || sibling.classList.contains('right-stack'))) {
+        sibling = sibling.previousElementSibling;
+      }
+      
+      // Align with preceding left sibling's top
+      if (sibling) {
+        htmlEl.style.top = `${(sibling as HTMLElement).offsetTop}px`;
+      }
+      htmlEl.style.left = '';  // Let CSS handle horizontal positioning
+    });
+  }
+
   function syncHeaderBg() {
     const article = document.querySelector('.longform-post') as HTMLElement;
     if (!article) return;
@@ -171,367 +270,67 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
     }
   }
 
-  /* ─── Scrollytelling Setup ─── */
+  function setupTocHighlight() {
+    const tocItems = document.querySelectorAll('.sticky-toc ul > li[data-chapter]');
+    if (tocItems.length === 0) return;
 
-  function setupScrollytelling() {
-    const content = document.getElementById('longform-content');
-    const layoutContainer = document.querySelector('.longform-layout-container');
-    if (!content || !layoutContainer) return;
-    if (content.dataset.scrolly === 'true') return;
-
-    const children = Array.from(content.children) as HTMLElement[];
-    const h2s = children.filter(el => el.tagName === 'H2');
+    const h2s = document.querySelectorAll('#longform-content > h2, #longform-content > section > h2');
     if (h2s.length === 0) return;
 
-    content.dataset.scrolly = 'true';
-    const postBody = content; // non-null after guard
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Pick the h2 closest to the reading line (45% from top)
+        let best: Element | null = null;
+        let bestDist = Infinity;
+        const readY = window.innerHeight * 0.45;
 
-    // 1. Parse children into chapters
-    const introElements: HTMLElement[] = [];
-    const chapters: ScrollyChapter[] = [];
-    let current: ScrollyChapter | null = null;
-
-    children.forEach(el => {
-      if (el.tagName === 'H2') {
-        current = { heading: el, elements: [], steps: [] };
-        chapters.push(current);
-      } else if (current) {
-        current.elements.push(el);
-      } else {
-        introElements.push(el);
-      }
-    });
-
-    // 2. For each chapter, identify steps by H3s or figures
-    let nextMediaId = 0;
-    const allMedia: { id: number; figure: HTMLElement }[] = [];
-
-    function isExtractable(el: HTMLElement): boolean {
-      if (el.tagName === 'FIGURE') return true;
-      if (el.tagName === 'IMG' && !el.closest('figure')) return true;
-      return false;
-    }
-
-    chapters.forEach(ch => {
-      const h3s = ch.elements.filter(el => el.tagName === 'H3');
-      const hasFigures = ch.elements.some(el => isExtractable(el));
-
-      if (h3s.length > 0) {
-        // H3-based steps
-        const steps: ScrollyStep[] = [];
-        let cur: ScrollyStep = { elements: [], mediaId: -1 };
-
-        ch.elements.forEach(el => {
-          if (el.tagName === 'H3') {
-            if (cur.elements.length > 0 || cur.h3) steps.push(cur);
-            cur = { elements: [], mediaId: -1, h3: el };
-          } else {
-            cur.elements.push(el);
-            if (isExtractable(el) && cur.mediaId === -1) {
-              const mId = nextMediaId++;
-              allMedia.push({ id: mId, figure: el });
-              cur.mediaId = mId;
+        // Update our intersection map
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const rect = (entry.target as HTMLElement).getBoundingClientRect();
+            const center = rect.top + rect.height / 2;
+            const dist = Math.abs(center - readY);
+            if (dist < bestDist) {
+              bestDist = dist;
+              best = entry.target;
             }
           }
         });
-        if (cur.elements.length > 0 || cur.h3) steps.push(cur);
 
-        // Inherit media forward for steps without their own figure
-        let lastMedia = -1;
-        steps.forEach(s => {
-          if (s.mediaId >= 0) lastMedia = s.mediaId;
-          else s.mediaId = lastMedia;
+        if (!best) return;
+
+        const slug = (best as HTMLElement).id;
+        if (!slug) return;
+
+        tocItems.forEach(item => {
+          item.classList.toggle('active', (item as HTMLElement).dataset.chapter === slug);
         });
+      },
+      { rootMargin: '-30% 0px -30% 0px', threshold: 0 }
+    );
 
-        ch.steps = steps;
-      } else if (hasFigures) {
-        // Figure-based chapter: create steps for each figure
-        const steps: ScrollyStep[] = [];
-        let cur: ScrollyStep = { elements: [], mediaId: -1 };
-
-        ch.elements.forEach(el => {
-          if (isExtractable(el)) {
-            // Finish current step if it has content
-            if (cur.elements.length > 0) {
-              steps.push(cur);
-            }
-            // Create new step with this figure
-            const mId = nextMediaId++;
-            allMedia.push({ id: mId, figure: el });
-            cur = { elements: [el], mediaId: mId };
-          } else {
-            cur.elements.push(el);
-          }
-        });
-        if (cur.elements.length > 0) steps.push(cur);
-
-        ch.steps = steps;
-      } else {
-        // No H3s and no figures → single step, no media
-        ch.steps = [{ elements: ch.elements, mediaId: -1 }];
-      }
-    });
-
-    // 3. Build the scrolly DOM
-    const wrapper = document.createElement('div');
-    wrapper.className = 'scrolly-wrapper';
-
-    const mediaPane = document.createElement('div');
-    mediaPane.className = 'scrolly-media';
-    mediaPane.setAttribute('aria-hidden', 'true');
-
-    const narrativePane = document.createElement('div');
-    narrativePane.className = 'scrolly-narrative';
-
-    // Create media frames in the sticky pane
-    allMedia.forEach(m => {
-      const frame = document.createElement('div');
-      frame.className = 'scrolly-media-frame';
-      frame.dataset.mediaId = String(m.id);
-      frame.appendChild(m.figure.cloneNode(true));
-      mediaPane.appendChild(frame);
-    });
-
-    // Rebuild post-body content into scrolly sections
-    postBody.innerHTML = '';
-
-    // Intro (content before first H2)
-    if (introElements.length > 0) {
-      const intro = document.createElement('div');
-      intro.className = 'scrolly-intro';
-      introElements.forEach(el => intro.appendChild(el));
-      postBody.appendChild(intro);
-    }
-
-    // Chapters and steps
-    let stepIdx = 0;
-    chapters.forEach(ch => {
-      const section = document.createElement('section');
-      section.className = 'scrolly-chapter';
-      section.dataset.chapterSlug = ch.heading.id;
-
-      ch.steps.forEach((step, sIdx) => {
-        const stepDiv = document.createElement('div');
-        stepDiv.className = 'scrolly-step';
-        stepDiv.dataset.stepIndex = String(stepIdx);
-        stepDiv.dataset.mediaId = String(step.mediaId);
-
-        // First step in chapter gets the H2 heading
-        if (sIdx === 0) stepDiv.appendChild(ch.heading);
-        // H3 heading if present
-        if (step.h3) stepDiv.appendChild(step.h3);
-        // Step content - keep all elements including figures (hidden on desktop via CSS)
-        step.elements.forEach(el => {
-          stepDiv.appendChild(el);
-        });
-
-        section.appendChild(stepDiv);
-        stepIdx++;
-      });
-
-      postBody.appendChild(section);
-    });
-
-    // Assemble: move content into narrative pane, add wrapper to layout container
-    narrativePane.appendChild(postBody);
-    wrapper.appendChild(narrativePane);
-    wrapper.appendChild(mediaPane);
-    layoutContainer.appendChild(wrapper);
-
-    // 4. Lightbox target management: avoid duplicates between sticky and narrative
-    const mq = window.matchMedia('(min-width: 1025px)');
-
-    function updateLightboxTargets() {
-      const isDesktop = mq.matches;
-
-      // Narrative inline images: disable lightbox on desktop only if
-      // there are duplicate frames in the sticky pane (H3-based chapters).
-      // For inline-only chapters (figure-based), keep lightbox active.
-      const hasStickyFrames = mediaPane.querySelectorAll('.scrolly-media-frame').length > 0;
-      postBody.querySelectorAll('.scrolly-step figure img').forEach(img => {
-        const el = img as HTMLImageElement;
-        if (isDesktop && hasStickyFrames) {
-          el.classList.add('no-lightbox');
-          el.onclick = null;
-          el.style.cursor = '';
-        } else {
-          el.classList.remove('no-lightbox');
-        }
-      });
-
-      // Sticky pane images: disable lightbox on mobile (pane is hidden)
-      mediaPane.querySelectorAll('img').forEach(img => {
-        const el = img as HTMLImageElement;
-        if (!isDesktop) {
-          el.classList.add('no-lightbox');
-          el.onclick = null;
-          el.style.cursor = '';
-        } else {
-          el.classList.remove('no-lightbox');
-        }
-      });
-
-      // Re-attach lightbox handlers for the active set
-      requestAnimationFrame(() => {
-        if (typeof (window as any).__attachLightboxListeners === 'function') {
-          (window as any).__attachLightboxListeners();
-        }
-      });
-    }
-
-    mq.addEventListener('change', updateLightboxTargets);
-    // Defer initial call so Lightbox has time to initialize
-    requestAnimationFrame(() => updateLightboxTargets());
-
-    // 5. Scroll sync - position media frames to align with text steps
-    setupScrollSync(mediaPane, postBody);
+    h2s.forEach(h => observer.observe(h));
   }
-
-  /* ─── Scroll Sync Setup ─── */
-
-  function setupScrollSync(mediaPane: HTMLElement, content: HTMLElement) {
-    const steps = content.querySelectorAll('.scrolly-step');
-    const frames = mediaPane.querySelectorAll('.scrolly-media-frame');
-    const tocItems = document.querySelectorAll('.sticky-toc ul > li[data-chapter]');
-
-    // Map mediaId to frame element
-    const frameMap = new Map<number, HTMLElement>();
-    frames.forEach(f => {
-      const id = parseInt((f as HTMLElement).dataset.mediaId ?? '-1');
-      if (id >= 0) frameMap.set(id, f as HTMLElement);
-    });
-
-    // Position each frame to align with its associated paragraph content
-    function syncMediaPositions() {
-      const minSpacing = window.innerHeight * 0.9; // Minimum 90vh between images
-      const framePositions: { frame: HTMLElement; desiredTop: number }[] = [];
-
-      // First pass: calculate desired positions based on first paragraph in step
-      steps.forEach(step => {
-        const mId = parseInt((step as HTMLElement).dataset.mediaId ?? '-1');
-        if (mId >= 0) {
-          const frame = frameMap.get(mId);
-          if (frame) {
-            const wrapper = mediaPane.parentElement;
-            if (wrapper) {
-              // Find first paragraph/content element in the step (not heading)
-              const contentEl = step.querySelector('p, ul, ol, blockquote');
-              const targetEl = contentEl || step;
-              const targetRect = (targetEl as HTMLElement).getBoundingClientRect();
-              const wrapperRect = wrapper.getBoundingClientRect();
-              const desiredTop = targetRect.top - wrapperRect.top + wrapper.scrollTop;
-              framePositions.push({ frame, desiredTop });
-            }
-          }
-        }
-      });
-
-      // Sort by desired position
-      framePositions.sort((a, b) => a.desiredTop - b.desiredTop);
-
-      // Second pass: adjust positions to prevent overlaps
-      let lastBottom = -Infinity;
-      framePositions.forEach(({ frame, desiredTop }) => {
-        const actualTop = Math.max(desiredTop, lastBottom + minSpacing);
-        frame.style.top = `${actualTop}px`;
-        lastBottom = actualTop;
-      });
-
-      // Set media pane height to match narrative height
-      const narrative = content.parentElement;
-      if (narrative) {
-        const narrativeHeight = narrative.scrollHeight;
-        mediaPane.style.height = `${narrativeHeight}px`;
-      }
-    }
-
-    // Initial positioning
-    syncMediaPositions();
-
-    // Re-position on resize
-    window.addEventListener('resize', syncMediaPositions);
-
-    // Set up intersection observer for TOC highlighting
-    const intersecting = new Map<Element, number>();
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          intersecting.set(entry.target, entry.intersectionRatio);
-        } else {
-          intersecting.delete(entry.target);
-        }
-      });
-
-      // Find the step closest to the reading position
-      let bestStep: Element | null = null;
-      let bestDist = Infinity;
-      const readY = window.innerHeight * 0.45;
-
-      intersecting.forEach((_, step) => {
-        const rect = (step as HTMLElement).getBoundingClientRect();
-        const center = rect.top + rect.height / 2;
-        const dist = Math.abs(center - readY);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestStep = step;
-        }
-      });
-
-      if (!bestStep) return;
-
-      // Update TOC active chapter
-      const chapter = (bestStep as HTMLElement).closest('.scrolly-chapter');
-      if (chapter) {
-        const slug = (chapter as HTMLElement).dataset.chapterSlug;
-        if (slug) {
-          tocItems.forEach(item => {
-            item.classList.toggle('active', (item as HTMLElement).dataset.chapter === slug);
-          });
-        }
-      }
-    }, {
-      rootMargin: '-40% 0px -50% 0px',
-      threshold: [0, 0.25, 0.5, 0.75],
-    });
-
-    steps.forEach(s => observer.observe(s));
-  }
-
-  /* ─── Inline Image Reveals ─── */
-
-  function setupInlineReveals() {
-    const narrative = document.querySelector('.scrolly-narrative');
-    if (!narrative) return;
-
-    const blocks = narrative.querySelectorAll('.scrolly-step, .scrolly-intro');
-    if (blocks.length === 0) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.querySelectorAll('figure').forEach(fig => {
-            fig.classList.add('revealed');
-          });
-        }
-      });
-    }, {
-      rootMargin: '0px 0px -10% 0px',
-      threshold: 0,
-    });
-
-    blocks.forEach(block => observer.observe(block));
-  }
-
-  /* ─── Initialization ─── */
 
   function init() {
     document.body.classList.add('no-snow');
     document.body.classList.add('page-longform');
     autoCaptions();
-    setupScrollytelling();
+    wrapInlineFloats();
+    stackRightFigures();
+    positionRightImages();
+    setupTocHighlight();
     syncHeaderBg();
   }
 
   init();
   document.addEventListener('astro:page-load', init);
+
+  // Reposition right images on resize and after images load
+  window.addEventListener('resize', positionRightImages);
+  document.querySelectorAll('#longform-content img').forEach(img => {
+    img.addEventListener('load', positionRightImages);
+  });
+  setTimeout(positionRightImages, 100);
+  setTimeout(positionRightImages, 500);
 </script>
