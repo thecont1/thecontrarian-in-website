@@ -2,7 +2,7 @@
 
 /*
   Body font alternatives (all loaded in Layout.astro):
-  "Spectral"      ← current
+  "Spectral"
   "EB Garamond"
   "Crimson Text"
   "Libre Baskerville"
@@ -137,9 +137,9 @@
 
 .post-body {
   font-family: "EB Garamond", serif;
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 300;
-  line-height: 1.35;
+  line-height: 1.4;
   color: var(--ink);
   width: 100%;
   max-width: 1500px;
@@ -148,7 +148,11 @@
   box-sizing: border-box;
   position: relative;
   z-index: 1;
-  padding: 0 2rem;
+  padding: 0 0rem;
+}
+
+.post-body strong {
+  font-weight: 600;
 }
 
 /* Left column content wrapper - must stay left-aligned to make room for right images */
