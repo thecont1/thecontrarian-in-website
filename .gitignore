@@ -1,6 +1,5 @@
 # build output
 dist/
-public/library/
 
 # Content is now tracked for Cloudflare Pages auto-deployment
 # (previously ignored, now committed to repo)
@@ -23,8 +22,8 @@ node_modules/
 .env.*.local
 .env.production
 
-# local media library (now hosted on R2 CDN)
-public/library/
+# originals/ are served from Cloudflare R2 CDN (4.2GB, too large for git)
+public/library/originals/
 
 # macOS / Windows
 .DS_Store
