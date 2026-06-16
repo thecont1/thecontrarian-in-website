@@ -1,0 +1,4 @@
+# Cloudflare Pages redirects
+# Only /library/originals/* goes to the C2PA viewer Worker.
+# /library/throwaways/* and /library/about/* remain static files.
+/library/originals/* https://library.thecontrarian.in/originals/:splat 301

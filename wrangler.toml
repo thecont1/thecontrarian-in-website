@@ -1,0 +1,11 @@
+# Cloudflare Pages configuration for thecontrarian.in
+# Used by wrangler CLI and CI/CD for Pages deployments.
+
+name = "thecontrarian"
+compatibility_date = "2024-01-01"
+
+# Build output directory for Pages
+pages_build_output_dir = "./dist"
+
+[build]
+command = "bun run build"
