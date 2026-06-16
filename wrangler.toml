@@ -1,0 +1,13 @@
+# Cloudflare Pages configuration
+# This is used for local wrangler commands and CI/CD
+
+name = "thecontrarian"
+compatibility_date = "2024-01-01"
+
+# Build command for local development
+[build]
+command = "npm run build"
+
+# Upload directory
+[site]
+bucket = "./dist"

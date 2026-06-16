@@ -2,7 +2,7 @@
  * FEATURED CONTENT - Manual control for homepage "The Projects" section
  */
 
-export type FeaturedItemType = "post" | "essay" | "longform" | "photogallery" | "code" | "datastory" | "project";
+export type FeaturedItemType = "post" | "essay" | "longform" | "photogallery" | "code" | "datastory";
 
 export interface FeaturedItem {
   /** The content collection type */
@@ -70,6 +70,14 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
   },
 
   {
+    title: "The African Portraits",
+    items: [
+      { type: "photogallery", slug: "the-african-portraits", label: "Series" },
+      { type: "longform", slug: "the-burden-of-being-seen-and-heard", displayTitle: "The _____ Burden of Being Seen and Heard", label: "Long Read"},
+    ]
+  },
+
+  {
     title: "Data Science",
     items: [
       { type: "datastory", slug: "bangalore-metro-conspiracy-theory"},
@@ -79,9 +87,14 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
   },
 
   {
-    title: "Apps",
+    title: "On Github",
     items: [
+      { type: "code", slug: "traffic-monitor-lizard"},
+      { type: "code", slug: "namma-metro-ridership-tracker"},
+      { type: "code", slug: "india-votes-data"},
+      { type: "code", slug: "aditya-L1-solar-explorer"},
       { type: "code", slug: "ngl-storyteller"},
+      { type: "code", slug: "c2pa-viewer"},
     ]
   },
 ];
