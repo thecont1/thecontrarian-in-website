@@ -1,8 +1,10 @@
 # build output
 dist/
 public/library/
-# all directories under content/ at project root
-content/**
+
+# Content is now tracked for Cloudflare Pages auto-deployment
+# (previously ignored, now committed to repo)
+# content/**
 
 # generated types
 .astro/
