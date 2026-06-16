@@ -2,12 +2,12 @@
 import { render, type CollectionEntry } from "astro:content";
 import SiteHeader from "../SiteHeader.astro";
 import SiteFooter from "../SiteFooter.astro";
-import { AUTHOR } from "../../data/author";
-import "../../styles/fonts.css";
-import "../../styles/global.css";
-import "../../styles/header.css";
-import "../../styles/footer.css";
-import "../../styles/code.css";
+import { AUTHOR } from "../data/author";
+import "../styles/fonts.css";
+import "../styles/global.css";
+import "../styles/header.css";
+import "../styles/footer.css";
+import "../styles/code.css";
 
 interface Props {
   post: CollectionEntry<"code">;
