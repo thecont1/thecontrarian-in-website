@@ -162,12 +162,12 @@ echo -e "${BLUE}═════════════════════�
 echo -e "${BLUE}STEP 4: Prepare Build Output${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
 
-if [ -d "dist/library" ]; then
-    echo -e "${YELLOW}Deleting dist/library (served from R2 CDN)...${NC}"
-    rm -rf dist/library
-    echo -e "${GREEN}✓ Deleted dist/library${NC}"
+if [ -d "dist/library/originals" ]; then
+    echo -e "${YELLOW}Deleting dist/library/originals (served from R2 CDN)...${NC}"
+    rm -rf dist/library/originals
+    echo -e "${GREEN}✓ Deleted dist/library/originals${NC}"
 else
-    echo -e "${GREEN}✓ dist/library not found (already clean)${NC}"
+    echo -e "${GREEN}✓ dist/library/originals not found (already clean)${NC}"
 fi
 
 if [ -d "remote-only" ]; then

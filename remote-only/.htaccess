@@ -3,10 +3,11 @@ RewriteEngine On
 # Redirect legacy sitemap URLs to the generated sitemap index.
 RewriteRule ^sitemap\.xml$ /sitemap-index.xml [R=301,L]
 
-# Redirect all /library/** requests to the CDN origin.
+# Redirect only /library/originals/** to the CDN origin for C2PA viewer.
 # The Cloudflare Worker on library.thecontrarian.in handles lightbox-vs-raw-image routing.
+# /library/throwaways/ and /library/about/ remain static files served directly.
 RewriteCond %{HTTP_HOST} ^(www\.)?thecontrarian\.in$ [NC]
-RewriteRule ^library/(.*)$ https://library.thecontrarian.in/$1 [R=301,L,NC,NE]
+RewriteRule ^library/originals/(.*)$ https://library.thecontrarian.in/originals/$1 [R=301,L,NC,NE]
 
 # HTML should always revalidate to avoid old pages referencing pruned hashed assets.
 <IfModule mod_headers.c>
