@@ -1,9 +1,8 @@
 # build output
 dist/
 public/library/
-# all directories under src/content/ but not the file config.ts
-src/content/**
-!src/content/config.ts
+# all directories under content/ at project root
+content/**
 
 # generated types
 .astro/

@@ -6,6 +6,7 @@ import C2PAOverlay from "../ui/C2PAOverlay.astro";
 import ContentsToggle from "../ui/ContentsToggle.astro";
 import fs from "node:fs";
 import path from "node:path";
+import "../../styles/datastory.css";
 
 interface Props {
   post: CollectionEntry<"datastory">;
@@ -26,7 +27,7 @@ interface TocEntry { slug: string; text: string; }
 const tocEntries: TocEntry[] = [];
 let hasKatex = false;
 
-const contentBase = path.resolve("src/content/datastory");
+const contentBase = path.resolve("content/datastory");
 const htmlPath = path.join(contentBase, `${post.id}.notebook.html`);
 if (fs.existsSync(htmlPath)) {
   notebookHtml = fs.readFileSync(htmlPath, "utf-8").trim();

@@ -1,6 +1,6 @@
 ---
 import { getCollection } from "astro:content";
-import Code from "../../components/layouts/Code.astro";
+import Code from "../../layouts/Code.astro";
 
 export async function getStaticPaths() {
   const codeProjects = await getCollection("code", ({ data }) => data.status === "published");

@@ -152,7 +152,7 @@ const projectSchema = z.object({
 });
 
 const markdownLoader = (collection: string) => glob({
-  base: `./src/content/${collection}`,
+  base: `./content/${collection}`,
   pattern: "**/*.{md,mdx}",
   generateId: ({ entry }) => entry.replace(/\.(md|mdx)$/i, ""),
 });

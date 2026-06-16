@@ -32,7 +32,7 @@ from nbconvert import HTMLExporter
 import nbformat
 
 
-CONTENT_DIR = Path(__file__).resolve().parent.parent / "src" / "content" / "datastory"
+CONTENT_DIR = Path(__file__).resolve().parent.parent / "content" / "datastory"
 SHA_CACHE_PATH = Path(__file__).resolve().parent / ".notebook-shas.json"
 
 # ---------------------------------------------------------------------------
