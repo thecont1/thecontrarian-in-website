@@ -48,7 +48,6 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
     items: [
       { type: "photogallery", slug: "ayodhya", label: "Album" },
       { type: "photogallery", slug: "kashmir", label: "Album" },
-      { type: "photogallery", slug: "the-african-portraits", label: "Series" },
     ]
   },
 
