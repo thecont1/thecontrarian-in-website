@@ -60,6 +60,7 @@ const codeSchema = z.object({
   author: z.string(),
   description: z.string().optional(),
   subtitle: z.string().optional(),
+  heroImage: z.string().optional(),
   status: z.enum(["private", "draft", "published"]).default("published"),
   repoUrl: z.url(),
   repoOwner: z.string(),
