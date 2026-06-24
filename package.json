@@ -4,6 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
+    "enrich": "node scripts/enrich-code.mjs",
+    "prebuild": "node scripts/enrich-code.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
