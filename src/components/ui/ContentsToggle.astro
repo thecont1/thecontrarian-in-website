@@ -262,19 +262,12 @@ const { title, label = "Contents" } = Astro.props;
     list-style: none;
     padding: 0;
     margin: 0;
-    counter-reset: chapter;
   }
 
   .sticky-toc li {
     margin-bottom: 1.25rem;
-    counter-increment: chapter;
     display: block;
     position: relative;
-  }
-
-  .sticky-toc li::before {
-    content: none !important;
-    display: none !important;
   }
 
   .sticky-toc ul a {
@@ -289,21 +282,9 @@ const { title, label = "Contents" } = Astro.props;
     pointer-events: auto !important;
   }
 
-  .sticky-toc ul a::before {
-    content: counter(chapter) ". ";
-    font-family: "Inter", sans-serif;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #d04b36;
-    margin-right: 0.5rem;
-    display: inline-block;
-    vertical-align: middle;
-  }
-
   /* Force TOC Hover Colors and Disable Animations */
   .sticky-toc a:hover,
   .sticky-toc li:hover a,
-  .sticky-toc a:hover::before,
   .toc-title-link:hover .toc-title,
   .toc-header:hover .toc-title {
     color: #d04b36 !important;
