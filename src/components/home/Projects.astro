@@ -107,8 +107,13 @@ const typeIcons: Record<string, string> = {
                   {(() => {
                     const heroSrc = normalizePublicPath(item.heroImage);
                     const optimizedSrc = heroSrc?.startsWith('/library/') ? cfImageUrl(heroSrc, 600) : heroSrc;
-                    return heroSrc && (heroSrc.startsWith('http') || hasPublicFile(heroSrc)) ? (
-                      <img src={optimizedSrc} alt={item.title} loading="lazy" decoding="async" />
+                    const codeData = item.type === 'code' ? (item.entry?.data as any) : null;
+                    const fallbackSrc = codeData?.repoOwner && codeData?.repoName
+                      ? `https://opengraph.githubassets.com/1/${codeData.repoOwner}/${codeData.repoName}`
+                      : null;
+                    const imgSrc = (heroSrc && (heroSrc.startsWith('http') || hasPublicFile(heroSrc))) ? optimizedSrc : fallbackSrc;
+                    return imgSrc ? (
+                      <img src={imgSrc} alt={item.title} loading="lazy" decoding="async" />
                     ) : (
                       <div class="card-placeholder-icon">
                         <span>{typeIcons[item.type] || "📄"}</span>
@@ -141,8 +146,13 @@ const typeIcons: Record<string, string> = {
                   {(() => {
                     const heroSrc = normalizePublicPath(item.heroImage);
                     const optimizedSrc = heroSrc?.startsWith('/library/') ? cfImageUrl(heroSrc, 600) : heroSrc;
-                    return heroSrc && (heroSrc.startsWith('http') || hasPublicFile(heroSrc)) ? (
-                      <img src={optimizedSrc} alt={item.title} loading="lazy" decoding="async" />
+                    const codeData = item.type === 'code' ? (item.entry?.data as any) : null;
+                    const fallbackSrc = codeData?.repoOwner && codeData?.repoName
+                      ? `https://opengraph.githubassets.com/1/${codeData.repoOwner}/${codeData.repoName}`
+                      : null;
+                    const imgSrc = (heroSrc && (heroSrc.startsWith('http') || hasPublicFile(heroSrc))) ? optimizedSrc : fallbackSrc;
+                    return imgSrc ? (
+                      <img src={imgSrc} alt={item.title} loading="lazy" decoding="async" />
                     ) : (
                       <div class="card-placeholder-icon">
                         <span>{typeIcons[item.type] || "📄"}</span>
