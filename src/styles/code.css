@@ -554,3 +554,115 @@ html {
   outline: 2px solid #58a6ff;
   outline-offset: 2px;
 }
+
+/* ── File Tree ──────────────────────────────────────────────────────── */
+
+.filetree-panel {
+  margin-top: 1.5rem;
+}
+
+.file-tree {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #8b949e;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #30363d transparent;
+}
+
+.file-tree::-webkit-scrollbar { width: 6px; }
+.file-tree::-webkit-scrollbar-track { background: transparent; }
+.file-tree::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+.tree-dir {
+  margin: 0;
+  padding: 0;
+}
+
+.tree-dir > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0;
+  color: #c9d1d9;
+  font-weight: 500;
+  list-style: none;
+  user-select: none;
+}
+
+.tree-dir > summary::-webkit-details-marker { display: none; }
+.tree-dir > summary::marker { display: none; content: ''; }
+
+.tree-dir-icon {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid #58a6ff;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.tree-dir[open] > summary .tree-dir-icon {
+  transform: rotate(90deg);
+}
+
+.tree-count {
+  color: #484f58;
+  font-size: 0.7rem;
+  margin-left: 0.25rem;
+}
+
+.tree-children {
+  padding-left: 1rem;
+  border-left: 1px solid #21262d;
+  margin-left: 0.35rem;
+}
+
+.tree-file {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0;
+  color: #8b949e;
+  cursor: default;
+  transition: color 0.15s;
+}
+
+.tree-file:hover {
+  color: #c9d1d9;
+}
+
+.tree-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  border-radius: 2px;
+  flex-shrink: 0;
+  color: #0d1117;
+}
+
+.tree-icon-md, .tree-icon-mdx { background: #58a6ff; }
+.tree-icon-py { background: #3572A5; }
+.tree-icon-js { background: #f1e05a; }
+.tree-icon-ts { background: #3178c6; }
+.tree-icon-css { background: #563d7c; color: #fff; }
+.tree-icon-html { background: #e34c26; }
+.tree-icon-json { background: #8b949e; }
+.tree-icon-toml, .tree-icon-yaml, .tree-icon-yml { background: #6e7681; }
+.tree-icon-sh, .tree-icon-bash { background: #89e051; }
+.tree-icon-svg { background: #ffb13b; }
+.tree-icon-default { background: #484f58; }
+
+/* Responsive: hide file tree on narrow screens */
+@media (max-width: 900px) {
+  .filetree-panel { display: none; }
+}
