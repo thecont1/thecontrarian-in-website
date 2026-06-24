@@ -304,6 +304,25 @@ def strip_legacy_markers(md_text: str) -> str:
     return cleaned.rstrip() + "\n"
 
 
+def embed_notebook_html(md_text: str, html_body: str) -> str:
+    """Embed notebook HTML between markers in the .md file (after frontmatter)."""
+    # Strip any existing markers first
+    cleaned = strip_legacy_markers(md_text)
+
+    # Find end of frontmatter
+    fm_match = re.match(r"^---\s*\n(.*?)\n---", cleaned, re.DOTALL)
+    if not fm_match:
+        # No frontmatter — prepend markers
+        return f"{_LEGACY_MARKER_START}\n{html_body}\n{_LEGACY_MARKER_END}\n\n{cleaned}"
+
+    fm_end = fm_match.end()
+    frontmatter = cleaned[:fm_end]
+    rest = cleaned[fm_end:].lstrip("\n")
+
+    # Insert markers after frontmatter, before any prose
+    return f"{frontmatter}\n\n{_LEGACY_MARKER_START}\n{html_body}\n{_LEGACY_MARKER_END}\n\n{rest}"
+
+
 # ---------------------------------------------------------------------------
 # Per-file processing
 # ---------------------------------------------------------------------------
@@ -322,7 +341,7 @@ def process_file(md_path: Path, sha_cache: dict, force: bool = False) -> bool:
         print("  notebook.excludeCodeCells: enabled (code inputs will be hidden)")
 
     # --- SHA-based change detection for GitHub notebooks ---
-    html_path = md_path.with_suffix(".notebook.html")
+    has_embedded = _LEGACY_MARKER_START in md_text
     if not force:
         latest_sha = fetch_latest_sha(notebook_url)
         if latest_sha:
@@ -330,7 +349,7 @@ def process_file(md_path: Path, sha_cache: dict, force: bool = False) -> bool:
             if (
                 cached_sha == latest_sha
                 and cached_exclude_code_cells == exclude_code_cells
-                and html_path.exists()
+                and has_embedded
             ):
                 print(f"  Up to date (SHA {latest_sha[:8]}), skipping.")
                 return False
@@ -357,9 +376,10 @@ def process_file(md_path: Path, sha_cache: dict, force: bool = False) -> bool:
             html_body = resolve_relative_urls(html_body, base_url)
             print(f"  Resolved relative URLs against: {base_url}")
 
-        # Write notebook HTML to sibling .notebook.html file
-        html_path.write_text(html_body, encoding="utf-8")
-        print(f"  Wrote {html_path.name}")
+        # Embed notebook HTML in the .md file between markers
+        updated_md = embed_notebook_html(md_text, html_body)
+        md_path.write_text(updated_md, encoding="utf-8")
+        print(f"  Embedded notebook HTML in {md_path.name}")
 
         # Update SHA cache entry
         if latest_sha or not force:
@@ -372,12 +392,6 @@ def process_file(md_path: Path, sha_cache: dict, force: bool = False) -> bool:
                 print(
                     f"  Cached SHA {resolved_sha[:8]} with excludeCodeCells={exclude_code_cells}"
                 )
-
-        # Clean legacy markers from the .md file if present
-        if _LEGACY_MARKER_START in md_text:
-            cleaned = strip_legacy_markers(md_text)
-            md_path.write_text(cleaned, encoding="utf-8")
-            print(f"  Cleaned legacy markers from {md_path.name}")
 
         return True
 

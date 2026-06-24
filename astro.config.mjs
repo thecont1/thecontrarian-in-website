@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import scaffold from './scripts/scaffold-integration.ts';
+import stripNotebookHtml from './scripts/remark-strip-notebook-html.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -11,6 +12,9 @@ export default defineConfig({
   output: 'static',
   build: {
     inlineStylesheets: 'always'
+  },
+  markdown: {
+    remarkPlugins: [stripNotebookHtml],
   },
   vite: {
     build: {
