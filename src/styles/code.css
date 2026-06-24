@@ -561,6 +561,45 @@ html {
   margin-top: 1.5rem;
 }
 
+.filetree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.filetree-header h3 {
+  margin: 0;
+}
+
+.filetree-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.filetree-btn {
+  background: rgba(88, 166, 255, 0.1);
+  color: #58a6ff;
+  border: 1px solid rgba(88, 166, 255, 0.2);
+  border-radius: 4px;
+  width: 1.4rem;
+  height: 1.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.15s;
+}
+
+.filetree-btn:hover {
+  background: rgba(88, 166, 255, 0.2);
+  border-color: rgba(88, 166, 255, 0.4);
+}
+
 .file-tree {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
@@ -629,12 +668,13 @@ html {
   gap: 0.35rem;
   padding: 0.1rem 0;
   color: #8b949e;
-  cursor: default;
+  cursor: pointer;
+  text-decoration: none;
   transition: color 0.15s;
 }
 
 .tree-file:hover {
-  color: #c9d1d9;
+  color: #58a6ff;
 }
 
 .tree-icon {
