@@ -81,19 +81,20 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
     items: [
       { type: "datastory", slug: "bangalore-metro-conspiracy-theory"},
       { type: "datastory", slug: "bangalore-metro-phenomena-inspector"},
-      { type: "datastory", slug: "bangalore-traffic-monitor"},
+      { type: "datastory", slug: "traffic-monitor-lizard"},
+      { type: "datastory", slug: "rolling-relative-route-scoring-system"},
+      { type: "datastory", slug: "aditya-L1-solar-explorer"},
     ]
   },
 
   {
-    title: "On Github",
+    title: "Digital Products",
     items: [
-      { type: "code", slug: "traffic-monitor-lizard"},
-      { type: "code", slug: "namma-metro-ridership-tracker"},
+      { type: "code", slug: "flatwrite"},
+      { type: "code", slug: "traffic-oracle"},
       { type: "code", slug: "india-votes-data"},
-      { type: "code", slug: "aditya-L1-solar-explorer"},
-      { type: "code", slug: "ngl-storyteller"},
       { type: "code", slug: "c2pa-viewer"},
+      { type: "code", slug: "ngl-storyteller"},
     ]
   },
 ];
