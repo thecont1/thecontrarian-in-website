@@ -55,7 +55,6 @@ fileTree:
 
 # ngl v1.0 😜 – Not Gonna Lie!
 
-[![ngl v1.0](./assets/app-screenshot.png)](./assets/app-screenshot.png)
 
 A creative photo-based storytelling tool that gives you the freedom to reassemble your visual memories into compelling, surrealistic narratives. 
 
