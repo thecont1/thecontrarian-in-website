@@ -385,12 +385,6 @@ export default function Carousel({ images }: { images: Image[] }) {
             >
               <img
                 src={revealed[i] ? cfImageUrl(img.src, 1920) : placeholderSvg(img.width || img.metadata?.width || 2560, img.height || img.metadata?.height || 1920)}
-                srcSet={revealed[i] ? [
-                  `${cfImageUrl(img.src, 1200)} 1200w`,
-                  `${cfImageUrl(img.src, 1920)} 1920w`,
-                  `${cfImageUrl(img.src, 2560)} 2560w`,
-                ].join(", ") : undefined}
-                sizes="100vw"
                 alt={img.alt || img.caption || img.metadata?.iptc?.description || img.metadata?.photography?.description || ""}
                 className="carousel-image"
                 width={img.width || img.metadata?.width || undefined}

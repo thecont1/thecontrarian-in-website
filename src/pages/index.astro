@@ -98,12 +98,6 @@ const personJsonLd = {
         rel="preload"
         as="image"
         href={cfImageUrl(img.src, 1920)}
-        imagesrcset={[
-          `${cfImageUrl(img.src, 1200)} 1200w`,
-          `${cfImageUrl(img.src, 1920)} 1920w`,
-          `${cfImageUrl(img.src, 2560)} 2560w`,
-        ].join(", ")}
-        imagesizes="100vw"
         fetchpriority="high"
       />
     ))}
