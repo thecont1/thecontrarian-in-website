@@ -7,7 +7,7 @@ status: published
 date: 2018-08-18
 container: matrimania
 backgroundColor: "#f9e4e4"
-heroImage: /library/originals/MATRIMANIA/MS201306-BipashaAashish0192.jpg
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/MS201306-BipashaAashish0192.jpg"
 showhero: true
 toc: true
 lightbox:

@@ -5,7 +5,7 @@ title: "MATRIMANIA (Hatje Cantz, 2018)"
 subtitle: "A fictional narrative through one dreary wedding night in an India tearing at its seams."
 author: "Mahesh Shantaram"
 metaDescription: "The Matrimania photobook: a curated collection examining India's wedding culture, class, and consumption through documentary photography."
-heroImage: "/library/originals/MATRIMANIA-book/_DSF3283.jpg"
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/_DSF3300.jpg"
 date: 2015-06-01
 layoutType: tile
 backgroundColor: "#ff44ee44"

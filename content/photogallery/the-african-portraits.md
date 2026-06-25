@@ -5,7 +5,7 @@ title: "The African Portraits"
 subtitle: "Anywhere in the world, it takes a black person to tell us what racism really feels like."
 author: "Mahesh Shantaram"
 metaDescription: "Documentary portraits of African students in India, exploring racism, identity, and belonging in contemporary Indian society."
-heroImage: "/library/originals/TheAfricanPortraits/MS201609-KhojResidency0058.jpg"
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/MS201609-KhojResidency0058.jpg"
 date: 2017-06-01
 layoutType: carousel
 backgroundColor: "#000000cc"

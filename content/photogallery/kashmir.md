@@ -4,7 +4,7 @@ subtitle: "Land of Pain and Pleasure"
 author: "Mahesh Shantaram"
 status: published
 date: 2026-01-04
-heroImage: "/library/originals/KASHMIR/MS201904-Kashmir0594.jpg"
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/KASHMIR/MS201904-Kashmir0594.jpg"
 metaDescription: "Intimate photographs of Kashmir's landscapes and people, capturing the beauty and complexity of India's most contested region."
 showhero: true
 layoutType: carousel

@@ -7,7 +7,7 @@ status: published
 date: 2024-01-22
 container: ayodhya
 backgroundColor: "#FFCCA5"
-heroImage: "/library/originals/Ayodhya-TIME/MS202401-Ayodhya1813-Enhanced-NR.jpg"
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/MS202401-Ayodhya1806-Enhanced-NR.jpg"
 showhero: false
 geography: [ayodhya, uttar pradesh, india]
 theme: [religion, politics, nationalism, history, reporting]

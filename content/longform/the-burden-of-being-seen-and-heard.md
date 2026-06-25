@@ -4,7 +4,7 @@ subtitle: "How a photo project about racism in India got branded as a racist Ind
 author: "Mahesh Shantaram"
 status: published
 date: 2020-11-21
-heroImage: "/library/throwaways/the-burden-of-being-seen-and-heard/image46.jpg"
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/image46.jpg"
 showhero: false
 toc: true
 lightbox:
