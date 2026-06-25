@@ -45,7 +45,9 @@ export async function getImageMetadata(imagePath: string): Promise<ExifMetadata 
   try {
     const uri = resolveImageUri(imagePath);
     const apiUrl = `${C2PA_API_BASE}/api/exif_metadata?uri=${encodeURIComponent(uri)}`;
-    const response = await fetch(apiUrl);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const response = await fetch(apiUrl, { signal: controller.signal }).finally(() => clearTimeout(timeoutId));
     if (!response.ok) return null;
 
     const data = await response.json();

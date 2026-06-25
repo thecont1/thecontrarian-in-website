@@ -28,9 +28,10 @@ const tocEntries: TocEntry[] = [];
 let hasKatex = false;
 
 const contentBase = path.resolve("content/datastory");
-const htmlPath = path.join(contentBase, `${post.id}.notebook.html`);
-if (fs.existsSync(htmlPath)) {
-  notebookHtml = fs.readFileSync(htmlPath, "utf-8").trim();
+const notebookHtmlPath = path.join(contentBase, `${post.id}.notebook.html`);
+
+if (fs.existsSync(notebookHtmlPath)) {
+  notebookHtml = fs.readFileSync(notebookHtmlPath, "utf-8").trim();
 
   const h2Re = /<h2[^>]*id=["']([^"']*)["'][^>]*>(.*?)<\/h2>/gi;
   let match: RegExpExecArray | null;

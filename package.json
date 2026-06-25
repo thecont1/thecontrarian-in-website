@@ -4,6 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
+    "enrich": "node scripts/enrich-code.mjs",
+    "prebuild": "node scripts/enrich-code.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
@@ -23,10 +25,14 @@
     "@types/react-dom": "^19.2.3",
     "astro": "6.1.3",
     "chokidar": "^5.0.0",
+    "js-yaml": "^5.1.0",
+    "marked": "^18.0.5",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "typescript": "^5.9.3",
     "zod-to-json-schema": "^3.25.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9"
+  }
 }

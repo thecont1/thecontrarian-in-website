@@ -304,6 +304,18 @@ def strip_legacy_markers(md_text: str) -> str:
     return cleaned.rstrip() + "\n"
 
 
+def write_notebook_html(md_path: Path, md_text: str, html_body: str) -> None:
+    """Write notebook HTML to a sibling .notebook.html file and strip legacy markers from .md."""
+    # Strip any legacy embedded markers from the .md file
+    cleaned = strip_legacy_markers(md_text)
+    if cleaned != md_text:
+        md_path.write_text(cleaned, encoding="utf-8")
+
+    # Write notebook HTML to sibling .notebook.html file
+    html_path = md_path.with_suffix(".notebook.html")
+    html_path.write_text(html_body + "\n", encoding="utf-8")
+
+
 # ---------------------------------------------------------------------------
 # Per-file processing
 # ---------------------------------------------------------------------------
@@ -323,6 +335,7 @@ def process_file(md_path: Path, sha_cache: dict, force: bool = False) -> bool:
 
     # --- SHA-based change detection for GitHub notebooks ---
     html_path = md_path.with_suffix(".notebook.html")
+    has_rendered = html_path.exists()
     if not force:
         latest_sha = fetch_latest_sha(notebook_url)
         if latest_sha:
@@ -330,7 +343,7 @@ def process_file(md_path: Path, sha_cache: dict, force: bool = False) -> bool:
             if (
                 cached_sha == latest_sha
                 and cached_exclude_code_cells == exclude_code_cells
-                and html_path.exists()
+                and has_rendered
             ):
                 print(f"  Up to date (SHA {latest_sha[:8]}), skipping.")
                 return False
@@ -358,8 +371,8 @@ def process_file(md_path: Path, sha_cache: dict, force: bool = False) -> bool:
             print(f"  Resolved relative URLs against: {base_url}")
 
         # Write notebook HTML to sibling .notebook.html file
-        html_path.write_text(html_body, encoding="utf-8")
-        print(f"  Wrote {html_path.name}")
+        write_notebook_html(md_path, md_text, html_body)
+        print(f"  Wrote notebook HTML to {html_path.name}")
 
         # Update SHA cache entry
         if latest_sha or not force:
@@ -372,12 +385,6 @@ def process_file(md_path: Path, sha_cache: dict, force: bool = False) -> bool:
                 print(
                     f"  Cached SHA {resolved_sha[:8]} with excludeCodeCells={exclude_code_cells}"
                 )
-
-        # Clean legacy markers from the .md file if present
-        if _LEGACY_MARKER_START in md_text:
-            cleaned = strip_legacy_markers(md_text)
-            md_path.write_text(cleaned, encoding="utf-8")
-            print(f"  Cleaned legacy markers from {md_path.name}")
 
         return True
 

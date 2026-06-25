@@ -41,7 +41,9 @@ export interface C2PAData {
 export async function fetchC2PAMini(imgSrc: string): Promise<C2PAMiniData> {
   try {
     const uri = resolveImageUri(imgSrc);
-    const response = await fetch(`${C2PA_API_BASE}/api/c2pa_mini?uri=${encodeURIComponent(uri)}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const response = await fetch(`${C2PA_API_BASE}/api/c2pa_mini?uri=${encodeURIComponent(uri)}`, { signal: controller.signal }).finally(() => clearTimeout(timeoutId));
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -76,7 +78,9 @@ export async function fetchC2PAMini(imgSrc: string): Promise<C2PAMiniData> {
 export async function fetchC2PAData(imgSrc: string): Promise<C2PAData> {
   try {
     const uri = resolveImageUri(imgSrc);
-    const response = await fetch(`${C2PA_API_BASE}/api/c2pa_metadata?uri=${encodeURIComponent(uri)}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const response = await fetch(`${C2PA_API_BASE}/api/c2pa_metadata?uri=${encodeURIComponent(uri)}`, { signal: controller.signal }).finally(() => clearTimeout(timeoutId));
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);

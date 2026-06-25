@@ -56,33 +56,22 @@ const longformSchema = baseSchema.extend({
 });
 
 const codeSchema = z.object({
+  status: z.enum(["private", "draft", "published"]).default("draft"),
   title: z.string(),
-  author: z.string(),
   description: z.string().optional(),
-  subtitle: z.string().optional(),
-  heroImage: z.string().optional(),
-  status: z.enum(["private", "draft", "published"]).default("published"),
-  repoUrl: z.url(),
   repoOwner: z.string(),
   repoName: z.string(),
-  language: z.string().optional(),
-  stars: z.number().optional(),
-  forks: z.number().optional(),
-  license: z.string().optional(),
-  homepage: z.url().optional(),
-  date: z.date().optional(),
+  repoEmail: z.string().optional(),
+  author: z.string(),
+  createdDate: z.date().optional(),
   lastUpdated: z.date().optional(),
+  repoUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
+  readmeUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
+  branch: z.string().optional().default("main"),
+  appUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
+  fileTree: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),
-  topics: z.array(z.string()).default([]),
-  dependencies: z.array(z.string()).default([]),
-  devDependencies: z.array(z.string()).default([]),
-  backgroundColor: z.string().optional(),
-  apiData: z.object({
-    fetchedAt: z.date(),
-    readme: z.string().optional(),
-    fileTree: z.array(z.string()).default([]),
-    languages: z.record(z.string(), z.number()).optional(),
-  }).optional(),
+  license: z.string().optional(),
 });
 
 const datastorySchema = z.object({
