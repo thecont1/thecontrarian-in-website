@@ -39,6 +39,9 @@ jobs:
 
       - name: Build site
         run: bun run build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INTERNAL_RENDER_KEY: ${{ secrets.INTERNAL_RENDER_KEY }}
 
       - name: Copy remote-only files
         run: |
