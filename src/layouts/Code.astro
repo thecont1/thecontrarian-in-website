@@ -72,13 +72,19 @@ function resolveReadmeUrl(post: CollectionEntry<"code">): string {
   return url;
 }
 
-function splitFragment(html: string) {
-  const headMatch = html.match(/<head>([\s\S]*?)<\/head>/);
-  const bodyMatch = html.match(/<body[^>]*>[\s\S]*?<\/body>/);
-  return {
-    head: headMatch ? headMatch[1].trim() : '',
-    bodyTag: bodyMatch ? bodyMatch[0].trim() : '<body></body>',
-  };
+interface FlatwriteApiResponse {
+  head: string;
+  body: string;
+}
+
+function parseFragmentResponse(text: string): FlatwriteApiResponse | null {
+  try {
+    const parsed = JSON.parse(text);
+    if (typeof parsed.head !== 'string' || typeof parsed.body !== 'string') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
 }
 
 function extractStyles(headHtml: string) {
@@ -139,18 +145,18 @@ async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> 
       signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId));
     if (!resp.ok) throw new Error(`FlatWrite API returned ${resp.status}`);
-    const fragment = await resp.text();
-    const { head, bodyTag } = splitFragment(fragment);
-    const pageHeadStyles = extractStyles(head);
+    const fragment = parseFragmentResponse(await resp.text());
+    if (!fragment) throw new Error('Invalid FlatWrite API response');
+    const pageHeadStyles = extractStyles(fragment.head);
     const iframeSrcdoc = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <base target="_blank" rel="noopener noreferrer">
-  ${head}
+  ${fragment.head}
 </head>
-${bodyTag}
+${fragment.body}
 </html>`;
     return { pageHeadStyles, iframeSrcdoc };
   } catch (err) {
