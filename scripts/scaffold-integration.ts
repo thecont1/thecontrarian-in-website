@@ -228,7 +228,6 @@ repoUrl: ""
 readmeUrl: ""
 branch: main
 appUrl: ""
-fileTree: []
 tags: []
 license: ""
 ---
@@ -297,15 +296,7 @@ async function enrichCodeFile(filePath: string) {
       return;
     }
 
-    // File tree
     const branch = repoData.default_branch || 'main';
-    let fileTree: string[] = [];
-    const treeData = ghApi(`/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`);
-    if (treeData && treeData.tree) {
-      fileTree = treeData.tree
-        .filter((item: any) => item.type === 'blob')
-        .map((item: any) => item.path);
-    }
 
     // Author + email: try repo endpoint first, fall back to user profile (cached)
     let authorName = fields.author;
@@ -316,11 +307,8 @@ async function enrichCodeFile(filePath: string) {
       if (!repoEmail && profile?.email) repoEmail = profile.email;
     }
 
-    // Determine the README.md URL from the file tree (Code.astro renders it via FlatWrite)
-    const readmePath = fileTree.find(p => p.toLowerCase() === 'readme.md' || p.toLowerCase().endsWith('/readme.md'));
-    const readmeUrl = readmePath
-      ? `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${readmePath}`
-      : fields.readmeUrl;
+    // Determine the README.md URL from the repo root (Code.astro renders it via FlatWrite)
+    const readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/README.md`;
 
     // Ensure tags is always an array
     const tags = Array.isArray(fields.tags) ? fields.tags : [];
@@ -343,7 +331,6 @@ async function enrichCodeFile(filePath: string) {
       readmeUrl: readmeUrl || '',
       branch: fields.branch || branch,
       appUrl: fields.appUrl || repoData.homepage || '',
-      fileTree: fileTree.length > 0 ? fileTree : fields.fileTree || [],
       tags,
       license: fields.license || repoData.license?.spdx_id || '',
     };

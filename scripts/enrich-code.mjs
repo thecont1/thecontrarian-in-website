@@ -133,15 +133,6 @@ async function enrichCodeFile(filePath) {
     // Authoritative branch from GitHub (single source of truth)
     fields.branch = repoData.default_branch || 'main';
 
-    // File tree
-    let fileTree = [];
-    const treeData = ghApi(`/repos/${owner}/${repo}/git/trees/${fields.branch}?recursive=1`);
-    if (treeData && treeData.tree) {
-      fileTree = treeData.tree
-        .filter(item => item.type === 'blob')
-        .map(item => item.path);
-    }
-
     // Author + email: try repo endpoint first, fall back to user profile (cached)
     let authorName = fields.author;
     let repoEmail = fields.repoEmail;
@@ -151,11 +142,8 @@ async function enrichCodeFile(filePath) {
       if (!repoEmail && profile?.email) repoEmail = profile.email;
     }
 
-    // Determine the README.md URL from the file tree
-    const readmePath = fileTree.find(p => p.toLowerCase() === 'readme.md' || p.toLowerCase().endsWith('/readme.md'));
-    const readmeUrl = readmePath
-      ? `https://raw.githubusercontent.com/${owner}/${repo}/${fields.branch}/${readmePath}`
-      : fields.readmeUrl;
+    // Determine the README.md URL from the repo root
+    const readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${fields.branch}/README.md`;
 
     // Ensure tags is always an array
     const tags = Array.isArray(fields.tags) ? fields.tags : [];
@@ -178,7 +166,6 @@ async function enrichCodeFile(filePath) {
       readmeUrl: readmeUrl || '',
       branch: fields.branch || repoData.default_branch || 'main',
       appUrl: fields.appUrl || repoData.homepage || '',
-      fileTree: fileTree.length > 0 ? fileTree : fields.fileTree || [],
       tags,
       license: fields.license || repoData.license?.spdx_id || '',
     };

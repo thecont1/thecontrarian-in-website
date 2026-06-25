@@ -8,6 +8,9 @@ dist/
 # generated types
 .astro/
 
+# build-time GitHub API cache
+.cache/
+
 # dependencies
 node_modules/
 

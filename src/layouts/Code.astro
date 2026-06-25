@@ -2,6 +2,7 @@
 import { type CollectionEntry } from "astro:content";
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 import { createHmac } from "node:crypto";
 import * as yaml from "js-yaml";
 import { marked } from "marked";
@@ -23,6 +24,68 @@ interface TreeNode {
 }
 
 const { post } = Astro.props;
+
+/* ── GitHub file tree cache (build-time, change-detected) ──────────── */
+
+const FILETREE_CACHE_DIR = path.resolve(".cache");
+const FILETREE_CACHE_FILE = path.join(FILETREE_CACHE_DIR, "code-filetrees.json");
+
+interface CachedTree {
+  pushedAt: string;
+  tree: string[];
+}
+
+function readFileTreeCache(): Record<string, CachedTree> {
+  try {
+    return JSON.parse(fs.readFileSync(FILETREE_CACHE_FILE, "utf-8"));
+  } catch {
+    return {};
+  }
+}
+
+function writeFileTreeCache(cache: Record<string, CachedTree>) {
+  if (!fs.existsSync(FILETREE_CACHE_DIR)) {
+    fs.mkdirSync(FILETREE_CACHE_DIR, { recursive: true });
+  }
+  fs.writeFileSync(FILETREE_CACHE_FILE, JSON.stringify(cache, null, 2));
+}
+
+function ghApi(endpoint: string): any {
+  try {
+    const out = execSync(`gh api "${endpoint}"`, { encoding: "utf8", maxBuffer: 1024 * 1024 });
+    return JSON.parse(out);
+  } catch {
+    return null;
+  }
+}
+
+function getRepoFileTree(repoOwner: string, repoName: string, branch: string): string[] {
+  const repoKey = `${repoOwner}/${repoName}`;
+  const cache = readFileTreeCache();
+
+  const repoData = ghApi(`/repos/${repoOwner}/${repoName}`);
+  if (!repoData) {
+    console.error(`[Code.astro] GitHub repo metadata fetch failed for ${repoKey}`);
+    return cache[repoKey]?.tree || [];
+  }
+
+  const pushedAt = repoData.pushed_at;
+  if (cache[repoKey]?.pushedAt === pushedAt) {
+    return cache[repoKey].tree;
+  }
+
+  const treeData = ghApi(`/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`);
+  const tree: string[] = treeData?.tree
+    ? treeData.tree.filter((item: any) => item.type === "blob").map((item: any) => item.path)
+    : [];
+
+  cache[repoKey] = { pushedAt, tree };
+  writeFileTreeCache(cache);
+
+  return tree;
+}
+
+const repoFileTree = getRepoFileTree(post.data.repoOwner, post.data.repoName, post.data.branch || "main");
 
 /* ── FlatWrite: fetch README + render via API ──────────── */
 
@@ -358,9 +421,9 @@ const personJsonLd = {
                 </div>
               </div>
             )}
-            {post.data.fileTree && post.data.fileTree.length > 0 && (() => {
+            {repoFileTree.length > 0 && (() => {
               const tree: TreeNode = {};
-              for (const fp of post.data.fileTree) {
+              for (const fp of repoFileTree) {
                 const parts = fp.split('/');
                 let node = tree;
                 for (let i = 0; i < parts.length; i++) {
