@@ -12,6 +12,7 @@ repoUrl: "https://github.com/thecont1/flatwrite"
 readmeUrl: "https://raw.githubusercontent.com/thecont1/flatwrite/main/README.md"
 branch: main
 appUrl: "https://flatwrite.md/"
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/flatwrite.png"
 tags:
   - "frameworks"
   - "markdown"

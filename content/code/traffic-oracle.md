@@ -12,6 +12,7 @@ repoUrl: "https://github.com/thecont1/traffic-oracle"
 readmeUrl: "https://raw.githubusercontent.com/thecont1/traffic-oracle/main/README.md"
 branch: main
 appUrl: "https://co.thecontrarian.in/"
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/traffic-oracle.jpg"
 tags:
   - "public-data"
   - "traffic-analysis"

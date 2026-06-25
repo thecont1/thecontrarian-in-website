@@ -12,6 +12,7 @@ repoUrl: "https://github.com/thecont1/c2pa-viewer"
 readmeUrl: "https://raw.githubusercontent.com/thecont1/c2pa-viewer/main/README.md"
 branch: main
 appUrl: "https://apps.thecontrarian.in/c2pa"
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/c2pa-viewer.jpg"
 tags:
   - "c2pa"
   - "exif-metadata"

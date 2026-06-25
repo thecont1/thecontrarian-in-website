@@ -12,6 +12,7 @@ repoUrl: "https://github.com/thecont1/india-votes-data"
 readmeUrl: "https://raw.githubusercontent.com/thecont1/india-votes-data/main/README.md"
 branch: main
 appUrl: "https://letlive.thecontrarian.in/"
+heroImage: "https://library.thecontrarian.in/throwaways/homepage/india-votes-data.jpg"
 tags:
   - "candidates"
   - "democracy"
