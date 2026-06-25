@@ -215,19 +215,22 @@ function scaffoldFile(filePath: string) {
   if (collectionName === 'code') {
     // Code template: pre-fill repoOwner and repoName from filename
     const template = `---
+status: draft
 title: ""
 description: ""
-author: ""
-status: draft
 repoOwner: "${GITHUB_OWNER}"
 repoName: "${fileName}"
-license: ""
+repoEmail: ""
+author: ""
 createdDate: ${today()}
 lastUpdated: ${today()}
-tags: []
 repoUrl: ""
-repoEmail: ""
+readmeUrl: ""
+branch: main
 appUrl: ""
+fileTree: []
+tags: []
+license: ""
 ---
 `;
     console.log(`[Scaffold] Populating code: ${relativePath} (thecont1/${fileName})`);
