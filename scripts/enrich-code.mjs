@@ -157,6 +157,7 @@ async function enrichCodeFile(filePath) {
     }
     // Always update from GitHub (authoritative)
     if (repoData.pushed_at) fields.lastUpdated = repoData.pushed_at.split('T')[0];
+    if (repoData.default_branch) fields.branch = repoData.default_branch;
     fields.repoUrl = `https://github.com/${owner}/${repo}`;
 
     // Ensure tags is always an array
@@ -164,9 +165,15 @@ async function enrichCodeFile(filePath) {
     // Always update fileTree from GitHub
     if (fileTree.length > 0) fields.fileTree = fileTree;
 
-    // Write frontmatter only — README body is fetched by render-code-flatwrite.mjs
+    // Determine the README.md URL from the file tree
+    const readmePath = fileTree.find(p => p.toLowerCase() === 'readme.md' || p.toLowerCase().endsWith('/readme.md'));
+    if (readmePath) {
+      fields.readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${readmePath}`;
+    }
+
+    // Write frontmatter + preserved body
     const fm = buildFrontmatter(fields);
-    writeFileSync(filePath, `---\n${fm}\n---\n`);
+    writeFileSync(filePath, `---\n${fm}\n---\n${body}`);
     console.log(`[Enrich] ✓ ${relative(CONTENT_DIR, filePath)} from ${repoKey}`);
   } catch (err) {
     console.error(`[Enrich] ✗ ${repoKey}: ${err.message}`);

@@ -1,5 +1,5 @@
 ---
-import { render, type CollectionEntry } from "astro:content";
+import { type CollectionEntry } from "astro:content";
 import fs from "node:fs";
 import path from "node:path";
 import { createHmac } from "node:crypto";
@@ -19,11 +19,15 @@ interface Props {
   post: CollectionEntry<"code">;
 }
 
+interface TreeNode {
+  [key: string]: TreeNode | null;
+}
+
 const { post } = Astro.props;
 
 /* ── FlatWrite: fetch README + render via API ──────────── */
 
-const FLATWRITE_API = "https://flatwrite.md/api/render";
+const FLATWRITE_API = process.env.FLATWRITE_API || "https://flatwrite.md/api/render";
 const SECRET = process.env.INTERNAL_RENDER_KEY || "";
 
 // Load design config from YAML
@@ -45,11 +49,11 @@ const WEIGHT_MAP: Record<number, number> = { "-3": 100, "-2": 200, "-1": 300, 0:
 const LINE_SCALE: Record<number, number> = { "-2": 1.3, "-1": 1.5, 0: 1.75, 1: 2.0, 2: 2.3, 3: 2.6 };
 const BASE_FONT_SIZE = 16;
 
-function sign(secret, ts, method_, path_) {
+function sign(secret: string, ts: number, method_: string, path_: string) {
   return createHmac("sha256", secret).update(`${ts}.${method_}.${path_}`).digest("hex");
 }
 
-function fetchREADME(owner, repo) {
+function fetchREADME(owner: string, repo: string) {
   try {
     return execSync(`gh api repos/${owner}/${repo}/readme --jq '.content' | base64 -d`, {
       encoding: "utf8",
@@ -60,8 +64,12 @@ function fetchREADME(owner, repo) {
   }
 }
 
+function resolveReadmeUrl(post: CollectionEntry<"code">) {
+  if (post.data.readmeUrl) return post.data.readmeUrl;
+  return `https://raw.githubusercontent.com/${post.data.repoOwner}/${post.data.repoName}/main/README.md`;
+}
 
-async function renderFlatwrite(markdown) {
+async function renderFlatwrite(source: { markdownUrl?: string; markdown?: string }) {
   if (!SECRET) return null;
   const scale = SIZE_SCALE[designConfig.size] ?? 1;
   const fontWeight = WEIGHT_MAP[designConfig.weight] ?? 400;
@@ -69,41 +77,52 @@ async function renderFlatwrite(markdown) {
   const ts = Math.floor(Date.now() / 1000);
   const sig = sign(SECRET, ts, "POST", "/api/render");
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
-  const resp = await fetch(FLATWRITE_API, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Render-Timestamp": String(ts),
-      "X-Render-Signature": sig,
-    },
-    body: JSON.stringify({
-      markdown,
-      framework: designConfig.framework || "spectre",
-      font: designConfig.font,
-      fontSize: Math.round(BASE_FONT_SIZE * scale),
-      fontWeight,
-      lineHeight,
-    }),
-    signal: controller.signal,
-  }).finally(() => clearTimeout(timeoutId));
-  if (!resp.ok) return null;
-  // Return the full HTML document as-is — the iframe isolates it completely
-  return await resp.text();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  const body: Record<string, unknown> = {
+    framework: designConfig.framework || "spectre",
+    font: designConfig.font,
+    fontSize: Math.round(BASE_FONT_SIZE * scale),
+    fontWeight,
+    lineHeight,
+    docEngine: designConfig.docEngine || "none",
+    surfaceMode: designConfig.surfaceMode || "doc",
+  };
+  if (source.markdownUrl) {
+    body.markdownUrl = source.markdownUrl;
+  } else if (source.markdown) {
+    body.markdown = source.markdown;
+  } else {
+    return null;
+  }
+
+  try {
+    const resp = await fetch(FLATWRITE_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Render-Timestamp": String(ts),
+        "X-Render-Signature": sig,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId));
+    if (!resp.ok) return null;
+    // Return the full HTML document as-is — the iframe isolates it completely
+    return await resp.text();
+  } catch (err) {
+    const message = err instanceof Error ? (err.cause as Error)?.message || err.message : String(err);
+    console.error('[renderFlatwrite] fetch failed:', FLATWRITE_API, message);
+    return null;
+  }
 }
 
-// Fetch and render at build time
-const readme = fetchREADME(post.data.repoOwner, post.data.repoName);
-let flatwriteHTML: string | null = null;
-if (readme.trim()) {
-  flatwriteHTML = await renderFlatwrite(readme);
-  if (!flatwriteHTML) {
-    // Fallback: render markdown locally matching FlatWrite API's output structure
-    const bodyHtml = marked.parse(readme, { breaks: true, gfm: true }) as string;
-    const scale = SIZE_SCALE[designConfig.size] ?? 1;
-    const fontWeight = WEIGHT_MAP[designConfig.weight] ?? 400;
-    const lineHeight = LINE_SCALE[designConfig.line] ?? 1.75;
-    flatwriteHTML = `<!DOCTYPE html>
+function renderReadmeFallback(markdown: string) {
+  const scale = SIZE_SCALE[designConfig.size] ?? 1;
+  const fontWeight = WEIGHT_MAP[designConfig.weight] ?? 400;
+  const lineHeight = LINE_SCALE[designConfig.line] ?? 1.75;
+  const bodyHtml = marked.parse(markdown, { breaks: true, gfm: true }) as string;
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -124,6 +143,20 @@ if (readme.trim()) {
 ${bodyHtml}
 </body>
 </html>`;
+}
+
+// Build-time rendering: prefer the README URL from the enriched file tree.
+const readmeUrl = resolveReadmeUrl(post);
+let flatwriteHTML: string | null = null;
+flatwriteHTML = await renderFlatwrite({ markdownUrl: readmeUrl });
+if (!flatwriteHTML) {
+  // Fallback: fetch the README content and render it inline
+  const readme = fetchREADME(post.data.repoOwner, post.data.repoName);
+  if (readme.trim()) {
+    flatwriteHTML = await renderFlatwrite({ markdown: readme });
+  }
+  if (!flatwriteHTML && readme.trim()) {
+    flatwriteHTML = renderReadmeFallback(readme);
   }
 }
 
@@ -245,23 +278,24 @@ const personJsonLd = {
               </div>
             )}
             {post.data.fileTree && post.data.fileTree.length > 0 && (() => {
-              const tree = {};
+              const tree: TreeNode = {};
               for (const fp of post.data.fileTree) {
                 const parts = fp.split('/');
                 let node = tree;
                 for (let i = 0; i < parts.length; i++) {
                   const part = parts[i];
                   if (i === parts.length - 1) { node[part] = null; }
-                  else { if (!node[part]) node[part] = {}; node = node[part]; }
+                  else { if (!node[part]) node[part] = {}; node = node[part] as TreeNode; }
                 }
               }
-              function countFiles(obj) {
+              function countFiles(obj: TreeNode) {
                 let n = 0;
                 for (const v of Object.values(obj)) n += v === null ? 1 : countFiles(v);
                 return n;
               }
               const repoBase = post.data.repoUrl || `https://github.com/${post.data.repoOwner}/${post.data.repoName}`;
-              function renderNode(obj, parentPath) {
+              const branch = post.data.branch || 'main';
+              function renderNode(obj: TreeNode, parentPath: string) {
                 const entries = Object.entries(obj).sort(([a, va], [b, vb]) => {
                   if (va !== null && vb === null) return -1;
                   if (va === null && vb !== null) return 1;
@@ -272,7 +306,7 @@ const personJsonLd = {
                     const ext = key.split('.').pop() || '';
                     const icon = ext === 'md' || ext === 'mdx' ? 'M' : ext === 'py' ? 'Py' : ext === 'js' || ext === 'ts' ? 'JS' : ext === 'css' ? 'CS' : ext === 'html' ? 'H' : ext === 'json' ? '{}' : ext === 'toml' || ext === 'yaml' || ext === 'yml' ? '=' : ext === 'sh' || ext === 'bash' ? '>' : ext === 'svg' ? 'S' : 'F';
                     const filePath = parentPath ? `${parentPath}/${key}` : key;
-                    return <a class="tree-file" href={`${repoBase}/blob/main/${filePath}`} target="_blank" rel="noopener noreferrer"><span class={`tree-icon tree-icon-${ext}`}>{icon}</span>{key}</a>;
+                    return <a class="tree-file" href={`${repoBase}/blob/${branch}/${filePath}`} target="_blank" rel="noopener noreferrer"><span class={`tree-icon tree-icon-${ext}`}>{icon}</span>{key}</a>;
                   } else {
                     const fileCount = countFiles(val);
                     const dirPath = parentPath ? `${parentPath}/${key}` : key;
@@ -303,6 +337,7 @@ const personJsonLd = {
                 <iframe
                   class="flatwrite-iframe"
                   title={`${post.data.title} — README`}
+                  srcdoc={flatwriteHTML}
                   loading="lazy"
                 />
               </div>
@@ -335,14 +370,10 @@ const personJsonLd = {
     });
   </script>
   {flatwriteHTML && (
-    <script is:inline define:vars={{ flatwriteHTML }}>
+    <script is:inline>
       (function() {
         var iframe = document.querySelector('.flatwrite-iframe');
         if (!iframe) return;
-
-        var blob = new Blob([flatwriteHTML], { type: 'text/html;charset=utf-8' });
-        var url = URL.createObjectURL(blob);
-        iframe.src = url;
 
         function resize() {
           try {

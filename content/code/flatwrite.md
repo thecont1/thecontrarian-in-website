@@ -1,22 +1,16 @@
 ---
+status: published
 title: flatwrite
 description: FlatWrite turns plain markdown into beautiful, shareable documents you actually enjoy reading. Makes markdown publishing feel effortless.
-author: Mahesh Shantaram
-status: published
 repoOwner: thecont1
 repoName: flatwrite
-license: ""
-createdDate: 2026-06-24
-lastUpdated: 2026-06-24
-tags:
-  - "frameworks"
-  - "markdown"
-  - "mini-css"
-  - "spectre-css"
-  - "text-editor"
-  - "ui-components"
-repoUrl: "https://github.com/thecont1/flatwrite"
 repoEmail: ms@thecontrarian.in
+author: Mahesh Shantaram
+createdDate: 2026-06-24
+lastUpdated: 2026-06-25
+repoUrl: "https://github.com/thecont1/flatwrite"
+readmeUrl: "https://raw.githubusercontent.com/thecont1/flatwrite/main/README.md"
+branch: main
 appUrl: "https://flatwrite.md/"
 fileTree:
   - ".DS_Store"
@@ -66,4 +60,12 @@ fileTree:
   - "workers/flatwrite-render/src/index.js"
   - "workers/flatwrite-render/wrangler.toml"
   - "wrangler.jsonc"
+tags:
+  - "frameworks"
+  - "markdown"
+  - "mini-css"
+  - "spectre-css"
+  - "text-editor"
+  - "ui-components"
+license: ""
 ---

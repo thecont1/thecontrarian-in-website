@@ -56,20 +56,22 @@ const longformSchema = baseSchema.extend({
 });
 
 const codeSchema = z.object({
+  status: z.enum(["private", "draft", "published"]).default("draft"),
   title: z.string(),
   description: z.string().optional(),
-  author: z.string(),
-  status: z.enum(["private", "draft", "published"]).default("draft"),
   repoOwner: z.string(),
   repoName: z.string(),
-  license: z.string().optional(),
+  repoEmail: z.string().optional(),
+  author: z.string(),
   createdDate: z.date().optional(),
   lastUpdated: z.date().optional(),
-  tags: z.array(z.string()).default([]),
   repoUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
-  repoEmail: z.string().optional(),
+  readmeUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
+  branch: z.string().optional().default("main"),
   appUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
   fileTree: z.array(z.string()).default([]),
+  tags: z.array(z.string()).default([]),
+  license: z.string().optional(),
 });
 
 const datastorySchema = z.object({
