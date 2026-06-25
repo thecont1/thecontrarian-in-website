@@ -262,6 +262,21 @@ async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <base target="_blank" rel="noopener noreferrer">
   ${fragment.head}
+  <style>
+    html, body { background: #c7e3ff !important; overflow: hidden !important; }
+    .fw-render { background: #c7e3ff !important; color: #1a233a !important; }
+    .fw-render a { color: #0c4a6e !important; }
+    .fw-render a:hover { color: #1e7bb4 !important; }
+    .fw-render h1, .fw-render h2, .fw-render h3, .fw-render h4, .fw-render h5, .fw-render h6 { color: #0c1222 !important; }
+    .fw-render blockquote { border-left-color: #c7e3ff !important; }
+    .fw-render pre { background: #3a5a7e !important; color: #ffffff !important; font-size: 0.85em !important; padding: 1em !important; }
+    .fw-render code { background: #3a5a7e !important; color: #ffffff !important; font-size: 0.85em !important; padding: 0.2em 0.4em !important; }
+    .fw-render pre code { font-size: 1em !important; padding: 0 !important; }
+    .fw-render table th, .fw-render table td { border-color: #cbd5e1 !important; }
+    .fw-render thead th { background: #0c1222 !important; color: #c7e3ff !important; }
+    .fw-render tbody tr:nth-child(even) { background: #b3d6ff !important; }
+    .fw-render tbody tr:nth-child(odd) { background: #c7e3ff !important; }
+  </style>
 </head>
 ${fragment.body}
 </html>`;
@@ -454,7 +469,7 @@ const personJsonLd = {
                   } else {
                     const fileCount = countFiles(val);
                     const dirPath = parentPath ? `${parentPath}/${key}` : key;
-                    return <details class="tree-dir" open={fileCount <= 12}>
+                    return <details class="tree-dir">
                       <summary><span class="tree-dir-icon"></span>{key}/ <span class="tree-count">{fileCount}</span></summary>
                       <div class="tree-children">{renderNode(val, dirPath)}</div>
                     </details>;
@@ -465,10 +480,6 @@ const personJsonLd = {
                 <div class="sidebar-panel filetree-panel">
                   <div class="filetree-header">
                     <h3>Files</h3>
-                    <div class="filetree-actions">
-                      <button type="button" class="filetree-btn" data-action="expand" aria-label="Expand all">+</button>
-                      <button type="button" class="filetree-btn" data-action="collapse" aria-label="Collapse all">-</button>
-                    </div>
                   </div>
                   <div class="file-tree" id="file-tree">{renderNode(tree, '')}</div>
                 </div>
@@ -483,6 +494,7 @@ const personJsonLd = {
                   title={`${post.data.title} — README`}
                   srcdoc={flatwrite.iframeSrcdoc}
                   loading="lazy"
+                  scrolling="no"
                 />
               ) : flatwrite?.fallbackHtml ? (
                 <div class="flatwrite-fallback flatwrite-local-render" set:html={flatwrite.fallbackHtml} />
@@ -512,19 +524,6 @@ const personJsonLd = {
   <script is:inline src="/textmode.js" defer></script>
   <script is:inline src="/snow-loader.js" defer></script>
   <script is:inline src="/mobile-nav.js" defer></script>
-  <script is:inline>
-    document.addEventListener('DOMContentLoaded', function() {
-      var tree = document.getElementById('file-tree');
-      if (!tree) return;
-      tree.addEventListener('click', function(e) {
-        var btn = e.target.closest('.filetree-btn');
-        if (!btn) return;
-        var action = btn.getAttribute('data-action');
-        var dirs = tree.querySelectorAll('details.tree-dir');
-        for (var i = 0; i < dirs.length; i++) dirs[i].open = action === 'expand';
-      });
-    });
-  </script>
   <script is:inline>
     (function() {
       var iframe = document.querySelector('.flatwrite-iframe');
