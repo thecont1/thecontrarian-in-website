@@ -39,7 +39,13 @@ function getServerSecret(key: string): string {
 }
 
 const FLATWRITE_API = import.meta.env.FLATWRITE_API || "https://flatwrite.md/api/render";
-const SECRET = getServerSecret('INTERNAL_RENDER_KEY');
+let SECRET = '';
+try {
+  SECRET = getServerSecret('INTERNAL_RENDER_KEY');
+} catch (err) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error('[Code.astro]', message);
+}
 
 // Load design config from YAML
 const designConfig = yaml.load(
