@@ -58,7 +58,7 @@ export default function Carousel({ images }: { images: Image[] }) {
   const [index, setIndex] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   const [userTookControl, setUserTookControl] = useState(false);
-  const [revealed, setRevealed] = useState<boolean[]>(() => images.map((_, i) => i === 0));
+  const [revealed, setRevealed] = useState<boolean[]>(() => images.map((_, i) => i < 6));
   const trackRef = useRef<HTMLDivElement | null>(null);
   const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
   const isAutoScrollingRef = useRef(false);
@@ -136,7 +136,7 @@ export default function Carousel({ images }: { images: Image[] }) {
   }, [images.length, index]);
 
   useEffect(() => {
-    setRevealed(images.map((_, i) => i === 0));
+    setRevealed(images.map((_, i) => i < 6));
   }, [images]);
 
   useEffect(() => {
@@ -250,7 +250,7 @@ export default function Carousel({ images }: { images: Image[] }) {
     const timer = window.setTimeout(() => {
       if (cancelled) return;
       images.forEach((img, i) => {
-        if (i === 0 || !img?.src) return;
+        if (i === 0 || !img?.src || i >= 6) return;
         const url = cfImageUrl(img.src, 1920);
         const el = new Image();
         el.decoding = "async";
