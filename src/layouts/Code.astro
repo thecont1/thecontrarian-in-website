@@ -45,9 +45,31 @@ function sign(secret: string, ts: number, method_: string, path_: string) {
   return createHmac("sha256", secret).update(`${ts}.${method_}.${path_}`).digest("hex");
 }
 
-function resolveReadmeUrl(post: CollectionEntry<"code">) {
-  if (post.data.readmeUrl) return post.data.readmeUrl;
-  return `https://raw.githubusercontent.com/${post.data.repoOwner}/${post.data.repoName}/${post.data.branch || 'main'}/README.md`;
+const ALLOWED_MARKDOWN_HOSTS = new Set([
+  'raw.githubusercontent.com',
+  'raw.gitlab.com',
+  'bitbucket.org',
+]);
+
+function isValidMarkdownUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    return ALLOWED_MARKDOWN_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function resolveReadmeUrl(post: CollectionEntry<"code">): string {
+  const url = post.data.readmeUrl
+    || `https://raw.githubusercontent.com/${post.data.repoOwner}/${post.data.repoName}/${post.data.branch || 'main'}/README.md`;
+  if (!isValidMarkdownUrl(url)) {
+    let host: string;
+    try { host = new URL(url).hostname; } catch { host = 'invalid'; }
+    throw new Error(`Disallowed markdownUrl host: ${host}`);
+  }
+  return url;
 }
 
 function splitFragment(html: string) {
@@ -88,6 +110,7 @@ interface FlatwriteFragment {
 
 async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> {
   if (!SECRET) throw new Error('INTERNAL_RENDER_KEY is not configured');
+  if (!isValidMarkdownUrl(markdownUrl)) throw new Error('Disallowed markdownUrl');
   const ts = Math.floor(Date.now() / 1000);
   const sig = sign(SECRET, ts, "POST", "/api/render");
   const controller = new AbortController();
