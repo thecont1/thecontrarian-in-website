@@ -533,6 +533,16 @@
   margin-top: 0.75rem;
 }
 
+.flatwrite-local-render {
+  font-style: normal;
+  text-align: left;
+  color: #c9d1d9;
+}
+
+.flatwrite-local-render a {
+  color: #58a6ff;
+}
+
 /* ── Mobile ────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .filetree-panel { display: none; }

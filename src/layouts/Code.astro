@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHmac } from "node:crypto";
 import * as yaml from "js-yaml";
+import { marked } from "marked";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { AUTHOR } from "../data/author";
@@ -87,6 +88,29 @@ function parseFragmentResponse(text: string): FlatwriteApiResponse | null {
   }
 }
 
+function simpleSanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+    .replace(/on\w+\s*=/gi, '');
+}
+
+async function renderLocalMarkdownFallback(markdownUrl: string): Promise<string | null> {
+  try {
+    const resp = await fetch(markdownUrl, { headers: { Accept: 'text/markdown,text/plain' } });
+    if (!resp.ok) return null;
+    const markdown = await resp.text();
+    const html = marked.parse(markdown);
+    return simpleSanitizeHtml(html);
+  } catch (err) {
+    console.error('[Code.astro] Local markdown fallback failed:', err);
+    return null;
+  }
+}
+
 function extractStyles(headHtml: string) {
   const styles: string[] = [];
   const re = /<style>([\s\S]*?)<\/style>/g;
@@ -111,7 +135,8 @@ function sanitizeFlatwriteCss(css: string) {
 
 interface FlatwriteFragment {
   pageHeadStyles: string;
-  iframeSrcdoc: string;
+  iframeSrcdoc?: string;
+  fallbackHtml?: string;
 }
 
 async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> {
@@ -144,9 +169,10 @@ async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> 
       body: JSON.stringify(body),
       signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId));
-    if (!resp.ok) throw new Error(`FlatWrite API returned ${resp.status}`);
-    const fragment = parseFragmentResponse(await resp.text());
-    if (!fragment) throw new Error('Invalid FlatWrite API response');
+    if (!resp.ok) throw new Error(`FlatWrite API returned ${resp.status} for ${markdownUrl}`);
+    const text = await resp.text();
+    const fragment = parseFragmentResponse(text);
+    if (!fragment) throw new Error(`Invalid FlatWrite API response for ${markdownUrl} (status ${resp.status})`);
     const pageHeadStyles = extractStyles(fragment.head);
     const iframeSrcdoc = `<!DOCTYPE html>
 <html lang="en">
@@ -168,13 +194,32 @@ ${fragment.body}
 // Build-time rendering: fetch the rendered README from the enriched URL.
 let flatwrite: FlatwriteFragment | null = null;
 let flatwriteError: string | null = null;
+let readmeUrlForLog: string | null = null;
 
 try {
   const readmeUrl = resolveReadmeUrl(post);
+  readmeUrlForLog = readmeUrl;
   flatwrite = await renderFlatwrite(readmeUrl);
 } catch (err) {
   flatwriteError = err instanceof Error ? err.message : String(err);
-  console.error('[Code.astro] FlatWrite render failed:', flatwriteError);
+  console.error(
+    '[Code.astro] FlatWrite render failed:',
+    {
+      repo: `${post.data.repoOwner}/${post.data.repoName}`,
+      readmeUrl: readmeUrlForLog,
+      error: flatwriteError,
+    }
+  );
+  if (readmeUrlForLog) {
+    const fallbackHtml = await renderLocalMarkdownFallback(readmeUrlForLog);
+    if (fallbackHtml) {
+      flatwrite = {
+        pageHeadStyles: '',
+        fallbackHtml,
+      };
+      flatwriteError = null;
+    }
+  }
 }
 
 /* ── Standard metadata ─────────────────────────────────── */
@@ -351,16 +396,25 @@ const personJsonLd = {
           </aside>
           <article class="code-article">
             <div class="flatwrite-wrapper">
-              {flatwrite ? (
+              {flatwrite?.iframeSrcdoc ? (
                 <iframe
                   class="flatwrite-iframe"
                   title={`${post.data.title} — README`}
                   srcdoc={flatwrite.iframeSrcdoc}
                   loading="lazy"
                 />
+              ) : flatwrite?.fallbackHtml ? (
+                <div class="flatwrite-fallback flatwrite-local-render" set:html={flatwrite.fallbackHtml} />
               ) : (
                 <div class="flatwrite-fallback">
                   <p>README preview is currently unavailable.</p>
+                  {readmeUrlForLog && (
+                    <p>
+                      <a class="action-link" href={readmeUrlForLog} target="_blank" rel="noopener noreferrer">
+                        View raw README
+                      </a>
+                    </p>
+                  )}
                   {flatwriteError && (
                     <p class="flatwrite-error">{flatwriteError}</p>
                   )}
