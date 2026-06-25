@@ -25,8 +25,8 @@ const { post } = Astro.props;
 
 /* ── FlatWrite: fetch README + render via API ──────────── */
 
-const FLATWRITE_API = process.env.FLATWRITE_API || "https://flatwrite.md/api/render";
-const SECRET = process.env.INTERNAL_RENDER_KEY || "";
+const FLATWRITE_API = import.meta.env.FLATWRITE_API || "https://flatwrite.md/api/render";
+const SECRET = import.meta.env.INTERNAL_RENDER_KEY || "";
 
 // Load design config from YAML
 const designConfig = yaml.load(
