@@ -64,9 +64,21 @@ function extractStyles(headHtml: string) {
   const re = /<style>([\s\S]*?)<\/style>/g;
   let m;
   while ((m = re.exec(headHtml)) !== null) {
-    styles.push(`<style>${m[1]}</style>`);
+    styles.push(sanitizeFlatwriteCss(m[1]));
   }
   return styles.join('\n');
+}
+
+function sanitizeFlatwriteCss(css: string) {
+  let cleaned = String(css)
+    .replace(/<[^>]+>/g, '')
+    .replace(/<!--|-->/g, '')
+    .replace(/@import\b[^;]*;/gi, '')
+    .replace(/@charset\b[^;]*;/gi, '')
+    .replace(/@namespace\b[^;]*;/gi, '')
+    .replace(/@font-face\s*\{[^}]*\}/gi, '')
+    .replace(/url\(\s*(['"]?)(?!data:)([^)\1]+)\1\s*\)/gi, 'url()');
+  return cleaned.trim();
 }
 
 interface FlatwriteFragment {
@@ -193,7 +205,7 @@ const personJsonLd = {
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
   <script type="application/ld+json" set:html={JSON.stringify(codeJsonLd)} />
   <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
-  <Fragment set:html={flatwrite.pageHeadStyles} />
+  <style is:global set:html={flatwrite.pageHeadStyles}></style>
 </head>
 
 <body>
