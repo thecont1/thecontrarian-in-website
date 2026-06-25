@@ -294,15 +294,6 @@ async function enrichCodeFile(filePath: string) {
       return;
     }
 
-    // README (base64 decoded)
-    let readmeBody = '';
-    try {
-      readmeBody = execSync(
-        `gh api repos/${owner}/${repo}/readme --jq '.content' | base64 -d`,
-        { encoding: 'utf8', maxBuffer: 1024 * 1024 }
-      );
-    } catch {}
-
     // File tree
     const branch = repoData.default_branch || 'main';
     let fileTree: string[] = [];
@@ -336,13 +327,15 @@ async function enrichCodeFile(filePath: string) {
     // Always update fileTree
     if (fileTree.length > 0) fields.fileTree = fileTree;
 
-    // Body: use README if body is empty
-    const trimmedBody = body.trim();
-    const newBody = (!trimmedBody && readmeBody) ? readmeBody : trimmedBody;
+    // Determine the README.md URL from the file tree (Code.astro renders it via FlatWrite)
+    const readmePath = fileTree.find(p => p.toLowerCase() === 'readme.md' || p.toLowerCase().endsWith('/readme.md'));
+    if (readmePath) {
+      fields.readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${readmePath}`;
+    }
 
     // Write back
     const fm = buildFrontmatter(fields);
-    fs.writeFileSync(filePath, `---\n${fm}\n---\n\n${newBody}\n`);
+    fs.writeFileSync(filePath, `---\n${fm}\n---\n${body}`);
 
     fetchedRepos.set(filePath, repoKey);
     console.log(`[Scaffold] Enriched ${relativePath} from ${repoKey}`);
