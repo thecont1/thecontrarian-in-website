@@ -52,10 +52,10 @@ function resolveReadmeUrl(post: CollectionEntry<"code">) {
 
 function splitFragment(html: string) {
   const headMatch = html.match(/<head>([\s\S]*?)<\/head>/);
-  const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/);
+  const bodyMatch = html.match(/<body[^>]*>[\s\S]*?<\/body>/);
   return {
     head: headMatch ? headMatch[1].trim() : '',
-    body: bodyMatch ? bodyMatch[1].trim() : '',
+    bodyTag: bodyMatch ? bodyMatch[0].trim() : '<body></body>',
   };
 }
 
@@ -105,7 +105,7 @@ async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> 
     }).finally(() => clearTimeout(timeoutId));
     if (!resp.ok) throw new Error(`FlatWrite API returned ${resp.status}`);
     const fragment = await resp.text();
-    const { head, body: fragmentBody } = splitFragment(fragment);
+    const { head, bodyTag } = splitFragment(fragment);
     const pageHeadStyles = extractStyles(head);
     const iframeSrcdoc = `<!DOCTYPE html>
 <html lang="en">
@@ -115,7 +115,7 @@ async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> 
   <base target="_blank" rel="noopener noreferrer">
   ${head}
 </head>
-${fragmentBody}
+${bodyTag}
 </html>`;
     return { pageHeadStyles, iframeSrcdoc };
   } catch (err) {
