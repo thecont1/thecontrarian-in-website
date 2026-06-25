@@ -160,8 +160,16 @@ ${bodyTag}
 }
 
 // Build-time rendering: fetch the rendered README from the enriched URL.
-const readmeUrl = resolveReadmeUrl(post);
-const flatwrite = await renderFlatwrite(readmeUrl);
+let flatwrite: FlatwriteFragment | null = null;
+let flatwriteError: string | null = null;
+
+try {
+  const readmeUrl = resolveReadmeUrl(post);
+  flatwrite = await renderFlatwrite(readmeUrl);
+} catch (err) {
+  flatwriteError = err instanceof Error ? err.message : String(err);
+  console.error('[Code.astro] FlatWrite render failed:', flatwriteError);
+}
 
 /* ── Standard metadata ─────────────────────────────────── */
 
@@ -228,7 +236,7 @@ const personJsonLd = {
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
   <script type="application/ld+json" set:html={JSON.stringify(codeJsonLd)} />
   <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
-  <style is:global set:html={flatwrite.pageHeadStyles}></style>
+  {flatwrite && <style is:global set:html={flatwrite.pageHeadStyles}></style>}
 </head>
 
 <body>
@@ -337,12 +345,21 @@ const personJsonLd = {
           </aside>
           <article class="code-article">
             <div class="flatwrite-wrapper">
-              <iframe
-                class="flatwrite-iframe"
-                title={`${post.data.title} — README`}
-                srcdoc={flatwrite.iframeSrcdoc}
-                loading="lazy"
-              />
+              {flatwrite ? (
+                <iframe
+                  class="flatwrite-iframe"
+                  title={`${post.data.title} — README`}
+                  srcdoc={flatwrite.iframeSrcdoc}
+                  loading="lazy"
+                />
+              ) : (
+                <div class="flatwrite-fallback">
+                  <p>README preview is currently unavailable.</p>
+                  {flatwriteError && (
+                    <p class="flatwrite-error">{flatwriteError}</p>
+                  )}
+                </div>
+              )}
             </div>
           </article>
         </div>
