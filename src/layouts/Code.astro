@@ -26,8 +26,20 @@ const { post } = Astro.props;
 
 /* ── FlatWrite: fetch README + render via API ──────────── */
 
+// SERVER-ONLY: these env vars are read during Astro's build-time frontmatter
+// execution. They must NEVER be prefixed with PUBLIC_ or referenced in client
+// code, otherwise they would be shipped to the browser.
+function getServerSecret(key: string): string {
+  if (typeof window !== 'undefined' || typeof document !== 'undefined') {
+    throw new Error(`Server-only env var ${key} accessed in client context`);
+  }
+  const value = import.meta.env[key];
+  if (!value) throw new Error(`${key} is not configured`);
+  return value;
+}
+
 const FLATWRITE_API = import.meta.env.FLATWRITE_API || "https://flatwrite.md/api/render";
-const SECRET = import.meta.env.INTERNAL_RENDER_KEY || "";
+const SECRET = getServerSecret('INTERNAL_RENDER_KEY');
 
 // Load design config from YAML
 const designConfig = yaml.load(
