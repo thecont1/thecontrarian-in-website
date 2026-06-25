@@ -130,15 +130,6 @@ async function enrichCodeFile(filePath) {
       return;
     }
 
-    // README (base64 decoded by gh api)
-    let readmeBody = '';
-    try {
-      readmeBody = execSync(
-        `gh api repos/${owner}/${repo}/readme --jq '.content' | base64 -d`,
-        { encoding: 'utf8', maxBuffer: 1024 * 1024 }
-      );
-    } catch {}
-
     // File tree
     const branch = repoData.default_branch || 'main';
     let fileTree = [];
@@ -173,12 +164,9 @@ async function enrichCodeFile(filePath) {
     // Always update fileTree from GitHub
     if (fileTree.length > 0) fields.fileTree = fileTree;
 
-    // Body: use README if body is empty
-    const trimmedBody = body.trim();
-    const newBody = (!trimmedBody && readmeBody) ? readmeBody : trimmedBody;
-
+    // Write frontmatter only — README body is fetched by render-code-flatwrite.mjs
     const fm = buildFrontmatter(fields);
-    writeFileSync(filePath, `---\n${fm}\n---\n\n${newBody}\n`);
+    writeFileSync(filePath, `---\n${fm}\n---\n`);
     console.log(`[Enrich] ✓ ${relative(CONTENT_DIR, filePath)} from ${repoKey}`);
   } catch (err) {
     console.error(`[Enrich] ✗ ${repoKey}: ${err.message}`);
