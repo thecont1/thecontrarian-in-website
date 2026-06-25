@@ -39,6 +39,9 @@ jobs:
 
       - name: Build with Astro
         run: bun run build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INTERNAL_RENDER_KEY: ${{ secrets.INTERNAL_RENDER_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
