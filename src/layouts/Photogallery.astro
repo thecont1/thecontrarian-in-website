@@ -49,7 +49,6 @@ async function getMetaForImage(imgSrc: string): Promise<any> {
 ---
 
 {layoutType === "carousel" ? (
-  <!-- CAROUSEL LAYOUT - Full page with curtain, then footer -->
   <Layout title={post.data.title} description={seoDescription} image={post.data.heroImage || images[0]?.src} type="article" publishedDate={post.data.date?.toISOString()}>
     <Fragment slot="head">
       {images.slice(0, 1).map((img) => (
@@ -102,7 +101,6 @@ async function getMetaForImage(imgSrc: string): Promise<any> {
     <C2PAOverlay />
   </Layout>
 ) : (
-  <!-- REGULAR PHOTOGALLERY LAYOUTS (tile/one-up) -->
   <Layout title={post.data.title} description={seoDescription} image={post.data.heroImage || images[0]?.src} type="article" publishedDate={post.data.date?.toISOString()}>
     <Fragment slot="head">
       <SchemaMarkup
@@ -140,7 +138,6 @@ async function getMetaForImage(imgSrc: string): Promise<any> {
 
       <!-- Gallery Content -->
       {layoutType === "one-up" ? (
-        <!-- ONE-UP LAYOUT -->
         <div class="photogallery-oneup">
           {images.map((img) => (
             <figure class="gallery-item">
@@ -155,7 +152,6 @@ async function getMetaForImage(imgSrc: string): Promise<any> {
           )}
         </div>
       ) : (
-        <!-- GRID LAYOUT (tile) - Default -->
         <div class="photogallery-grid">
           {images.map((img) => (
             <figure class="gallery-item">

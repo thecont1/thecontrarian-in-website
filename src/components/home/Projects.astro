@@ -94,7 +94,6 @@ const typeIcons: Record<string, string> = {
   </header>
 
   {useSections ? (
-    <!-- SECTIONED LAYOUT -->
     <>
     {sectionedItems.map((section) => section.items.length > 0 && (
       <div class="projects-section">
@@ -134,7 +133,6 @@ const typeIcons: Record<string, string> = {
     ))}
     </>
   ) : (
-    <!-- FLAT LAYOUT -->
     <>
     {flatItems.length > 0 ? (
       <div class="projects-section">
