@@ -130,10 +130,12 @@ async function enrichCodeFile(filePath) {
       return;
     }
 
+    // Authoritative branch from GitHub (single source of truth)
+    fields.branch = repoData.default_branch || 'main';
+
     // File tree
-    const branch = repoData.default_branch || 'main';
     let fileTree = [];
-    const treeData = ghApi(`/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`);
+    const treeData = ghApi(`/repos/${owner}/${repo}/git/trees/${fields.branch}?recursive=1`);
     if (treeData && treeData.tree) {
       fileTree = treeData.tree
         .filter(item => item.type === 'blob')
@@ -157,7 +159,6 @@ async function enrichCodeFile(filePath) {
     }
     // Always update from GitHub (authoritative)
     if (repoData.pushed_at) fields.lastUpdated = repoData.pushed_at.split('T')[0];
-    if (repoData.default_branch) fields.branch = repoData.default_branch;
     fields.repoUrl = `https://github.com/${owner}/${repo}`;
 
     // Ensure tags is always an array
@@ -168,7 +169,7 @@ async function enrichCodeFile(filePath) {
     // Determine the README.md URL from the file tree
     const readmePath = fileTree.find(p => p.toLowerCase() === 'readme.md' || p.toLowerCase().endsWith('/readme.md'));
     if (readmePath) {
-      fields.readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${readmePath}`;
+      fields.readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${fields.branch}/${readmePath}`;
     }
 
     // Write frontmatter + preserved body
