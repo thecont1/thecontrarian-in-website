@@ -58,7 +58,10 @@ export default function Carousel({ images }: { images: Image[] }) {
   const [index, setIndex] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   const [userTookControl, setUserTookControl] = useState(false);
-  const [revealed, setRevealed] = useState<boolean[]>(() => images.map((_, i) => i < 6));
+  const GREEDY_COUNT = 7;
+  const LAZY_CHUNK = 7;
+
+  const [revealed, setRevealed] = useState<boolean[]>(() => images.map((_, i) => i < GREEDY_COUNT));
   const trackRef = useRef<HTMLDivElement | null>(null);
   const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
   const isAutoScrollingRef = useRef(false);
@@ -136,17 +139,24 @@ export default function Carousel({ images }: { images: Image[] }) {
   }, [images.length, index]);
 
   useEffect(() => {
-    setRevealed(images.map((_, i) => i < 6));
+    setRevealed(images.map((_, i) => i < GREEDY_COUNT));
   }, [images]);
 
   useEffect(() => {
     setRevealed((prev) => {
       if (index < 0 || index >= images.length) return prev;
-      if (prev[index]) return prev;
+      const chunkStart = Math.floor(index / LAZY_CHUNK) * LAZY_CHUNK;
+      const chunkEnd = Math.min(chunkStart + LAZY_CHUNK, images.length);
+      let changed = false;
       const next = prev.slice(0, images.length);
       while (next.length < images.length) next.push(false);
-      next[index] = true;
-      return next;
+      for (let i = chunkStart; i < chunkEnd; i++) {
+        if (!next[i]) {
+          next[i] = true;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
     });
   }, [images.length, index]);
 
@@ -250,7 +260,7 @@ export default function Carousel({ images }: { images: Image[] }) {
     const timer = window.setTimeout(() => {
       if (cancelled) return;
       images.forEach((img, i) => {
-        if (i === 0 || !img?.src || i >= 6) return;
+        if (i === 0 || !img?.src || i >= GREEDY_COUNT) return;
         const url = cfImageUrl(img.src, 1920);
         const el = new Image();
         el.decoding = "async";
