@@ -490,12 +490,26 @@
 .tree-icon-svg { background: #ffb13b; color: #333; }
 
 /* ── FlatWrite rendered content (iframe-isolated) ───────── */
+.flatwrite-wrapper {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #1c2a3e;
+}
+
 .flatwrite-iframe {
   width: 100%;
   border: none;
   min-height: 400px;
   display: block;
   border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+  .flatwrite-iframe {
+    min-height: 300px;
+  }
 }
 
 .flatwrite-fallback {

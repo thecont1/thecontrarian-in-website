@@ -41,12 +41,6 @@ const designConfig = yaml.load(
   line: number;
 };
 
-// FlatWrite scale indices → final CSS values
-const SIZE_SCALE: Record<number, number> = { "-5": 0.62, "-4": 0.68, "-3": 0.76, "-2": 0.84, "-1": 0.92, 0: 1, 1: 1.1, 2: 1.2, 3: 1.32, 4: 1.46, 5: 1.62, 6: 1.8 };
-const WEIGHT_MAP: Record<number, number> = { "-3": 100, "-2": 200, "-1": 300, 0: 400, 1: 600, 2: 700 };
-const LINE_SCALE: Record<number, number> = { "-2": 1.3, "-1": 1.5, 0: 1.75, 1: 2.0, 2: 2.3, 3: 2.6 };
-const BASE_FONT_SIZE = 16;
-
 function sign(secret: string, ts: number, method_: string, path_: string) {
   return createHmac("sha256", secret).update(`${ts}.${method_}.${path_}`).digest("hex");
 }
@@ -56,25 +50,46 @@ function resolveReadmeUrl(post: CollectionEntry<"code">) {
   return `https://raw.githubusercontent.com/${post.data.repoOwner}/${post.data.repoName}/${post.data.branch || 'main'}/README.md`;
 }
 
-async function renderFlatwrite(markdownUrl: string) {
+function splitFragment(html: string) {
+  const headMatch = html.match(/<head>([\s\S]*?)<\/head>/);
+  const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/);
+  return {
+    head: headMatch ? headMatch[1].trim() : '',
+    body: bodyMatch ? bodyMatch[1].trim() : '',
+  };
+}
+
+function extractStyles(headHtml: string) {
+  const styles: string[] = [];
+  const re = /<style>([\s\S]*?)<\/style>/g;
+  let m;
+  while ((m = re.exec(headHtml)) !== null) {
+    styles.push(`<style>${m[1]}</style>`);
+  }
+  return styles.join('\n');
+}
+
+interface FlatwriteFragment {
+  pageHeadStyles: string;
+  iframeSrcdoc: string;
+}
+
+async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> {
   if (!SECRET) throw new Error('INTERNAL_RENDER_KEY is not configured');
-  const scale = SIZE_SCALE[designConfig.size] ?? 1;
-  const fontWeight = WEIGHT_MAP[designConfig.weight] ?? 400;
-  const lineHeight = LINE_SCALE[designConfig.line] ?? 1.75;
   const ts = Math.floor(Date.now() / 1000);
   const sig = sign(SECRET, ts, "POST", "/api/render");
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   const body = {
+    markdownUrl,
+    surfaceMode: designConfig.surfaceMode || "doc",
+    docEngine: designConfig.docEngine || "none",
     framework: designConfig.framework || "spectre",
     font: designConfig.font,
-    fontSize: Math.round(BASE_FONT_SIZE * scale),
-    fontWeight,
-    lineHeight,
-    docEngine: designConfig.docEngine || "none",
-    surfaceMode: designConfig.surfaceMode || "doc",
-    markdownUrl,
+    size: designConfig.size,
+    weight: designConfig.weight,
+    line: designConfig.line,
   };
 
   try {
@@ -89,8 +104,20 @@ async function renderFlatwrite(markdownUrl: string) {
       signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId));
     if (!resp.ok) throw new Error(`FlatWrite API returned ${resp.status}`);
-    // Return the full HTML document as-is — the iframe isolates it completely
-    return await resp.text();
+    const fragment = await resp.text();
+    const { head, body: fragmentBody } = splitFragment(fragment);
+    const pageHeadStyles = extractStyles(head);
+    const iframeSrcdoc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base target="_blank" rel="noopener noreferrer">
+  ${head}
+</head>
+${fragmentBody}
+</html>`;
+    return { pageHeadStyles, iframeSrcdoc };
   } catch (err) {
     const message = err instanceof Error ? (err.cause as Error)?.message || err.message : String(err);
     throw new Error(`FlatWrite render failed: ${message}`);
@@ -99,7 +126,7 @@ async function renderFlatwrite(markdownUrl: string) {
 
 // Build-time rendering: fetch the rendered README from the enriched URL.
 const readmeUrl = resolveReadmeUrl(post);
-const flatwriteHTML = await renderFlatwrite(readmeUrl);
+const flatwrite = await renderFlatwrite(readmeUrl);
 
 /* ── Standard metadata ─────────────────────────────────── */
 
@@ -166,6 +193,7 @@ const personJsonLd = {
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
   <script type="application/ld+json" set:html={JSON.stringify(codeJsonLd)} />
   <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
+  <Fragment set:html={flatwrite.pageHeadStyles} />
 </head>
 
 <body>
@@ -277,7 +305,7 @@ const personJsonLd = {
               <iframe
                 class="flatwrite-iframe"
                 title={`${post.data.title} — README`}
-                srcdoc={flatwriteHTML}
+                srcdoc={flatwrite.iframeSrcdoc}
                 loading="lazy"
               />
             </div>
