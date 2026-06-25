@@ -1,5 +1,11 @@
 ---
 import { render, type CollectionEntry } from "astro:content";
+import fs from "node:fs";
+import path from "node:path";
+import { createHmac } from "node:crypto";
+import { execSync } from "node:child_process";
+import * as yaml from "js-yaml";
+import { marked } from "marked";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { AUTHOR } from "../data/author";
@@ -14,7 +20,114 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+
+/* ── FlatWrite: fetch README + render via API ──────────── */
+
+const FLATWRITE_API = "https://flatwrite.md/api/render";
+const SECRET = process.env.INTERNAL_RENDER_KEY || "";
+
+// Load design config from YAML
+const designConfig = yaml.load(
+  fs.readFileSync(path.resolve("src/styles/code.flatwrite.yaml"), "utf-8")
+) as {
+  docEngine: string;
+  surfaceMode: string;
+  framework: string;
+  font: string;
+  size: number;
+  weight: number;
+  line: number;
+};
+
+// FlatWrite scale indices → final CSS values
+const SIZE_SCALE: Record<number, number> = { "-5": 0.62, "-4": 0.68, "-3": 0.76, "-2": 0.84, "-1": 0.92, 0: 1, 1: 1.1, 2: 1.2, 3: 1.32, 4: 1.46, 5: 1.62, 6: 1.8 };
+const WEIGHT_MAP: Record<number, number> = { "-3": 100, "-2": 200, "-1": 300, 0: 400, 1: 600, 2: 700 };
+const LINE_SCALE: Record<number, number> = { "-2": 1.3, "-1": 1.5, 0: 1.75, 1: 2.0, 2: 2.3, 3: 2.6 };
+const BASE_FONT_SIZE = 16;
+
+function sign(secret, ts, method_, path_) {
+  return createHmac("sha256", secret).update(`${ts}.${method_}.${path_}`).digest("hex");
+}
+
+function fetchREADME(owner, repo) {
+  try {
+    return execSync(`gh api repos/${owner}/${repo}/readme --jq '.content' | base64 -d`, {
+      encoding: "utf8",
+      maxBuffer: 1024 * 1024,
+    });
+  } catch {
+    return "";
+  }
+}
+
+
+async function renderFlatwrite(markdown) {
+  if (!SECRET) return null;
+  const scale = SIZE_SCALE[designConfig.size] ?? 1;
+  const fontWeight = WEIGHT_MAP[designConfig.weight] ?? 400;
+  const lineHeight = LINE_SCALE[designConfig.line] ?? 1.75;
+  const ts = Math.floor(Date.now() / 1000);
+  const sig = sign(SECRET, ts, "POST", "/api/render");
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  const resp = await fetch(FLATWRITE_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Render-Timestamp": String(ts),
+      "X-Render-Signature": sig,
+    },
+    body: JSON.stringify({
+      markdown,
+      framework: designConfig.framework || "spectre",
+      font: designConfig.font,
+      fontSize: Math.round(BASE_FONT_SIZE * scale),
+      fontWeight,
+      lineHeight,
+    }),
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeoutId));
+  if (!resp.ok) return null;
+  // Return the full HTML document as-is — the iframe isolates it completely
+  return await resp.text();
+}
+
+// Fetch and render at build time
+const readme = fetchREADME(post.data.repoOwner, post.data.repoName);
+let flatwriteHTML: string | null = null;
+if (readme.trim()) {
+  flatwriteHTML = await renderFlatwrite(readme);
+  if (!flatwriteHTML) {
+    // Fallback: render markdown locally matching FlatWrite API's output structure
+    const bodyHtml = marked.parse(readme, { breaks: true, gfm: true }) as string;
+    const scale = SIZE_SCALE[designConfig.size] ?? 1;
+    const fontWeight = WEIGHT_MAP[designConfig.weight] ?? 400;
+    const lineHeight = LINE_SCALE[designConfig.line] ?? 1.75;
+    flatwriteHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(designConfig.font)}:wght@${fontWeight}&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: '${designConfig.font}', sans-serif;
+      font-size: ${Math.round(BASE_FONT_SIZE * scale)}px;
+      font-weight: ${fontWeight};
+      line-height: ${lineHeight};
+    }
+  </style>
+</head>
+<body class="container">
+${bodyHtml}
+</body>
+</html>`;
+  }
+}
+
+/* ── Standard metadata ─────────────────────────────────── */
 
 const formattedDate = post.data.lastUpdated?.toLocaleDateString("en-US", {
   year: "numeric",
@@ -39,28 +152,16 @@ const codeJsonLd = {
   ...(post.data.repoUrl && { codeRepository: post.data.repoUrl }),
   ...(post.data.license && { license: post.data.license }),
   ...(post.data.appUrl && { url: post.data.appUrl }),
-  author: {
-    "@type": "Person",
-    name: AUTHOR.name,
-    url: AUTHOR.url,
-    sameAs: AUTHOR.sameAs,
-  },
-  mainEntityOfPage: {
-    "@type": "WebPage",
-    "@id": canonicalURL.href,
-  },
+  author: { "@type": "Person", name: AUTHOR.name, url: AUTHOR.url, sameAs: AUTHOR.sameAs },
+  mainEntityOfPage: { "@type": "WebPage", "@id": canonicalURL.href },
 };
 
 const personJsonLd = {
   "@context": "https://schema.org",
   "@type": "Person",
-  name: AUTHOR.name,
-  url: AUTHOR.url,
-  email: AUTHOR.email,
-  jobTitle: AUTHOR.jobTitle,
-  description: AUTHOR.description,
-  image: ogImage,
-  sameAs: AUTHOR.sameAs,
+  name: AUTHOR.name, url: AUTHOR.url, email: AUTHOR.email,
+  jobTitle: AUTHOR.jobTitle, description: AUTHOR.description,
+  image: ogImage, sameAs: AUTHOR.sameAs,
 };
 ---
 
@@ -75,20 +176,20 @@ const personJsonLd = {
   <meta name="google-adsense-account" content="ca-pub-3564536130489009" />
   <link rel="canonical" href={canonicalURL.href} />
   <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
-
   <meta property="og:title" content={`${post.data.title} | Code Project | Mahesh Shantaram`} />
   <meta property="og:description" content={metaDescription} />
   <meta property="og:image" content={ogImage} />
   <meta property="og:url" content={canonicalURL.href} />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Mahesh Shantaram" />
-
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@thecontrarian" />
   <meta name="twitter:title" content={`${post.data.title} | Code Project | Mahesh Shantaram`} />
   <meta name="twitter:description" content={metaDescription} />
   <meta name="twitter:image" content={ogImage} />
-
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
   <script type="application/ld+json" set:html={JSON.stringify(codeJsonLd)} />
   <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
 </head>
@@ -96,102 +197,70 @@ const personJsonLd = {
 <body>
   <canvas id="snow-canvas" aria-hidden="true"></canvas>
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  
   <SiteHeader />
 
-  <div class="repo-page">
-    <header class="repo-header">
-      <div class="repo-header-inner">
-        <nav class="repo-breadcrumb" aria-label="Breadcrumb">
-          <a href="/">Home</a>
-          <span>/</span>
-          <a href="/code">Code</a>
-          <span>/</span>
-          <span>{post.data.repoName}</span>
-        </nav>
-
-        <div class="repo-main-info">
-          <div class="repo-icon-wrap">
-            <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor" class="repo-icon" aria-hidden="true">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-          </div>
-
-          <div class="repo-title-block">
-            <h1 class="repo-title">{post.data.repoOwner} / {post.data.repoName}</h1>
-            {post.data.author && <p class="repo-author">by {post.data.author}{post.data.repoEmail && <> · <a href={`mailto:${post.data.repoEmail}`}>{post.data.repoEmail}</a></>}</p>}
-            {post.data.description && <p class="repo-subtitle">{post.data.description}</p>}
-            <div class="repo-meta">
-              {post.data.license && <span class="repo-license">{post.data.license}</span>}
-              {formattedDate && <span class="repo-date">Updated {formattedDate}</span>}
-            </div>
-          </div>
-
-          <div class="repo-actions">
-            {post.data.repoUrl && (
-              <a class="repo-link" href={post.data.repoUrl} target="_blank" rel="noopener noreferrer">
-                <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-                </svg>
-                View on GitHub
-              </a>
-            )}
-            {post.data.appUrl && (
-              <a class="repo-link" href={post.data.appUrl} target="_blank" rel="noopener noreferrer">
-                <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">
-                  <path d="M3.75 2h3.5a.75.75 0 010 1.5H4.5v8h8V8.75a.75.75 0 011.5 0v3.5A1.75 1.75 0 0112.25 14h-8.5A1.75 1.75 0 012 12.25v-8.5C2 2.784 2.784 2 3.75 2zm6.72.72l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H7a.75.75 0 010-1.5h4.13L9.41 3.78a.75.75 0 011.06-1.06z" />
-                </svg>
-                Live App
-              </a>
-            )}
-          </div>
-        </div>
+  <main id="main-content" class="code-page" tabindex="-1">
+    <header class="code-header">
+      <div class="code-kicker">
+        <span class="collection-type">Open Source</span>
+      </div>
+      <h1 class="code-title">{post.data.repoOwner} / {post.data.repoName}</h1>
+      {post.data.description && <p class="code-subtitle">{post.data.description}</p>}
+      {post.data.author && (
+        <p class="code-author">
+          by {post.data.author}
+          {post.data.repoEmail && <> &middot; <a href={`mailto:${post.data.repoEmail}`}>{post.data.repoEmail}</a></>}
+        </p>
+      )}
+      <div class="code-meta">
+        {post.data.license && <span class="meta-license">{post.data.license}</span>}
+        {formattedDate && <span class="meta-date">Updated {formattedDate}</span>}
+      </div>
+      <div class="code-actions">
+        {post.data.repoUrl && (
+          <a class="action-link" href={post.data.repoUrl} target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+          </a>
+        )}
+        {post.data.appUrl && (
+          <a class="action-link" href={post.data.appUrl} target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M3.75 2h3.5a.75.75 0 010 1.5H4.5v8h8V8.75a.75.75 0 011.5 0v3.5A1.75 1.75 0 0112.25 14h-8.5A1.75 1.75 0 012 12.25v-8.5C2 2.784 2.784 2 3.75 2zm6.72.72l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H7a.75.75 0 010-1.5h4.13L9.41 3.78a.75.75 0 011.06-1.06z"/></svg>
+            Live App
+          </a>
+        )}
       </div>
     </header>
 
-    <main id="main-content" class="repo-content" tabindex="-1">
-      <div class="repo-container">
+    <section class="code-body">
+      <div class="code-container">
         <div class="content-wrapper">
-          <aside class="repo-sidebar">
+          <aside class="code-sidebar">
             {post.data.tags && post.data.tags.length > 0 && (
-              <div class="repo-panel topics-panel">
+              <div class="sidebar-panel topics-panel">
                 <h3>Topics</h3>
-                <div class="repo-tags">
-                  {post.data.tags.map((tag) => (
-                    <span class="repo-tag">{tag}</span>
-                  ))}
+                <div class="sidebar-tags">
+                  {post.data.tags.map((tag) => <span class="sidebar-tag">{tag}</span>)}
                 </div>
               </div>
             )}
-
             {post.data.fileTree && post.data.fileTree.length > 0 && (() => {
-              // Build nested tree from flat paths
               const tree = {};
               for (const fp of post.data.fileTree) {
                 const parts = fp.split('/');
                 let node = tree;
                 for (let i = 0; i < parts.length; i++) {
                   const part = parts[i];
-                  if (i === parts.length - 1) {
-                    node[part] = null; // file
-                  } else {
-                    if (!node[part]) node[part] = {};
-                    node = node[part];
-                  }
+                  if (i === parts.length - 1) { node[part] = null; }
+                  else { if (!node[part]) node[part] = {}; node = node[part]; }
                 }
               }
-
-              // Recursive file count for directories
               function countFiles(obj) {
                 let n = 0;
-                for (const v of Object.values(obj)) {
-                  n += v === null ? 1 : countFiles(v);
-                }
+                for (const v of Object.values(obj)) n += v === null ? 1 : countFiles(v);
                 return n;
               }
-
               const repoBase = post.data.repoUrl || `https://github.com/${post.data.repoOwner}/${post.data.repoName}`;
-
               function renderNode(obj, parentPath) {
                 const entries = Object.entries(obj).sort(([a, va], [b, vb]) => {
                   if (va !== null && vb === null) return -1;
@@ -200,14 +269,11 @@ const personJsonLd = {
                 });
                 return entries.map(([key, val]) => {
                   if (val === null) {
-                    // file
                     const ext = key.split('.').pop() || '';
                     const icon = ext === 'md' || ext === 'mdx' ? 'M' : ext === 'py' ? 'Py' : ext === 'js' || ext === 'ts' ? 'JS' : ext === 'css' ? 'CS' : ext === 'html' ? 'H' : ext === 'json' ? '{}' : ext === 'toml' || ext === 'yaml' || ext === 'yml' ? '=' : ext === 'sh' || ext === 'bash' ? '>' : ext === 'svg' ? 'S' : 'F';
                     const filePath = parentPath ? `${parentPath}/${key}` : key;
-                    const href = `${repoBase}/blob/main/${filePath}`;
-                    return <a class="tree-file" href={href} target="_blank" rel="noopener noreferrer"><span class={`tree-icon tree-icon-${ext}`}>{icon}</span>{key}</a>;
+                    return <a class="tree-file" href={`${repoBase}/blob/main/${filePath}`} target="_blank" rel="noopener noreferrer"><span class={`tree-icon tree-icon-${ext}`}>{icon}</span>{key}</a>;
                   } else {
-                    // directory
                     const fileCount = countFiles(val);
                     const dirPath = parentPath ? `${parentPath}/${key}` : key;
                     return <details class="tree-dir" open={fileCount <= 12}>
@@ -217,34 +283,41 @@ const personJsonLd = {
                   }
                 });
               }
-
               return (
-                <div class="repo-panel filetree-panel">
+                <div class="sidebar-panel filetree-panel">
                   <div class="filetree-header">
-                    <h3>Repository Files</h3>
+                    <h3>Files</h3>
                     <div class="filetree-actions">
-                      <button type="button" class="filetree-btn" data-action="expand" aria-label="Expand all directories">+</button>
-                      <button type="button" class="filetree-btn" data-action="collapse" aria-label="Collapse all directories">-</button>
+                      <button type="button" class="filetree-btn" data-action="expand" aria-label="Expand all">+</button>
+                      <button type="button" class="filetree-btn" data-action="collapse" aria-label="Collapse all">-</button>
                     </div>
                   </div>
-                  <div class="file-tree" id="file-tree">
-                    {renderNode(tree, '')}
-                  </div>
+                  <div class="file-tree" id="file-tree">{renderNode(tree, '')}</div>
                 </div>
               );
             })()}
           </aside>
-
-          <article class="repo-article">
-            <Content />
+          <article class="code-article">
+            {flatwriteHTML ? (
+              <div class="flatwrite-wrapper">
+                <iframe
+                  class="flatwrite-iframe"
+                  title={`${post.data.title} — README`}
+                  loading="lazy"
+                />
+              </div>
+            ) : (
+              <div class="flatwrite-fallback">
+                <p>Content not available. Ensure <code>INTERNAL_RENDER_KEY</code> is set.</p>
+              </div>
+            )}
           </article>
         </div>
       </div>
-    </main>
-  </div>
+    </section>
+  </main>
 
   <SiteFooter />
-
   <script is:inline src="/textmode.js" defer></script>
   <script is:inline src="/snow-loader.js" defer></script>
   <script is:inline src="/mobile-nav.js" defer></script>
@@ -257,11 +330,36 @@ const personJsonLd = {
         if (!btn) return;
         var action = btn.getAttribute('data-action');
         var dirs = tree.querySelectorAll('details.tree-dir');
-        for (var i = 0; i < dirs.length; i++) {
-          dirs[i].open = action === 'expand';
-        }
+        for (var i = 0; i < dirs.length; i++) dirs[i].open = action === 'expand';
       });
     });
   </script>
+  {flatwriteHTML && (
+    <script is:inline define:vars={{ flatwriteHTML }}>
+      (function() {
+        var iframe = document.querySelector('.flatwrite-iframe');
+        if (!iframe) return;
+
+        var blob = new Blob([flatwriteHTML], { type: 'text/html;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        iframe.src = url;
+
+        function resize() {
+          try {
+            var doc = iframe.contentDocument || iframe.contentWindow.document;
+            var height = doc.documentElement.scrollHeight || doc.body.scrollHeight;
+            iframe.style.height = height + 'px';
+          } catch(e) {}
+        }
+
+        iframe.addEventListener('load', resize);
+        iframe.addEventListener('load', function() {
+          setTimeout(resize, 300);
+          setTimeout(resize, 1000);
+        });
+        window.addEventListener('resize', resize);
+      })();
+    </script>
+  )}
 </body>
 </html>

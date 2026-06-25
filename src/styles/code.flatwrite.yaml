@@ -1,0 +1,9 @@
+# FlatWrite design config for Code project pages
+# Scale indices match the FlatWrite UI (size/weight/line selectors)
+docEngine: none
+surfaceMode: doc
+framework: spectre
+font: Unbounded
+size: -1
+weight: -3
+line: 0

@@ -91,9 +91,9 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
     title: "Digital Products",
     items: [
       { type: "code", slug: "flatwrite"},
+      { type: "code", slug: "c2pa-viewer"},
       { type: "code", slug: "traffic-oracle"},
       { type: "code", slug: "india-votes-data"},
-      { type: "code", slug: "c2pa-viewer"},
       { type: "code", slug: "ngl-storyteller"},
     ]
   },

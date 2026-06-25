@@ -28,32 +28,20 @@ const tocEntries: TocEntry[] = [];
 let hasKatex = false;
 
 const contentBase = path.resolve("content/datastory");
-const mdPath = path.join(contentBase, `${post.id}.md`);
-const mdxPath = path.join(contentBase, `${post.id}.mdx`);
-const filePath = fs.existsSync(mdPath) ? mdPath : (fs.existsSync(mdxPath) ? mdxPath : null);
+const notebookHtmlPath = path.join(contentBase, `${post.id}.notebook.html`);
 
-if (filePath) {
-  const rawContent = fs.readFileSync(filePath, "utf-8");
-  const markerStart = "<!-- NOTEBOOK_HTML_START -->";
-  const markerEnd = "<!-- NOTEBOOK_HTML_END -->";
-  const startIdx = rawContent.indexOf(markerStart);
-  const endIdx = rawContent.indexOf(markerEnd);
+if (fs.existsSync(notebookHtmlPath)) {
+  notebookHtml = fs.readFileSync(notebookHtmlPath, "utf-8").trim();
 
-  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-    notebookHtml = rawContent
-      .slice(startIdx + markerStart.length, endIdx)
-      .trim();
-
-    const h2Re = /<h2[^>]*id=["']([^"']*)["'][^>]*>(.*?)<\/h2>/gi;
-    let match: RegExpExecArray | null;
-    while ((match = h2Re.exec(notebookHtml)) !== null) {
-      const slug = match[1];
-      const text = match[2].replace(/<[^>]*>/g, "").replace(/\u00b6/g, "").trim();
-      if (text) tocEntries.push({ slug, text });
-    }
-
-    hasKatex = /\$\$|\\\(|\\\[|\\begin\{|(^|[^$])\$[^\n$]+\$(?!\$)/.test(notebookHtml);
+  const h2Re = /<h2[^>]*id=["']([^"']*)["'][^>]*>(.*?)<\/h2>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = h2Re.exec(notebookHtml)) !== null) {
+    const slug = match[1];
+    const text = match[2].replace(/<[^>]*>/g, "").replace(/\u00b6/g, "").trim();
+    if (text) tocEntries.push({ slug, text });
   }
+
+  hasKatex = /\$\$|\\\(|\\\[|\\begin\{|(^|[^$])\$[^\n$]+\$(?!\$)/.test(notebookHtml);
 }
 ---
 

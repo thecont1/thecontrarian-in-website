@@ -60,9 +60,12 @@ const personJsonLd = {
     <SiteHeader />
     
     <main id="main-content" class="code-index" tabindex="-1">
-      <header class="page-header">
-        <h1>Code Projects</h1>
-        <p>Open source projects and creative coding experiments</p>
+      <header class="code-header">
+        <div class="code-kicker">
+          <span class="collection-type">Open Source</span>
+        </div>
+        <h1 class="code-title">Code</h1>
+        <p class="code-subtitle">Open source projects and creative coding experiments</p>
       </header>
 
       <div class="projects-grid">
@@ -107,6 +110,156 @@ const personJsonLd = {
   .code-index {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 8rem 2rem 4rem;
+    padding: 0 2rem 4rem;
+    background: #0c1222;
+    min-height: 100vh;
+    color: #c9d1d9;
+  }
+
+  /* ── Code Header — dark data journalism aesthetic ────── */
+  .code-header {
+    background: #0c1222;
+    padding: 7rem 2rem 0;
+    text-align: center;
+    margin: 0 -2rem;
+    max-width: none;
+  }
+
+  .code-kicker {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 1.5rem;
+    border-top: 3px solid #58a6ff;
+    margin-bottom: 2rem;
+  }
+
+  .code-kicker .collection-type {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #0c1222;
+    background: #58a6ff;
+    padding: 0.2em 0.65em;
+    border-radius: 2px;
+  }
+
+  .code-title {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: clamp(2.4rem, 6vw, 4.5rem);
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+    color: #e6edf3;
+    max-width: 18ch;
+    margin: 0 auto 1.5rem;
+  }
+
+  .code-subtitle {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    font-style: italic;
+    font-weight: 300;
+    line-height: 1.5;
+    color: rgba(230, 237, 243, 0.6);
+    max-width: 55ch;
+    margin: 0 auto 3rem;
+  }
+
+  /* ── Projects Grid ──────────────────────────────────── */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .project-card {
+    background: #0f1829;
+    border: 1px solid #1c2a3e;
+    padding: 1.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .project-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border-color: #2d3a4e;
+  }
+
+  .project-card a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .github-icon {
+    flex-shrink: 0;
+    color: #c9d1d9;
+  }
+
+  .card-header h2 {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e6edf3;
+    margin: 0;
+  }
+
+  .description {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #8b949e;
+    margin-bottom: 1rem;
+  }
+
+  .project-meta {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .license {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #c9d1d9;
+    background: #1c2a3e;
+    padding: 0.2em 0.6em;
+    border-radius: 3px;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.75rem;
+    color: #556;
+  }
+
+  /* ── Mobile ─────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .code-header {
+      padding: 5rem 1rem 0;
+      margin: 0 -1rem;
+    }
+
+    .projects-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
