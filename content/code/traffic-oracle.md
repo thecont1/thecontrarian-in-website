@@ -1,21 +1,17 @@
 ---
+status: draft
 title: traffic-oracle
 description: Hyperlocal Road Traffic Monitor – compare current speeds with historical patterns across major routes. Know before you go.
-author: Mahesh Shantaram
-status: draft
 repoOwner: thecont1
 repoName: traffic-oracle
-license: NOASSERTION
+repoEmail: ms@thecontrarian.in
+author: Mahesh Shantaram
 createdDate: 2026-05-16
 lastUpdated: 2026-06-11
-tags:
-  - "public-data"
-  - "traffic-analysis"
-  - "urban-data-science"
 repoUrl: "https://github.com/thecont1/traffic-oracle"
-repoEmail: ms@thecontrarian.in
-appUrl: "https://co.thecontrarian.in/"
 readmeUrl: "https://raw.githubusercontent.com/thecont1/traffic-oracle/main/README.md"
+branch: main
+appUrl: "https://co.thecontrarian.in/"
 fileTree:
   - ".gitignore"
   - "LICENSE.md"
@@ -194,4 +190,9 @@ fileTree:
   - "tsconfig.json"
   - "vite.config.ts"
   - "wrangler.jsonc"
+tags:
+  - "public-data"
+  - "traffic-analysis"
+  - "urban-data-science"
+license: NOASSERTION
 ---

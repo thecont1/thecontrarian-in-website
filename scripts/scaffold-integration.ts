@@ -304,37 +304,49 @@ async function enrichCodeFile(filePath: string) {
         .map((item: any) => item.path);
     }
 
-    // Merge: fill empty fields + always update authoritative ones
-    if (!fields.title) fields.title = repoData.name || repo;
-    if (!fields.description && repoData.description) fields.description = repoData.description;
     // Author + email: try repo endpoint first, fall back to user profile (cached)
-    if (!fields.author || !fields.repoEmail) {
+    let authorName = fields.author;
+    let repoEmail = fields.repoEmail;
+    if (!authorName || !repoEmail) {
       const profile = ghUser(repoData.owner?.login);
-      if (!fields.author) fields.author = repoData.owner?.name || profile?.name || '';
-      if (!fields.repoEmail && profile?.email) fields.repoEmail = profile.email;
+      if (!authorName) authorName = repoData.owner?.name || profile?.name || '';
+      if (!repoEmail && profile?.email) repoEmail = profile.email;
     }
-    if (!fields.license && repoData.license?.spdx_id) fields.license = repoData.license.spdx_id;
-    if (!fields.appUrl && repoData.homepage) fields.appUrl = repoData.homepage;
-    if (!fields.createdDate && repoData.created_at) fields.createdDate = repoData.created_at.split('T')[0];
-    if ((!fields.tags || fields.tags.length === 0) && repoData.topics?.length) {
-      fields.tags = repoData.topics;
-    }
-    // Always update from GitHub (authoritative)
-    if (repoData.pushed_at) fields.lastUpdated = repoData.pushed_at.split('T')[0];
-    fields.repoUrl = `https://github.com/${owner}/${repo}`;
-    // Ensure tags is always an array
-    if (!Array.isArray(fields.tags)) fields.tags = [];
-    // Always update fileTree
-    if (fileTree.length > 0) fields.fileTree = fileTree;
 
     // Determine the README.md URL from the file tree (Code.astro renders it via FlatWrite)
     const readmePath = fileTree.find(p => p.toLowerCase() === 'readme.md' || p.toLowerCase().endsWith('/readme.md'));
-    if (readmePath) {
-      fields.readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${readmePath}`;
+    const readmeUrl = readmePath
+      ? `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${readmePath}`
+      : fields.readmeUrl;
+
+    // Ensure tags is always an array
+    const tags = Array.isArray(fields.tags) ? fields.tags : [];
+    if (tags.length === 0 && repoData.topics?.length) {
+      tags.push(...repoData.topics);
     }
 
+    // Build frontmatter in schema order, preserving user values and filling from GitHub
+    const newFields: Record<string, any> = {
+      status: fields.status || 'draft',
+      title: fields.title || repoData.name || repo,
+      description: fields.description || repoData.description || '',
+      repoOwner: owner,
+      repoName: repo,
+      repoEmail: repoEmail || '',
+      author: authorName || '',
+      createdDate: fields.createdDate || repoData.created_at?.split('T')[0] || '',
+      lastUpdated: repoData.pushed_at?.split('T')[0] || fields.lastUpdated || '',
+      repoUrl: `https://github.com/${owner}/${repo}`,
+      readmeUrl: readmeUrl || '',
+      branch: fields.branch || branch,
+      appUrl: fields.appUrl || repoData.homepage || '',
+      fileTree: fileTree.length > 0 ? fileTree : fields.fileTree || [],
+      tags,
+      license: fields.license || repoData.license?.spdx_id || '',
+    };
+
     // Write back
-    const fm = buildFrontmatter(fields);
+    const fm = buildFrontmatter(newFields);
     fs.writeFileSync(filePath, `---\n${fm}\n---\n${body}`);
 
     fetchedRepos.set(filePath, repoKey);
