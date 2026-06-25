@@ -3,9 +3,7 @@ import { type CollectionEntry } from "astro:content";
 import fs from "node:fs";
 import path from "node:path";
 import { createHmac } from "node:crypto";
-import { execSync } from "node:child_process";
 import * as yaml from "js-yaml";
-import { marked } from "marked";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { AUTHOR } from "../data/author";
@@ -53,24 +51,13 @@ function sign(secret: string, ts: number, method_: string, path_: string) {
   return createHmac("sha256", secret).update(`${ts}.${method_}.${path_}`).digest("hex");
 }
 
-function fetchREADME(owner: string, repo: string) {
-  try {
-    return execSync(`gh api repos/${owner}/${repo}/readme --jq '.content' | base64 -d`, {
-      encoding: "utf8",
-      maxBuffer: 1024 * 1024,
-    });
-  } catch {
-    return "";
-  }
-}
-
 function resolveReadmeUrl(post: CollectionEntry<"code">) {
   if (post.data.readmeUrl) return post.data.readmeUrl;
-  return `https://raw.githubusercontent.com/${post.data.repoOwner}/${post.data.repoName}/main/README.md`;
+  return `https://raw.githubusercontent.com/${post.data.repoOwner}/${post.data.repoName}/${post.data.branch || 'main'}/README.md`;
 }
 
-async function renderFlatwrite(source: { markdownUrl?: string; markdown?: string }) {
-  if (!SECRET) return null;
+async function renderFlatwrite(markdownUrl: string) {
+  if (!SECRET) throw new Error('INTERNAL_RENDER_KEY is not configured');
   const scale = SIZE_SCALE[designConfig.size] ?? 1;
   const fontWeight = WEIGHT_MAP[designConfig.weight] ?? 400;
   const lineHeight = LINE_SCALE[designConfig.line] ?? 1.75;
@@ -79,7 +66,7 @@ async function renderFlatwrite(source: { markdownUrl?: string; markdown?: string
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-  const body: Record<string, unknown> = {
+  const body = {
     framework: designConfig.framework || "spectre",
     font: designConfig.font,
     fontSize: Math.round(BASE_FONT_SIZE * scale),
@@ -87,14 +74,8 @@ async function renderFlatwrite(source: { markdownUrl?: string; markdown?: string
     lineHeight,
     docEngine: designConfig.docEngine || "none",
     surfaceMode: designConfig.surfaceMode || "doc",
+    markdownUrl,
   };
-  if (source.markdownUrl) {
-    body.markdownUrl = source.markdownUrl;
-  } else if (source.markdown) {
-    body.markdown = source.markdown;
-  } else {
-    return null;
-  }
 
   try {
     const resp = await fetch(FLATWRITE_API, {
@@ -107,58 +88,18 @@ async function renderFlatwrite(source: { markdownUrl?: string; markdown?: string
       body: JSON.stringify(body),
       signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId));
-    if (!resp.ok) return null;
+    if (!resp.ok) throw new Error(`FlatWrite API returned ${resp.status}`);
     // Return the full HTML document as-is — the iframe isolates it completely
     return await resp.text();
   } catch (err) {
     const message = err instanceof Error ? (err.cause as Error)?.message || err.message : String(err);
-    console.error('[renderFlatwrite] fetch failed:', FLATWRITE_API, message);
-    return null;
+    throw new Error(`FlatWrite render failed: ${message}`);
   }
 }
 
-function renderReadmeFallback(markdown: string) {
-  const scale = SIZE_SCALE[designConfig.size] ?? 1;
-  const fontWeight = WEIGHT_MAP[designConfig.weight] ?? 400;
-  const lineHeight = LINE_SCALE[designConfig.line] ?? 1.75;
-  const bodyHtml = marked.parse(markdown, { breaks: true, gfm: true }) as string;
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(designConfig.font)}:wght@${fontWeight}&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: '${designConfig.font}', sans-serif;
-      font-size: ${Math.round(BASE_FONT_SIZE * scale)}px;
-      font-weight: ${fontWeight};
-      line-height: ${lineHeight};
-    }
-  </style>
-</head>
-<body class="container">
-${bodyHtml}
-</body>
-</html>`;
-}
-
-// Build-time rendering: prefer the README URL from the enriched file tree.
+// Build-time rendering: fetch the rendered README from the enriched URL.
 const readmeUrl = resolveReadmeUrl(post);
-let flatwriteHTML: string | null = null;
-flatwriteHTML = await renderFlatwrite({ markdownUrl: readmeUrl });
-if (!flatwriteHTML) {
-  // Fallback: fetch the README content and render it inline
-  const readme = fetchREADME(post.data.repoOwner, post.data.repoName);
-  if (readme.trim()) {
-    flatwriteHTML = await renderFlatwrite({ markdown: readme });
-  }
-  if (!flatwriteHTML && readme.trim()) {
-    flatwriteHTML = renderReadmeFallback(readme);
-  }
-}
+const flatwriteHTML = await renderFlatwrite(readmeUrl);
 
 /* ── Standard metadata ─────────────────────────────────── */
 
@@ -332,20 +273,14 @@ const personJsonLd = {
             })()}
           </aside>
           <article class="code-article">
-            {flatwriteHTML ? (
-              <div class="flatwrite-wrapper">
-                <iframe
-                  class="flatwrite-iframe"
-                  title={`${post.data.title} — README`}
-                  srcdoc={flatwriteHTML}
-                  loading="lazy"
-                />
-              </div>
-            ) : (
-              <div class="flatwrite-fallback">
-                <p>Content not available. Ensure <code>INTERNAL_RENDER_KEY</code> is set.</p>
-              </div>
-            )}
+            <div class="flatwrite-wrapper">
+              <iframe
+                class="flatwrite-iframe"
+                title={`${post.data.title} — README`}
+                srcdoc={flatwriteHTML}
+                loading="lazy"
+              />
+            </div>
           </article>
         </div>
       </div>
@@ -369,28 +304,26 @@ const personJsonLd = {
       });
     });
   </script>
-  {flatwriteHTML && (
-    <script is:inline>
-      (function() {
-        var iframe = document.querySelector('.flatwrite-iframe');
-        if (!iframe) return;
+  <script is:inline>
+    (function() {
+      var iframe = document.querySelector('.flatwrite-iframe');
+      if (!iframe) return;
 
-        function resize() {
-          try {
-            var doc = iframe.contentDocument || iframe.contentWindow.document;
-            var height = doc.documentElement.scrollHeight || doc.body.scrollHeight;
-            iframe.style.height = height + 'px';
-          } catch(e) {}
-        }
+      function resize() {
+        try {
+          var doc = iframe.contentDocument || iframe.contentWindow.document;
+          var height = doc.documentElement.scrollHeight || doc.body.scrollHeight;
+          iframe.style.height = height + 'px';
+        } catch(e) {}
+      }
 
-        iframe.addEventListener('load', resize);
-        iframe.addEventListener('load', function() {
-          setTimeout(resize, 300);
-          setTimeout(resize, 1000);
-        });
-        window.addEventListener('resize', resize);
-      })();
-    </script>
-  )}
+      iframe.addEventListener('load', resize);
+      iframe.addEventListener('load', function() {
+        setTimeout(resize, 300);
+        setTimeout(resize, 1000);
+      });
+      window.addEventListener('resize', resize);
+    })();
+  </script>
 </body>
 </html>
