@@ -331,6 +331,7 @@ async function enrichCodeFile(filePath: string) {
       readmeUrl: readmeUrl || '',
       branch: fields.branch || branch,
       appUrl: fields.appUrl || repoData.homepage || '',
+      heroImage: fields.heroImage || '',
       tags,
       license: fields.license || repoData.license?.spdx_id || '',
     };

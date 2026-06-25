@@ -69,6 +69,7 @@ const codeSchema = z.object({
   readmeUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
   branch: z.string().optional().default("main"),
   appUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
+  heroImage: z.string().optional(),
   tags: z.array(z.string()).default([]),
   license: z.string().optional(),
 });
