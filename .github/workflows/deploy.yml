@@ -77,8 +77,14 @@ jobs:
 
       - name: Purge Cloudflare edge cache
         run: |
-          curl -s -X POST \
+          echo "Purging Cloudflare zone ${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          curl -w "\nHTTP %{http_code}\n" -X POST \
             "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything": true}'
+            --data '{"purge_everything": true}' -o /tmp/purge_response.json
+          cat /tmp/purge_response.json
+          if ! grep -q '"success":true' /tmp/purge_response.json; then
+            echo "Cache purge failed"
+            exit 1
+          fi
