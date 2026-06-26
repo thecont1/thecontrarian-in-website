@@ -1,7 +1,7 @@
 ---
 status: published
 title: ngl-storyteller
-description: Based on a true story. Your story. Go ahead, express yourself. 
+description: Based on a true story. Your story. Go ahead, express yourself.
 repoOwner: thecont1
 repoName: ngl-storyteller
 repoEmail: ms@thecontrarian.in
