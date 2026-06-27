@@ -8,6 +8,13 @@ type ImageMetadata = {
   width?: number;
   height?: number;
   exif?: Record<string, any>;
+  iptc?: {
+    title?: string;
+    description?: string;
+    location?: string;
+    city?: string;
+    keywords?: string;
+  };
   photography?: {
     camera_make?: string;
     camera_model?: string;
@@ -157,6 +164,20 @@ export default function InfoPanel({ metadata, imageSrc, onClose }: Props) {
     { label: 'Time', value: timeOriginal ? `${timeOriginal}${exif.OffsetTime ? ` (${exif.OffsetTime})` : ''}` : '' },
   ];
 
+  // Best-available description text. The hosted C2PA/EXIF API returns the
+  // literal placeholder "No description available" in `photography.description`
+  // when no real description was found in the image, so we ignore that
+  // placeholder and prefer the IPTC fields — which is where photographers
+  // actually enter caption/copyright/title text.
+  const PLACEHOLDER = 'No description available';
+  const iptc = metadata.iptc || {};
+  const rawDescription =
+    iptc.description ||
+    iptc.title ||
+    (photo.description && photo.description !== PLACEHOLDER ? photo.description : '') ||
+    (photo.title && photo.title !== PLACEHOLDER ? photo.title : '') ||
+    '';
+
   const processingRows: RowData[] = [
     { label: 'Software', value: exif.Software || '' },
     { label: 'Color Space', value: exif.ColorSpace === 1 ? 'sRGB' : (exif.ColorSpace ? `${exif.ColorSpace}` : '') },
@@ -190,8 +211,8 @@ export default function InfoPanel({ metadata, imageSrc, onClose }: Props) {
       </div>
 
       {/* Description/Caption */}
-      {photo.description && (
-        <p className="info-panel-description">{photo.description}</p>
+      {rawDescription && (
+        <p className="info-panel-description">{rawDescription}</p>
       )}
 
       {/* Sections */}
