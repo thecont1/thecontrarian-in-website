@@ -1,10 +1,10 @@
 /* Lightbox Component Styles */
 
-:global(body.lightbox-open .toc-toggle-btn) {
+body.lightbox-open .toc-toggle-btn {
   display: none !important;
 }
 
-:global(body.toc-hidden .toc-toggle-btn) {
+body.toc-hidden .toc-toggle-btn {
   display: none !important;
 }
 
