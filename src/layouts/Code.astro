@@ -255,13 +255,26 @@ async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> 
     const fragment = parseFragmentResponse(text);
     if (!fragment) throw new Error(`Invalid FlatWrite API response for ${markdownUrl} (status ${resp.status})`);
     const pageHeadStyles = extractStyles(fragment.head);
+
+    // FlatWrite's API returns self-contained <head>...</head> and <body>...</body>
+    // fragments. Strip the outer head/body wrappers so we can splice our own
+    // meta tags + base + body override styles in without producing duplicate
+    // <head> / <body> nesting (which the HTML parser tolerates but breaks
+    // the resize cross-origin access path and confuses some browsers).
+    const headInner = fragment.head
+      .replace(/^<head[^>]*>/i, '')
+      .replace(/<\/head>\s*$/i, '');
+    const bodyInner = fragment.body
+      .replace(/^<body[^>]*>/i, '')
+      .replace(/<\/body>\s*$/i, '');
+
     const iframeSrcdoc = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <base target="_blank" rel="noopener noreferrer">
-  ${fragment.head}
+  ${headInner}
   <style>
     html, body { background: #c7e3ff !important; overflow: hidden !important; }
     .fw-render { background: #c7e3ff !important; color: #1a233a !important; }
@@ -278,7 +291,9 @@ async function renderFlatwrite(markdownUrl: string): Promise<FlatwriteFragment> 
     .fw-render tbody tr:nth-child(odd) { background: #c7e3ff !important; }
   </style>
 </head>
-${fragment.body}
+<body class="fw-render">
+  ${bodyInner}
+</body>
 </html>`;
     return { pageHeadStyles, iframeSrcdoc };
   } catch (err) {
@@ -493,7 +508,6 @@ const personJsonLd = {
                   class="flatwrite-iframe"
                   title={`${post.data.title} — README`}
                   srcdoc={flatwrite.iframeSrcdoc}
-                  loading="lazy"
                   scrolling="no"
                 />
               ) : flatwrite?.fallbackHtml ? (
@@ -529,19 +543,64 @@ const personJsonLd = {
       var iframe = document.querySelector('.flatwrite-iframe');
       if (!iframe) return;
 
-      function resize() {
+      function getDoc() {
         try {
-          var doc = iframe.contentDocument || iframe.contentWindow.document;
-          var height = doc.documentElement.scrollHeight || doc.body.scrollHeight;
-          iframe.style.height = height + 'px';
-        } catch(e) {}
+          return iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document) || null;
+        } catch (e) {
+          return null;
+        }
       }
 
-      iframe.addEventListener('load', resize);
+      function resize() {
+        var doc = getDoc();
+        if (!doc) return;
+        var body = doc.body;
+        var html = doc.documentElement;
+        if (!body || !html) return;
+        // Use offsetHeight rather than scrollHeight so we get the laid-out
+        // box height, which matches what the iframe needs to display without
+        // internal scroll. scrollHeight can over-report when content extends
+        // beyond the viewport.
+        var height = Math.max(body.scrollHeight, body.offsetHeight, html.scrollHeight, html.offsetHeight);
+        if (height && iframe.style.height !== height + 'px') {
+          iframe.style.height = height + 'px';
+        }
+      }
+
+      // Fire on the iframe's own load event (srcdoc fires this after parse).
       iframe.addEventListener('load', function() {
+        resize();
+        // Re-run after fonts/images settle in case layout changed.
+        setTimeout(resize, 50);
         setTimeout(resize, 300);
         setTimeout(resize, 1000);
       });
+
+      // If the iframe has already finished loading before this script ran
+      // (rare, but possible when the script is deferred), the load listener
+      // would never fire — call resize once now and poll briefly.
+      resize();
+      var pollCount = 0;
+      var poll = setInterval(function() {
+        resize();
+        if (++pollCount > 20) clearInterval(poll);
+      }, 100);
+
+      // Observe content-size changes inside the iframe (images loading, etc.)
+      // and re-resize. The observer is created lazily once the iframe is
+      // accessible.
+      var observerStarted = false;
+      function startObserver() {
+        var doc = getDoc();
+        if (!doc || !doc.body || observerStarted) return;
+        observerStarted = true;
+        if (typeof ResizeObserver !== 'undefined') {
+          new ResizeObserver(resize).observe(doc.documentElement);
+        }
+      }
+      iframe.addEventListener('load', startObserver);
+      startObserver();
+
       window.addEventListener('resize', resize);
     })();
   </script>
