@@ -5,6 +5,7 @@ import ScreenToggle from "../components/ui/ScreenToggle.astro";
 import C2PAOverlay from "../components/ui/C2PAOverlay.astro";
 import "../styles/home.css";
 import { getImageMetadata } from "../utils/exif";
+import { mapWithConcurrency } from "../utils/api";
 
 interface Props {
   post: CollectionEntry<"project">;
@@ -24,19 +25,19 @@ const projectContent = [...photogalleries, ...essays, ...longforms, ...posts, ..
   .filter((p) => p?.data?.status === "published");
 
 // 2. Derive carousel images from referenced photogalleries (frontmatter-defined)
-const carouselImages = await Promise.all(
-  photogalleries.flatMap((g: any) => 
-    (g?.data?.images || []).map(async (img: any) => {
-      const meta = await getImageMetadata(img.src);
-      const filename = img.src.split('/').pop()?.replace(/\.[^/.]+$/, '') || '';
-      return {
-        src: img.src,
-        caption: img.caption || img.alt || filename,
-        metadata: meta || {}
-      };
-    })
-  )
+const flattened = photogalleries.flatMap((g: any) =>
+  (g?.data?.images || []).map((img: any) => ({ img, gallery: g }))
 );
+
+const carouselImages = await mapWithConcurrency(flattened, async ({ img }) => {
+  const meta = await getImageMetadata(img.src);
+  const filename = img.src.split('/').pop()?.replace(/\.[^/.]+$/, '') || '';
+  return {
+    src: img.src,
+    caption: img.caption || img.alt || filename,
+    metadata: meta || {}
+  };
+}, 4);
 
 const backgroundColor = post.data.backgroundColor || "var(--paper)";
 ---

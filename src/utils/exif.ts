@@ -46,7 +46,11 @@ export async function getImageMetadata(imagePath: string): Promise<ExifMetadata 
     const uri = resolveImageUri(imagePath);
     const apiUrl = `${C2PA_API_BASE}/api/exif_metadata?uri=${encodeURIComponent(uri)}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    // Long enough for the API under load. With 48 carousel images fetched
+    // in parallel at build time, individual requests can take 10+ seconds.
+    // The previous 3s timeout caused almost every build-time fetch to
+    // return null, breaking the "i" info button on the live site.
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
     const response = await fetch(apiUrl, { signal: controller.signal }).finally(() => clearTimeout(timeoutId));
     if (!response.ok) return null;
 

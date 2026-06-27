@@ -9,6 +9,7 @@ import "../styles/photogallery.css";
 import "../styles/carousel.css";
 import "../styles/info-panel.css";
 import { getImageMetadata } from "../utils/exif";
+import { mapWithConcurrency } from "../utils/api";
 
 interface Props {
   post: CollectionEntry<"photogallery">;
@@ -66,15 +67,15 @@ async function getMetaForImage(imgSrc: string): Promise<any> {
     <section class="photogallery-carousel-hero">
       <!-- Fixed carousel layer -->
       <div class="carousel-hero-fixed">
-        <Carousel 
-          images={await Promise.all(images.map(async (img) => {
+        <Carousel
+          images={await mapWithConcurrency(images, async (img) => {
             const meta = await getMetaForImage(img.src);
             return {
               src: img.src,
               caption: img.caption,
               metadata: meta || {}
             };
-          }))}
+          }, 4)}
           client:load
         />
       </div>
