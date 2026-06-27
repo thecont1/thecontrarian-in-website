@@ -108,7 +108,10 @@
 
   display: flex;
   gap: 1rem;
-  z-index: 4;
+  /* Higher than the InfoPanel (z-index: 10) so the i button remains
+     clickable when the panel is open — otherwise the panel covers it
+     and the user has no way to close the panel via the toggle button. */
+  z-index: 20;
 
   opacity: 0;
   pointer-events: none;

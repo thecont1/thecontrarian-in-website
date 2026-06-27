@@ -427,7 +427,7 @@ export default function Carousel({ images }: { images: Image[] }) {
 
       {showInfo && metadata && (
         <Suspense fallback={null}>
-          <InfoPanel metadata={metadata} imageSrc={currentImage.src} />
+          <InfoPanel metadata={metadata} imageSrc={currentImage.src} onClose={onToggleInfo} />
         </Suspense>
       )}
       {showInfo && !metadata && <div className="debug-no-meta">Loading metadata…</div>}

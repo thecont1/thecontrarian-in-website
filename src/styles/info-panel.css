@@ -89,6 +89,32 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+.info-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.info-panel-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.info-panel-close:focus-visible {
+  outline: 2px solid #79c0ff;
+  outline-offset: 2px;
+}
+
 /* -----------------------------------------------------------------------------
    Description / Caption
    ----------------------------------------------------------------------------- */

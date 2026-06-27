@@ -28,6 +28,7 @@ type ImageMetadata = {
 type Props = {
   metadata: ImageMetadata;
   imageSrc: string;
+  onClose?: () => void;
 };
 
 type RowData = { label: string; value: string | number };
@@ -115,7 +116,7 @@ const Section = ({ title, rows }: { title: string; rows: RowData[] }) => {
   );
 };
 
-export default function InfoPanel({ metadata, imageSrc }: Props) {
+export default function InfoPanel({ metadata, imageSrc, onClose }: Props) {
   const photo = metadata.photography || {};
   const exif = metadata.exif || {};
   
@@ -172,6 +173,20 @@ export default function InfoPanel({ metadata, imageSrc }: Props) {
       {/* Header */}
       <div className="info-panel-header">
         <span className="info-panel-title">Image Info</span>
+        {onClose && (
+          <button
+            type="button"
+            className="info-panel-close"
+            onClick={onClose}
+            aria-label="Close image info"
+            title="Close"
+          >
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="3" x2="13" y2="13" />
+              <line x1="13" y1="3" x2="3" y2="13" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Description/Caption */}
