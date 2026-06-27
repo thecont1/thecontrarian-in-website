@@ -336,7 +336,13 @@ body.controls-visible .carousel-controls {
 /* Homepage scroll interactions */
 @supports (animation-timeline: scroll()) {
   body {
-    animation: reveal-controls linear both;
+    /* Use longhand to avoid Chromium 147+ parser bug:
+       the `animation` shorthand is silently dropped when it
+       contains `scroll()` (the animation-timeline value) in the
+       same rule. See https://issues.chromium.org/issues/... */
+    animation-name: reveal-controls;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: scroll();
     animation-range: 120vh 140vh;
   }
@@ -351,7 +357,9 @@ body.controls-visible .carousel-controls {
 /* As user scrolls, curtain lifts */
 @supports (animation-timeline: scroll()) {
   .hero-statement {
-    animation: curtain-raise linear both;
+    animation-name: curtain-raise;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: scroll();
     animation-range: 0vh 120vh;
   }
@@ -469,7 +477,9 @@ body.photogallery-carousel {
 /* Curtain returns with delay (scrolling back up: 0vh to 80vh) - slower return */
 @supports (animation-timeline: scroll()) {
   .carousel-curtain {
-    animation: carousel-curtain-raise linear both;
+    animation-name: carousel-curtain-raise;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: scroll();
     animation-range: 0vh 100vh;
   }
@@ -512,7 +522,9 @@ body.photogallery-carousel {
 /* Carousel shifts up to make room for footer (starts at 220vh, completes at 250vh) */
 @supports (animation-timeline: scroll()) {
   .carousel-hero-fixed {
-    animation: carousel-make-room linear both;
+    animation-name: carousel-make-room;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: scroll();
     animation-range: 220vh 250vh;
   }
