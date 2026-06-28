@@ -7,7 +7,7 @@ repoName: c2pa-viewer
 repoEmail: ms@thecontrarian.in
 author: Mahesh Shantaram
 createdDate: 2026-06-25
-lastUpdated: 2026-02-11
+lastUpdated: 2026-06-28
 repoUrl: "https://github.com/thecont1/c2pa-viewer"
 readmeUrl: "https://raw.githubusercontent.com/thecont1/c2pa-viewer/main/README.md"
 branch: main

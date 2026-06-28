@@ -6,10 +6,15 @@
 .carousel-info-panel {
   position: fixed;
   top: calc(var(--site-header-height) + 12px);
-  right: 2rem;
+  /* Shifted left to leave room for the floating nav button cluster
+     (< i >) at the bottom-right. The buttons occupy the rightmost
+     ~232px (200px wide + 2rem right margin); the panel's right edge
+     sits ~8px to the left of where the buttons start, so the panel
+     wraps around the buttons rather than overlapping them. */
+  right: 15rem;
   transform: none;
-  width: 340px;
-  max-width: calc(100vw - 4rem);
+  width: 380px;
+  max-width: calc(100vw - 18rem);
   max-height: calc(100vh - var(--site-header-height) - 24px);
   overflow-y: auto;
   overflow-x: hidden;
@@ -125,6 +130,30 @@
   margin: 0 0 1.25rem 0;
   padding-bottom: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  /* Cap the description at ~8 lines and scroll within it when longer,
+     so a long caption doesn't push the EXIF sections off-screen and
+     force the user to scroll the entire panel to reach them. */
+  max-height: calc(1.55em * 8);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.info-panel-description::-webkit-scrollbar {
+  width: 4px;
+}
+
+.info-panel-description::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.info-panel-description::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.info-panel-description::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* -----------------------------------------------------------------------------
@@ -296,8 +325,8 @@
 /* Tablet */
 @media (max-width: 768px) {
   .carousel-info-panel {
-    right: 1rem;
-    width: 300px;
+    right: 15rem;
+    width: 260px;
     padding: 1rem 1.25rem 1.25rem;
     border-radius: 14px;
   }
@@ -312,8 +341,8 @@
   }
 }
 
-/* Mobile */
-@media (max-width: 480px) {
+/* Mobile — full-width panel, buttons overlap (acceptable on small screens) */
+@media (max-width: 600px) {
   .carousel-info-panel {
     right: 0.75rem;
     left: 0.75rem;
