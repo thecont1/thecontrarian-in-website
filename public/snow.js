@@ -19,10 +19,14 @@ class PixelDust {
       // Responsive breakpoints
       mobileBreakpoint: 768,
       tabletBreakpoint: 1024,
-      // Particle count ratios for different viewports
-      mobileParticleRatio: 0.5,
-      tabletParticleRatio: 0.75,
-      desktopParticleRatio: 1.0,
+      // Particle count ratios — half of previous across the board
+      mobileParticleRatio: 0.15,  // was 0.3
+      tabletParticleRatio: 0.225,
+      desktopParticleRatio: 0.3,  // was 0.6
+      // Per-viewport max pixel size — desktop pixels ~4x larger
+      mobileMaxSize: 16,
+      tabletMaxSize: 32,
+      desktopMaxSize: 80,
       ...options,
     };
     this.canvas = null;
@@ -256,18 +260,23 @@ class PixelDust {
 
   getParticleCount() {
     const { maxParticles, mobileBreakpoint, mobileParticleRatio, desktopParticleRatio } = this.options;
-    
+
     // Simple viewport width detection
     const width = window.innerWidth || 1920;
-    
-    // Apply particle count ratios based on requirements:
-    // ≤768px: 50% fewer particles (mobile)
-    // >768px: full particle count (desktop)
+
+    // Mobile (≤768px) gets the mobile ratio; everything above gets desktop ratio.
     if (width <= mobileBreakpoint) {
       return Math.floor(maxParticles * mobileParticleRatio);
     }
-    // All viewports > 768px get full desktop particle count
     return Math.floor(maxParticles * desktopParticleRatio);
+  }
+
+  getMaxSize() {
+    const { mobileBreakpoint, tabletBreakpoint, mobileMaxSize, tabletMaxSize, desktopMaxSize, maxSize } = this.options;
+    const width = window.innerWidth || 1920;
+    if (width <= mobileBreakpoint) return mobileMaxSize ?? maxSize;
+    if (width <= tabletBreakpoint) return tabletMaxSize ?? maxSize;
+    return desktopMaxSize ?? maxSize;
   }
 
   getShape() {
@@ -275,8 +284,8 @@ class PixelDust {
   }
 
   spawnParticle(w, h, randomY = false) {
-    const { maxSize, maxSpeed, minSpeed } = this.options;
-    const size = Math.random() * maxSize + 2;
+    const { maxSpeed, minSpeed } = this.options;
+    const size = Math.random() * this.getMaxSize() + 2;
 
     // Fixed velocity system that respects maxSpeed
     const speed = minSpeed + Math.random() * (maxSpeed - minSpeed);
@@ -324,12 +333,17 @@ class PixelDust {
     this.canvas.height = Math.floor(height * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     
-    // Store previous particle count to detect breakpoint changes
+    // Store previous particle count and size cap to detect breakpoint changes
     const previousParticleCount = this.particles ? this.particles.length : 0;
+    const previousMaxSize = this._lastMaxSize ?? null;
+    const newMaxSize = this.getMaxSize();
     const newParticleCount = this.getParticleCount();
-    
-    // Only recreate particles if the count changed (crossed breakpoint)
-    if (previousParticleCount !== newParticleCount) {
+
+    // Respawn particles if either count or size cap changed (crossed a breakpoint
+    // or was resized across the mobile/tablet/desktop thresholds). Existing
+    // particles keep their old sizes otherwise.
+    if (previousParticleCount !== newParticleCount || previousMaxSize !== newMaxSize) {
+      this._lastMaxSize = newMaxSize;
       this.createParticles();
     }
   }
