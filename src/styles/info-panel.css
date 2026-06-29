@@ -49,7 +49,15 @@
   bottom: calc(var(--controls-bottom) - 1.5rem);
   width: 448px;
   max-width: calc(100vw - 2rem);
-  max-height: calc(100vh - var(--site-header-height) - var(--controls-bottom) - 12px);
+  /* Bumped from 'calc(100vh - header - controls-bottom - 12px)' to
+     give the panel an additional 1.5rem of vertical headroom
+     below the controls cluster. Without the bump, `top: 76px`
+     + max-height pinned the panel bottom exactly at the
+     controls' bottom edge (y=852 in a 900vh viewport), giving
+     zero padding below the buttons. The 1.5rem matches the
+     bottom anchor gap (`bottom: var(--controls-bottom) -
+     1.5rem`) so the panel is visually symmetric top-to-bottom. */
+  max-height: calc(100vh - var(--site-header-height) - var(--controls-bottom) - 12px + 1.5rem);
   overflow-y: auto;
   overflow-x: hidden;
   transform: translateX(110%);
