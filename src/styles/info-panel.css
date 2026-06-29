@@ -15,10 +15,33 @@
      edge, never flush with it. The panel itself extends 1rem past
      the controls on both axes. `right: 0` makes the panel flush
      with the viewport right edge; `bottom: 2rem` (= controls-bottom
-     − 1rem) keeps it 1rem below the controls' bottom edge. */
-  right: 0;
+     − 1rem) keeps it 1rem below the controls' bottom edge.
+
+     The panel anchors its right edge to the same `--controls-right`
+     offset as the controls cluster (right: 1rem), so the cluster
+     sits flush against the panel's right edge. Box-sizing
+     border-box + width 464px gives content area = 464 − 48px
+     padding − 2px border = 414px. The cluster is ~416px wide, so
+     it fills the content area and sits visually centered in the
+     panel: 24px from the panel's left edge, 24px from the panel's
+     right edge (which coincides with the cluster's right edge).
+
+     Panel still extends 1rem past the controls on the bottom
+     (`bottom: var(--controls-bottom) - 1rem`), keeping the
+     original floating-cluster geometry — the panel wraps around
+     the controls at the right (they share right edge) and
+     extends below them (controls float on top of the panel's
+     lower border).
+
+     Box-sizing border-box so the `width` is the full outer size
+     and the padding is internal. The outer 464px is narrower than
+     the previous ~490px render (440px content + 48px padding +
+     2px border), so the panel actually shrinks. */
+
+  box-sizing: border-box;
+  right: var(--controls-right);
   bottom: calc(var(--controls-bottom) - 1rem);
-  width: 440px;
+  width: 464px;
   max-width: calc(100vw - 2rem);
   max-height: calc(100vh - var(--site-header-height) - var(--controls-bottom) - 12px);
   overflow-y: auto;
