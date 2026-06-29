@@ -174,6 +174,66 @@ const formatExposureProgram = (program?: number): string => {
   return program !== undefined ? (programs[program] || '') : '';
 };
 
+// Build a flat array of "label-ish + value" chip strings from the
+// photo + exif fields. Returns only the chips that have a real
+// value (empty fields are skipped). Each string becomes a single
+// chip in the Exposure section. Order is deliberate — the visual
+// mnemonic photographers use is "focal length → aperture → shutter
+// → ISO → exposure correction → program → metering", the triangle
+// plus outcome.
+const buildExposureChips = (photo: any, exif: any): string[] => {
+  const chips: string[] = [];
+
+  const focal = clean(photo.focal_length);
+  if (focal) {
+    const eq = exif.FocalLengthIn35mmFilm ? ` (${exif.FocalLengthIn35mmFilm}mm eq.)` : '';
+    chips.push(`${focal}${eq}`);
+  }
+
+  const aperture = clean(photo.aperture) || (exif.FNumber ? `f/${exif.FNumber}` : '');
+  if (aperture) chips.push(aperture);
+
+  const shutter = clean(photo.shutter_speed) || formatExposure(exif.ExposureTime);
+  if (shutter) chips.push(shutter);
+
+  const iso = clean(photo.iso) || clean(exif.ISOSpeedRatings);
+  if (iso) chips.push(`ISO ${iso}`);
+
+  const bias = exif.ExposureBiasValue;
+  if (typeof bias === 'number' && !Number.isNaN(bias)) {
+    const formatted = bias > 0 ? `+${bias} EV` : `${bias} EV`;
+    chips.push(formatted);
+  }
+
+  const program = formatExposureProgram(exif.ExposureProgram);
+  if (program && program !== 'Not defined') chips.push(program);
+
+  const metering = formatMeteringMode(exif.MeteringMode);
+  if (metering) chips.push(metering);
+
+  return chips;
+};
+
+// Render the Exposure section as a row of inline "chips" instead
+// of the standard label/value table. Each chip is a self-contained
+// value (units like "23mm" / "f/3.2" / "ISO 200" are baked in), so
+// the panel can drop the row's label slot and save a row's worth
+// of vertical space (~16-18px per row at the panel's line-height).
+type ExposureChipsProps = { chips: string[] };
+const ExposureChips = ({ chips }: ExposureChipsProps) => {
+  if (chips.length === 0) return null;
+  return (
+    <div className="info-panel-section">
+      <div className="info-panel-section-title">Exposure</div>
+      <div className="info-panel-chips">
+        {chips.map((chip, i) => (
+          <span className="info-panel-chip" key={i}>{chip}</span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Section component for cleaner rendering
 const Section = ({ title, rows }: { title: string; rows: RowData[] }) => {
   const validRows = rows.filter(r => r.value !== '' && r.value !== undefined && r.value !== null);
@@ -226,15 +286,9 @@ export default function InfoPanel({ metadata, imageSrc, onClose, showCRButton = 
     { label: 'Lens S/N', value: clean(exif.LensSerialNumber) },
   ];
 
-  const exposureRows: RowData[] = [
-    { label: 'Focal Length', value: photo.focal_length ? `${photo.focal_length}${exif.FocalLengthIn35mmFilm ? ` (${exif.FocalLengthIn35mmFilm}mm eq.)` : ''}` : '' },
-    { label: 'Aperture', value: clean(photo.aperture) || (exif.FNumber ? `f/${exif.FNumber}` : '') },
-    { label: 'Shutter', value: clean(photo.shutter_speed) || formatExposure(exif.ExposureTime) },
-    { label: 'ISO', value: clean(photo.iso) || clean(exif.ISOSpeedRatings) },
-    { label: 'Exp. Bias', value: exif.ExposureBiasValue ? (exif.ExposureBiasValue > 0 ? `+${exif.ExposureBiasValue} EV` : `${exif.ExposureBiasValue} EV`) : '' },
-    { label: 'Program', value: formatExposureProgram(exif.ExposureProgram) },
-    { label: 'Metering', value: formatMeteringMode(exif.MeteringMode) },
-  ];
+  // Exposure is rendered as inline chips (ExposureChips component
+  // below), not the standard Section. Build the chip list here.
+  const exposureChips = buildExposureChips(photo, exif);
 
   const captureRows: RowData[] = [
     { label: 'Date', value: dateFormatted },
@@ -302,7 +356,7 @@ export default function InfoPanel({ metadata, imageSrc, onClose, showCRButton = 
       {/* Sections */}
       <Section title="File" rows={fileRows} />
       <Section title="Camera" rows={cameraRows} />
-      <Section title="Exposure" rows={exposureRows} />
+      <ExposureChips chips={exposureChips} />
       <Section title="Capture" rows={captureRows} />
       <Section title="Processing" rows={processingRows} />
       <Section title="Credits" rows={creditRows} />
