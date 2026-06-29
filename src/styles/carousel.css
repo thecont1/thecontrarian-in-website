@@ -60,17 +60,30 @@
 
 .carousel-image {
   /* Every image occupies the full viewport height. With
-     `width: auto` the image keeps its native aspect ratio and the
-     slide's width becomes the image's width at 100vh. The
-     `max-width: 100vw` clamp prevents any image from overflowing
-     the viewport on the horizontal axis (e.g. an extreme panorama
-     on a narrow viewport). `object-fit: contain` ensures the full
-     photograph — top to bottom — is visible, never cropped. The
-     .hero-fixed background underneath shows through any side
-     margins left by aspect mismatch. */
+     `width: auto` the image keeps its native aspect ratio and
+     the slide's width becomes the image's intrinsic width at
+     100vh. Wider images (e.g. 16:9 panoramas) extend past
+     the viewport's right edge — the user expects that
+     behaviour (the slide track scrolls horizontally to
+     reveal the rest of the image).
+
+     Note: there is NO `max-width: 100vw` clamp here. Earlier
+     revisions added one to keep extreme panoramas from
+     overflowing on narrow viewports, but that clamp on a
+     wider-than-viewport image fights `height: 100%` and
+     forces `object-fit: contain` to fit the image content
+     into a shorter box, producing visible top/bottom
+     letterbox on 16:9 photos. Without the clamp, the image's
+     CSS height/width box matches its natural scaled-to-100vh
+     dimensions and the content fills 100vh perfectly.
+
+     `object-fit: contain` is kept (in case `object-position`
+     or unusual container sizes ever cause a brief box
+     mismatch during scroll-driven animations), but in steady
+     state the image element renders at full 100vh with no
+     letterbox. */
   height: 100%;
   width: auto;
-  max-width: 100vw;
   object-fit: contain;
   object-position: center center;
   display: block;
