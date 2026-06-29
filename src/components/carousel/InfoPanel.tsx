@@ -80,6 +80,54 @@ const formatDate = (dateStr?: string): string => {
   }
 };
 
+// Placeholders returned by the hosted C2PA/EXIF API when a field is
+// missing. The API doesn't return null/empty for these — it returns
+// these literal strings — so the panel needs to recognise and drop
+// them so the InfoPanel Section can hide those rows. See:
+// https://github.com/thecont1/c2pa-viewer — API bug.
+const API_PLACEHOLDERS = new Set([
+  'Unknown',
+  'No description available',
+  'None',
+  'N/A',
+  'n/a',
+]);
+
+// Drop API placeholder strings so the Section component's filter
+// (which only catches empty/null/undefined) can hide the row. Returns
+// the trimmed string with surrounding whitespace removed, or '' if
+// the value is nullish, empty, or a recognised placeholder.
+const clean = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  const s = String(value).trim();
+  if (s === '') return '';
+  if (API_PLACEHOLDERS.has(s)) return '';
+  return s;
+};
+
+// The body's site-wide default artist. Mahesh is the photographer
+// behind every image on this site — when the API fails to extract
+// an Artist tag from EXIF/IPTC, fall back to this name rather than
+// showing "Unknown". The API bug masks the artist on a large
+// majority of older images.
+const DEFAULT_ARTIST = 'MAHESH SHANTARAM';
+
+// For the Artist field specifically: recognise EXIF's combined
+// "Name/email" convention (e.g. "Mahesh Shantaram/ms@thecontrarian.in")
+// and return just the name. Also substitute the default for missing
+// or placeholder values.
+const formatArtist = (raw: string | undefined | null): string => {
+  const cleaned = clean(raw);
+  if (cleaned === '') return DEFAULT_ARTIST;
+  // EXIF "Name<slash>email" combined string
+  const slashIdx = cleaned.indexOf('/');
+  if (slashIdx > 0) {
+    const name = cleaned.substring(0, slashIdx).trim();
+    if (name) return name;
+  }
+  return cleaned;
+};
+
 // Format camera make + model into a single string
 const formatCameraFull = (make?: string, model?: string): string => {
   if (!model) return make || '';
@@ -158,25 +206,31 @@ export default function InfoPanel({ metadata, imageSrc, onClose, showCRButton = 
     openC2PAOverlay(imageSrc);
   };
 
-  // Build section data
+  // Build section data — every value runs through `clean()` so the
+  // API's placeholder strings ("Unknown", "No description available")
+  // become empty strings and the Section component filters the row.
+  // Artist has its own special-cased formatter: missing/placeholder
+  // values fall back to DEFAULT_ARTIST; combined "Name/email" EXIF
+  // strings get the email stripped.
+  const iptc = metadata.iptc || {};
   const fileRows: RowData[] = [
-    { label: 'File', value: metadata.filename || '' },
-    { label: 'Format', value: metadata.format || '' },
+    { label: 'File', value: clean(metadata.filename) },
+    { label: 'Format', value: clean(metadata.format) },
     { label: 'Dimensions', value: (metadata.width && metadata.height) ? `${metadata.width} × ${metadata.height}` : '' },
   ];
 
   const cameraRows: RowData[] = [
-    { label: 'Camera', value: cameraFull },
-    { label: 'Lens', value: photo.lens_model || '' },
-    { label: 'Body S/N', value: exif.BodySerialNumber || '' },
-    { label: 'Lens S/N', value: exif.LensSerialNumber || '' },
+    { label: 'Camera', value: clean(cameraFull) },
+    { label: 'Lens', value: clean(photo.lens_model) },
+    { label: 'Body S/N', value: clean(exif.BodySerialNumber) },
+    { label: 'Lens S/N', value: clean(exif.LensSerialNumber) },
   ];
 
   const exposureRows: RowData[] = [
     { label: 'Focal Length', value: photo.focal_length ? `${photo.focal_length}${exif.FocalLengthIn35mmFilm ? ` (${exif.FocalLengthIn35mmFilm}mm eq.)` : ''}` : '' },
-    { label: 'Aperture', value: photo.aperture || (exif.FNumber ? `f/${exif.FNumber}` : '') },
-    { label: 'Shutter', value: photo.shutter_speed || formatExposure(exif.ExposureTime) },
-    { label: 'ISO', value: photo.iso || exif.ISOSpeedRatings || '' },
+    { label: 'Aperture', value: clean(photo.aperture) || (exif.FNumber ? `f/${exif.FNumber}` : '') },
+    { label: 'Shutter', value: clean(photo.shutter_speed) || formatExposure(exif.ExposureTime) },
+    { label: 'ISO', value: clean(photo.iso) || clean(exif.ISOSpeedRatings) },
     { label: 'Exp. Bias', value: exif.ExposureBiasValue ? (exif.ExposureBiasValue > 0 ? `+${exif.ExposureBiasValue} EV` : `${exif.ExposureBiasValue} EV`) : '' },
     { label: 'Program', value: formatExposureProgram(exif.ExposureProgram) },
     { label: 'Metering', value: formatMeteringMode(exif.MeteringMode) },
@@ -187,29 +241,32 @@ export default function InfoPanel({ metadata, imageSrc, onClose, showCRButton = 
     { label: 'Time', value: timeOriginal ? `${timeOriginal}${exif.OffsetTime ? ` (${exif.OffsetTime})` : ''}` : '' },
   ];
 
-  // Best-available description text. The hosted C2PA/EXIF API returns the
-  // literal placeholder "No description available" in `photography.description`
-  // when no real description was found in the image, so we ignore that
-  // placeholder and prefer the IPTC fields — which is where photographers
-  // actually enter caption/copyright/title text.
-  const PLACEHOLDER = 'No description available';
-  const iptc = metadata.iptc || {};
+  // Best-available description text. The hosted C2PA/EXIF API returns
+  // the literal placeholder "No description available" in
+  // `photography.description` when no real description was found in
+  // the image, so we ignore that placeholder and prefer the IPTC
+  // fields — which is where photographers actually enter
+  // caption/copyright/title text. The Section component also drops
+  // empty rows, so this const ensures the description never shows
+  // "No description available" literal text.
   const rawDescription =
-    iptc.description ||
-    iptc.title ||
-    (photo.description && photo.description !== PLACEHOLDER ? photo.description : '') ||
-    (photo.title && photo.title !== PLACEHOLDER ? photo.title : '') ||
+    clean(iptc.description) ||
+    clean(iptc.title) ||
+    clean(photo.description) ||
+    clean(photo.title) ||
     '';
 
   const processingRows: RowData[] = [
-    { label: 'Software', value: exif.Software || '' },
+    { label: 'Software', value: clean(exif.Software) },
     { label: 'Color Space', value: exif.ColorSpace === 1 ? 'sRGB' : (exif.ColorSpace ? `${exif.ColorSpace}` : '') },
     { label: 'Resolution', value: (exif.XResolution && exif.YResolution) ? `${exif.XResolution} × ${exif.YResolution} ${exif.ResolutionUnit === 2 ? 'DPI' : 'DPCM'}` : '' },
   ];
 
   const creditRows: RowData[] = [
-    { label: 'Artist', value: photo.artist || '' },
-    { label: 'Copyright', value: photo.copyright || '' },
+    // Try photo.artist first; fall back to exif.Artist; substitute
+    // DEFAULT_ARTIST when both are missing/placeholder.
+    { label: 'Artist', value: formatArtist(photo.artist || exif.Artist) },
+    { label: 'Copyright', value: clean(photo.copyright) || clean(exif.Copyright) },
   ];
 
   return (
