@@ -6,13 +6,18 @@
 .carousel-info-panel {
   position: fixed;
   top: calc(var(--site-header-height) + 12px);
-  /* Right-edge column sized just wide enough for the bottom button
-     cluster (200px content-credentials + 1rem + 200px < i > nav buttons
-     + a comfortable margin). The < i > cluster is positioned by
-     `.carousel-controls` at the same right/bottom offsets as the panel,
-     so it floats visually inside the panel's frosted backdrop. */
-  right: 1rem;
-  bottom: var(--controls-bottom);
+  /* The panel wraps the bottom button cluster with 1rem of
+     breathing room below and to the right. The < i > + nav cluster
+     is positioned by `.carousel-controls` at the inner edge of
+     that breathing room (`--controls-right: 1rem`,
+     `--controls-bottom: 3rem`), so the cluster floats 1rem inside
+     the panel's frosted backdrop — never overlapping the panel's
+     edge, never flush with it. The panel itself extends 1rem past
+     the controls on both axes. `right: 0` makes the panel flush
+     with the viewport right edge; `bottom: 2rem` (= controls-bottom
+     − 1rem) keeps it 1rem below the controls' bottom edge. */
+  right: 0;
+  bottom: calc(var(--controls-bottom) - 1rem);
   width: 440px;
   max-width: calc(100vw - 2rem);
   max-height: calc(100vh - var(--site-header-height) - var(--controls-bottom) - 12px);
