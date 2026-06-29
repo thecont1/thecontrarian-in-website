@@ -48,11 +48,13 @@
      to the right when it's removed. `transition-delay` on the
      hidden side keeps the panel interactive for the slide-in
      duration and removes pointer events as soon as the slide-out
-     starts. */
+     starts. The 600ms duration is deliberate — quick enough to
+     not block reading the next slide, slow enough to read as
+     motion rather than an instant pop. */
   transition:
-    transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
-    visibility 0s linear 0.32s;
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 0.6s;
 }
 
 .carousel .carousel-info-panel.is-visible {
@@ -62,12 +64,12 @@
   pointer-events: auto;
   /* No visibility delay when sliding in — the panel should be
      interactive as soon as the transform starts moving back in.
-     The transition itself takes 320ms; we keep the visibility
+     The transition itself takes 600ms; we keep the visibility
      change instant so the close button is clickable the moment
      the panel becomes visible. */
   transition:
-    transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
     visibility 0s linear 0s;
 }
 
