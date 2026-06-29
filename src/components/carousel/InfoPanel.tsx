@@ -37,6 +37,10 @@ type Props = {
   imageSrc: string;
   onClose?: () => void;
   showCRButton?: boolean;
+  /** When false the panel slides off-screen and becomes non-interactive
+   *  (it's still in the DOM so the CSS transition can play out). When
+   *  true the panel slides on-screen and accepts pointer events. */
+  isVisible?: boolean;
 };
 
 type RowData = { label: string; value: string | number };
@@ -124,7 +128,7 @@ const Section = ({ title, rows }: { title: string; rows: RowData[] }) => {
   );
 };
 
-export default function InfoPanel({ metadata, imageSrc, onClose, showCRButton = true }: Props) {
+export default function InfoPanel({ metadata, imageSrc, onClose, showCRButton = true, isVisible = false }: Props) {
   const photo = metadata.photography || {};
   const exif = metadata.exif || {};
   
@@ -191,7 +195,11 @@ export default function InfoPanel({ metadata, imageSrc, onClose, showCRButton = 
   ];
 
   return (
-    <div className="carousel-info-panel">
+    <div
+      className={`carousel-info-panel${isVisible ? " is-visible" : ""}`}
+      aria-hidden={!isVisible}
+      inert={isVisible ? undefined : true}
+    >
       {/* Header */}
       <div className="info-panel-header">
         <span className="info-panel-title">Image Info</span>

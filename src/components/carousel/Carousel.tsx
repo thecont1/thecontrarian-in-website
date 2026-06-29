@@ -447,9 +447,23 @@ export default function Carousel({ images }: { images: Image[] }) {
         </button>
       </div>
 
-      {showInfo && metadata && (
+      {metadata && (
         <Suspense fallback={null}>
-          <InfoPanel metadata={metadata} imageSrc={currentImage.src} onClose={onToggleInfo} showCRButton={false} />
+          {/*
+           * Always mounted (when metadata is available) so the CSS
+           * transition can play both directions: hidden →
+           * translateX(100%) + opacity 0, visible → translateX(0)
+           * + opacity 1. Unmounting on close would skip the slide-out
+           * animation entirely; the `is-visible` class toggles
+           * between states and the panel stays in the DOM.
+           */}
+          <InfoPanel
+            metadata={metadata}
+            imageSrc={currentImage.src}
+            onClose={onToggleInfo}
+            showCRButton={false}
+            isVisible={showInfo}
+          />
         </Suspense>
       )}
       {showInfo && !metadata && <div className="debug-no-meta">Loading metadata…</div>}
