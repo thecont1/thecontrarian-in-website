@@ -269,6 +269,15 @@
   margin-bottom: 0;
 }
 
+/* When the device-identity label/value rows AND the exposure chips
+   share the same section (Device Settings), give the chips a
+   little breathing room above so they read as a distinct block —
+   "what was used" → "what was set" — without a second section
+   header. */
+.info-panel-section .info-panel-details + .info-panel-chips {
+  margin-top: 0.6rem;
+}
+
 .info-panel-chip {
   display: inline-flex;
   align-items: center;

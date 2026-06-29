@@ -214,11 +214,51 @@ const buildExposureChips = (photo: any, exif: any): string[] => {
   return chips;
 };
 
+// Merge "Camera" (device identity: make+model, lens) with the
+// Exposure chips into a single "Device Settings" section. The
+// device identity sits at the top of the section so the user sees
+// "what was used" before "what was set"; the chips follow for the
+// capture triangle (focal/aperture/shutter/ISO/etc).
+type DeviceSettingsProps = {
+  identityRows: RowData[];
+  exposureChips: string[];
+};
+const DeviceSettings = ({ identityRows, exposureChips }: DeviceSettingsProps) => {
+  const validIdentity = identityRows.filter(
+    (r) => r.value !== '' && r.value !== undefined && r.value !== null
+  );
+  if (validIdentity.length === 0 && exposureChips.length === 0) return null;
+  return (
+    <div className="info-panel-section">
+      <div className="info-panel-section-title">Device Settings</div>
+      {validIdentity.length > 0 && (
+        <div className="info-panel-details">
+          {validIdentity.map((row, i) => (
+            <div className="info-panel-row" key={i}>
+              <span className="info-panel-label">{row.label}</span>
+              <span className="info-panel-value">{row.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {exposureChips.length > 0 && (
+        <div className="info-panel-chips">
+          {exposureChips.map((chip, i) => (
+            <span className="info-panel-chip" key={i}>{chip}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Render the Exposure section as a row of inline "chips" instead
 // of the standard label/value table. Each chip is a self-contained
 // value (units like "23mm" / "f/3.2" / "ISO 200" are baked in), so
 // the panel can drop the row's label slot and save a row's worth
 // of vertical space (~16-18px per row at the panel's line-height).
+// Replaced by DeviceSettings; kept exported in case other consumers
+// (Lightbox fallback) want a chips-only view.
 type ExposureChipsProps = { chips: string[] };
 const ExposureChips = ({ chips }: ExposureChipsProps) => {
   if (chips.length === 0) return null;
@@ -355,8 +395,7 @@ export default function InfoPanel({ metadata, imageSrc, onClose, showCRButton = 
 
       {/* Sections */}
       <Section title="File" rows={fileRows} />
-      <Section title="Camera" rows={cameraRows} />
-      <ExposureChips chips={exposureChips} />
+      <DeviceSettings identityRows={cameraRows} exposureChips={exposureChips} />
       <Section title="Capture" rows={captureRows} />
       <Section title="Processing" rows={processingRows} />
       <Section title="Credits" rows={creditRows} />
