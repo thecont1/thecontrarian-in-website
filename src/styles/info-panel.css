@@ -6,34 +6,26 @@
 .carousel-info-panel {
   position: fixed;
   top: calc(var(--site-header-height) + 12px);
-  /* Wider, right-anchored panel that extends down to the control bar.
-     A bottom-right notch lets the CR button and < i > nav cluster
-     occupy the blank space while the panel stays behind them. */
-  right: 2rem;
+  /* Right-edge column sized just wide enough for the bottom button
+     cluster (200px content-credentials + 1rem + 200px < i > nav buttons
+     + a comfortable margin). The < i > cluster is positioned by
+     `.carousel-controls` at the same right/bottom offsets as the panel,
+     so it floats visually inside the panel's frosted backdrop. */
+  right: 1rem;
   bottom: var(--controls-bottom);
-  width: 680px;
-  max-width: calc(100vw - 4rem);
+  width: 440px;
+  max-width: calc(100vw - 2rem);
   max-height: calc(100vh - var(--site-header-height) - var(--controls-bottom) - 12px);
   overflow-y: auto;
   overflow-x: hidden;
   transform: none;
-
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% calc(100% - 88px),
-    calc(100% - 448px) calc(100% - 88px),
-    calc(100% - 448px) 100%,
-    0 100%
-  );
 
   background: rgba(12, 12, 14, 0.88);
   backdrop-filter: blur(24px) saturate(1.2);
   -webkit-backdrop-filter: blur(24px) saturate(1.2);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  /* Extra padding keeps the scrollbar/content clear of the notch. */
-  padding: 1.25rem 1.5rem 5.5rem;
+  padding: 1.25rem 1.5rem 1.5rem;
 
   color: #fff;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;

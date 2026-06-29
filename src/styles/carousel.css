@@ -126,6 +126,12 @@
 
   display: flex;
   gap: 1rem;
+  /* Transparent container — the cluster of [content-credentials] < i >
+     buttons is meant to look like it's floating *inside* the info pane
+     (which sits behind the controls with a frosted backdrop). The
+     buttons themselves carry their own backgrounds; the container
+     has none. */
+  background: transparent;
   /* Higher than the InfoPanel (z-index: 10) so the i button remains
      clickable when the panel is open — otherwise the panel covers it
      and the user has no way to close the panel via the toggle button. */
