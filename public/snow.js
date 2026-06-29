@@ -4,7 +4,7 @@ class PixelDust {
       selector: "#snow-canvas",
       toggleSelector: "#toggle-snow",
       maxParticles: 300,
-      maxSize: 6,
+      maxSize: 2,
       maxSpeed: 0.5,
       minSpeed: 0.1,
       shape: "square",
@@ -23,10 +23,12 @@ class PixelDust {
       mobileParticleRatio: 0.15,  // was 0.3
       tabletParticleRatio: 0.225,
       desktopParticleRatio: 0.3,  // was 0.6
-      // Per-viewport max pixel size — desktop pixels ~4x larger
-      mobileMaxSize: 16,
-      tabletMaxSize: 32,
-      desktopMaxSize: 80,
+      // Per-viewport max pixel size — halved twice now (was 16/32/80,
+      // then 8/16/40, now 4/8/20) so pixels stay tasteful rather than
+      // dominating the viewport.
+      mobileMaxSize: 4,
+      tabletMaxSize: 8,
+      desktopMaxSize: 20,
       ...options,
     };
     this.canvas = null;
@@ -589,7 +591,7 @@ class PixelDust {
 // Initialize with working defaults
 const pixelDustInstance = new PixelDust({
   maxParticles: 350,
-  maxSize: 10,
+  maxSize: 3,
   maxSpeed: 0.9,
   minSpeed: 0.1,
   shape:   "square",
