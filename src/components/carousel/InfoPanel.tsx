@@ -48,15 +48,33 @@ type RowData = { label: string; value: string | number };
 // Format date from EXIF format (YYYY:MM:DD HH:MM:SS) to readable format
 const formatDate = (dateStr?: string): string => {
   if (!dateStr) return '';
+  // The hosted C2PA/EXIF API returns two formats depending on the field:
+  //   - `exif.DateTimeOriginal` is in EXIF format "YYYY:MM:DD HH:MM:SS"
+  //   - `photography.date_original` is pre-formatted by the API to
+  //     "Mon DD, YYYY at HH:MM AM/PM" (already human-readable)
+  // The earlier version of this function assumed EXIF format
+  // unconditionally; if it received a string without colons (the
+  // pre-formatted kind), split(':') returned one element and
+  // destructuring gave `year = "Jul 01, 2017 at 11:22 PM",
+  // month = undefined, day = undefined`. parseInt on undefined is
+  // NaN; `new Date(NaN, NaN, NaN).toLocaleDateString()` returns the
+  // literal string "Invalid Date", which is what every image was
+  // showing. Match the Lightbox's logic to handle both formats.
   try {
-    const [datePart, timePart] = dateStr.split(' ');
-    const [year, month, day] = datePart.split(':');
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+    if (/^\d{4}:\d{2}:\d{2}/.test(dateStr)) {
+      const [datePart] = dateStr.split(' ');
+      const [year, month, day] = datePart.split(':');
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      if (Number.isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    }
+    // Pre-formatted by the API: "Oct 08, 2021 at 09:17 PM"
+    const atIndex = dateStr.indexOf(' at ');
+    return atIndex !== -1 ? dateStr.substring(0, atIndex) : dateStr;
   } catch {
     return dateStr;
   }
