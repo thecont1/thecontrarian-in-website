@@ -48,52 +48,70 @@
 }
 
 .carousel-slide {
-  flex: 0 0 auto;
+  /* Each slide is one viewport wide; the carousel-image inside uses
+     `object-fit: cover` to fill 100vh regardless of its native
+     aspect ratio. */
+  flex: 0 0 100vw;
+  width: 100vw;
   height: 100vh;
+  overflow: hidden;
+  position: relative;
 }
 
 .carousel-image {
+  /* Always render at the full viewport height. `object-fit: cover`
+     crops the image on whichever axis is longer (so a landscape photo
+     gets its sides trimmed to fill 100vh, a portrait photo gets its
+     top/bottom trimmed) so the slide is never letterboxed. With
+     `width: 100%` and `height: 100%` the image element fills its
+     slide, and the slide itself is sized to the viewport by the
+     `flex: 0 0 100vw` rule on `.carousel-slide` below. */
+  width: 100%;
   height: 100%;
-  width: auto;
-  max-width: 100vw;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center center;
   display: block;
 }
 
 /* Mobile-specific carousel image optimization */
 @media (max-width: 768px) {
   .carousel-image {
-    width: auto;
+    /* Mirror the desktop rule: full width, full height, cover. */
+    width: 100%;
     height: 100%;
     max-width: none;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
   }
-  
+
   .carousel-slide {
-    width: auto;
+    width: 100vw;
     height: 100vh;
-    overflow: visible;
+    overflow: hidden;
   }
-  
+
   .carousel-track {
     overflow-x: auto;
     overflow-y: hidden;
   }
 }
 
-/* Responsive fitting for desktop */
+/* Responsive fitting for desktop — the base rule already enforces
+   full-viewport coverage; these aspect-ratio blocks are kept for
+   any future per-aspect-ratio tuning but currently inherit. */
 @media (min-width: 769px) and (min-aspect-ratio: 4/3) {
   .carousel-image {
     height: 100%;
-    width: auto;
+    width: 100%;
+    object-fit: cover;
   }
 }
 
 @media (min-width: 769px) and (max-aspect-ratio: 4/3) {
   .carousel-image {
     height: 100%;
-    width: auto;
+    width: 100%;
+    object-fit: cover;
   }
 }
 
@@ -302,10 +320,30 @@ body.controls-visible .carousel-controls {
   font-weight: 700;
   line-height: var(--hero-line-height, 0.9);
   text-align: center;
+  /* `text-wrap: balance` distributes text evenly across lines without
+     breaking words mid-word. `overflow-wrap: normal` (explicit) plus
+     `word-break: normal` (default) and `hyphens: manual` (default) all
+     enforce: words must never break. If a single word is wider than the
+     container, it overflows visibly rather than being cut. */
+  text-wrap: balance;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
 
-  color: rgba(255, 255, 255, 0.95);
+  color: #fff;
   background: rgba(90, 90, 90, 0.3);
-  text-shadow: 0px 2px 2px rgba(0, 0, 0, 1);
+  /* Each letter gets a solid 1.5px black stroke so the text is
+     readable against a white background (e.g. while the first carousel
+     image is still loading) and on top of the frosted-curtain backdrop
+     once the image is in. A subtle dark drop shadow adds depth on
+     darker, more uniform backgrounds. */
+  -webkit-text-stroke: 0.5px #000;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000,
+    0 2px 4px rgba(0, 0, 0, 0.6);
 
   transform: translateY(0);
   transition: transform 0.1s ease-out;
@@ -315,11 +353,10 @@ body.controls-visible .carousel-controls {
   height: 100vh;
   max-height: 100vh;
   box-sizing: border-box;
-  
-  /* Ensure text doesn't overflow */
+
+  /* Ensure text doesn't overflow visually, but allow normal word
+     breaks (never mid-word). */
   overflow: hidden;
-  word-wrap: break-word;
-  hyphens: auto;
 }
 
 /* Mobile-specific hero statement optimizations */

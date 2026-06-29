@@ -29,11 +29,17 @@ const images = await mapWithConcurrency(
 
 <section class="home-hero">
   <h1 class="sr-only">Mahesh Shantaram — Documentary Photographer and Data Scientist</h1>
-  <!-- Fixed carousel layer -->
+
+  <!-- Curtain: rendered FIRST in the DOM so the hero text is the first
+       thing the user reads while the first carousel image streams in.
+       The frosted curtain is position:fixed and the Carousel is
+       position:fixed behind it, so the DOM order here is purely about
+       source-order / accessibility, not visual stacking. -->
+  <HeroStatement />
+
+  <!-- Fixed carousel layer (rendered after the curtain so the curtain
+       paints on top in stacking-order terms if z-index is ever reset). -->
   <div class="hero-fixed">
     <Carousel images={images} client:load />
   </div>
-
-  <!-- Curtain -->
-  <HeroStatement />
 </section>

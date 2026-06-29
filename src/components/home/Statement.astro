@@ -18,11 +18,15 @@ The World of Mahesh Shantaram. Documentary Photographer and Data Scientist for t
       var availableWidth = window.innerWidth - paddingLeft - paddingRight;
       var availableHeight = window.innerHeight - paddingTop - paddingBottom;
 
+      // Measurement div mirrors the real element's wrapping rules
+      // (no mid-word breaks, no auto-hyphens) so the binary search
+      // finds a font size that fits with whole words only.
       var measure = document.createElement('div');
       measure.style.cssText =
-        'position:absolute;visibility:hidden;white-space:pre-wrap;word-wrap:break-word;' +
+        'position:absolute;visibility:hidden;white-space:pre-wrap;' +
+        'overflow-wrap:normal;word-break:normal;hyphens:manual;' +
         'font-family:"DM Sans",sans-serif;font-weight:700;text-align:center;' +
-        'width:' + availableWidth + 'px;line-height:0.92;hyphens:auto;';
+        'width:' + availableWidth + 'px;line-height:0.92';
       measure.textContent = text;
       document.body.appendChild(measure);
 
