@@ -347,7 +347,11 @@ const formattedDate = post.data.lastUpdated?.toLocaleDateString("en-US", {
 
 const metaDescription = post.data.description || AUTHOR.description;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const ogImage = new URL(AUTHOR.image, Astro.site).href;
+// Use GitHub's opengraph image for the corresponding repo so social
+// previews show the repo's name, description, contributor count, etc.
+// (rendered from https://github.com/thecont1/<repo>/settings — these
+// are the social-preview images GitHub itself serves).
+const ogImage = `https://opengraph.githubassets.com/0/${post.data.repoOwner}/${post.data.repoName}`;
 
 const codeJsonLd = {
   "@context": "https://schema.org",
