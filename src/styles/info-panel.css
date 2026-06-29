@@ -17,31 +17,37 @@
      with the viewport right edge; `bottom: 2rem` (= controls-bottom
      − 1rem) keeps it 1rem below the controls' bottom edge.
 
-     The panel anchors its right edge to the same `--controls-right`
-     offset as the controls cluster (right: 1rem), so the cluster
-     sits flush against the panel's right edge. Box-sizing
-     border-box + width 464px gives content area = 464 − 48px
-     padding − 2px border = 414px. The cluster is ~416px wide, so
-     it fills the content area and sits visually centered in the
-     panel: 24px from the panel's left edge, 24px from the panel's
-     right edge (which coincides with the cluster's right edge).
+     Anchors its right edge to the viewport (`right: 0`) so the
+     panel sticks to the viewport right edge. The width is sized
+     so the 416px controls cluster (right-aligned at `right:
+     var(--controls-right) = 1rem` from the viewport) sits
+     horizontally centered inside the panel:
 
-     Panel still extends 1rem past the controls on the bottom
-     (`bottom: var(--controls-bottom) - 1rem`), keeping the
-     original floating-cluster geometry — the panel wraps around
-     the controls at the right (they share right edge) and
-     extends below them (controls float on top of the panel's
-     lower border).
+       panel_left = vp - W
+       cluster_right = vp - 16  (controls-right = 1rem)
+       cluster_left = vp - 16 - 416 = vp - 432
+       For the cluster to be centered (gap_left == gap_right):
+         panel_left - cluster_left = 16
+         (vp - W) - (vp - 432) = 16
+         W = 448
 
-     Box-sizing border-box so the `width` is the full outer size
-     and the padding is internal. The outer 464px is narrower than
-     the previous ~490px render (440px content + 48px padding +
-     2px border), so the panel actually shrinks. */
+     So panel outer width is 448px, content area = 448 - 48px
+     padding - 2px border = 398px (the cluster overflows by 18px
+     and `overflow-x: hidden` clips it; visually the cluster sits
+     flush against the panel's content edges on both sides and
+     reads as centered at the panel's horizontal midline).
+
+     On the bottom, the panel extends 1.5rem past the cluster so
+     the controls have visibly more breathing room than the
+     16px the previous `calc(var(--controls-bottom) - 1rem)`
+     yielded (probe was reporting an effective 6px gap after the
+     bob animation pulled the cluster up; the user wants visible
+     bottom padding, not the 1rem 'tight' geometry). */
 
   box-sizing: border-box;
-  right: var(--controls-right);
-  bottom: calc(var(--controls-bottom) - 1rem);
-  width: 464px;
+  right: 0;
+  bottom: calc(var(--controls-bottom) - 1.5rem);
+  width: 448px;
   max-width: calc(100vw - 2rem);
   max-height: calc(100vh - var(--site-header-height) - var(--controls-bottom) - 12px);
   overflow-y: auto;
