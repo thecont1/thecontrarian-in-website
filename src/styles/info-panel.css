@@ -48,12 +48,16 @@
      to the right when it's removed. `transition-delay` on the
      hidden side keeps the panel interactive for the slide-in
      duration and removes pointer events as soon as the slide-out
-     starts. The 600ms duration is deliberate — quick enough to
-     not block reading the next slide, slow enough to read as
-     motion rather than an instant pop. */
+     starts. The 600ms duration is deliberate — slow enough to
+     read as motion rather than an instant pop. The cubic-bezier
+     `cubic-bezier(0.4, 0, 0.2, 1)` (Material standard) spreads
+     the motion roughly evenly across the duration rather than
+     front-loading the first 30% — at 300ms the panel should be
+     roughly halfway to its destination, so the slide reads as
+     a deliberate movement. */
   transition:
-    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
     visibility 0s linear 0.6s;
 }
 
@@ -68,8 +72,8 @@
      change instant so the close button is clickable the moment
      the panel becomes visible. */
   transition:
-    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
     visibility 0s linear 0s;
 }
 
