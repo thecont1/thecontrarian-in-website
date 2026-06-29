@@ -48,27 +48,30 @@
 }
 
 .carousel-slide {
-  /* Each slide is one viewport wide; the carousel-image inside uses
-     `object-fit: cover` to fill 100vh regardless of its native
-     aspect ratio. */
-  flex: 0 0 100vw;
-  width: 100vw;
+  /* Each slide's width is sized to the carousel image inside it:
+     `flex: 0 0 auto` lets the image define the slide's intrinsic
+     width, so images chain left-aligned with the .carousel-gap
+     zigzag SVG between them and never get stretched or cropped by
+     the slide box. The container height is the full viewport. */
+  flex: 0 0 auto;
   height: 100vh;
-  overflow: hidden;
   position: relative;
 }
 
 .carousel-image {
-  /* Always render at the full viewport height. `object-fit: cover`
-     crops the image on whichever axis is longer (so a landscape photo
-     gets its sides trimmed to fill 100vh, a portrait photo gets its
-     top/bottom trimmed) so the slide is never letterboxed. With
-     `width: 100%` and `height: 100%` the image element fills its
-     slide, and the slide itself is sized to the viewport by the
-     `flex: 0 0 100vw` rule on `.carousel-slide` below. */
-  width: 100%;
+  /* Every image occupies the full viewport height. With
+     `width: auto` the image keeps its native aspect ratio and the
+     slide's width becomes the image's width at 100vh. The
+     `max-width: 100vw` clamp prevents any image from overflowing
+     the viewport on the horizontal axis (e.g. an extreme panorama
+     on a narrow viewport). `object-fit: contain` ensures the full
+     photograph — top to bottom — is visible, never cropped. The
+     .hero-fixed background underneath shows through any side
+     margins left by aspect mismatch. */
   height: 100%;
-  object-fit: cover;
+  width: auto;
+  max-width: 100vw;
+  object-fit: contain;
   object-position: center center;
   display: block;
 }
@@ -76,18 +79,17 @@
 /* Mobile-specific carousel image optimization */
 @media (max-width: 768px) {
   .carousel-image {
-    /* Mirror the desktop rule: full width, full height, cover. */
-    width: 100%;
+    width: auto;
     height: 100%;
     max-width: none;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
   }
 
   .carousel-slide {
-    width: 100vw;
+    width: auto;
     height: 100vh;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .carousel-track {
@@ -96,22 +98,22 @@
   }
 }
 
-/* Responsive fitting for desktop — the base rule already enforces
-   full-viewport coverage; these aspect-ratio blocks are kept for
-   any future per-aspect-ratio tuning but currently inherit. */
+/* Responsive fitting for desktop — the base rule already preserves
+   each image's natural aspect at 100vh (no stretching, no
+   top/bottom crop). The per-aspect-ratio media queries are kept so
+   any future per-aspect tuning has a stable home, but they
+   currently inherit the base behaviour. */
 @media (min-width: 769px) and (min-aspect-ratio: 4/3) {
   .carousel-image {
     height: 100%;
-    width: 100%;
-    object-fit: cover;
+    width: auto;
   }
 }
 
 @media (min-width: 769px) and (max-aspect-ratio: 4/3) {
   .carousel-image {
     height: 100%;
-    width: 100%;
-    object-fit: cover;
+    width: auto;
   }
 }
 
