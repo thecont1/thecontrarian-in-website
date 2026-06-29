@@ -58,7 +58,14 @@ export default function Carousel({ images }: { images: Image[] }) {
   const [index, setIndex] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   const [userTookControl, setUserTookControl] = useState(false);
-  const GREEDY_COUNT = 7;
+  // Only the current slide's image is revealed on initial mount; the
+  // rest show a tiny inline-SVG placeholder sized to the image's
+  // natural dimensions. As the user scrolls (or autoplay advances),
+  // LAZY_CHUNK-sized windows of images are revealed and the browser
+  // starts fetching them. This keeps the homepage's `load` event
+  // from waiting on 7+ ~2MB JPEGs from the CDN, which on a slow
+  // connection made the homepage hang for 30+ seconds.
+  const GREEDY_COUNT = 1;
   const LAZY_CHUNK = 7;
 
   const [revealed, setRevealed] = useState<boolean[]>(() => images.map((_, i) => i < GREEDY_COUNT));
