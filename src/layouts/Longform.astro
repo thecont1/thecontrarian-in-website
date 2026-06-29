@@ -71,7 +71,7 @@ const formattedDate = post.data.date?.toLocaleDateString("en-US", {
       </div>
     )}
 
-    {post.data.showhero !== false && post.data.showhero !== "false" && post.data.heroImage && (
+    {post.data.showhero !== false && post.data.heroImage && (
       <figure class="post-hero">
         <img src={post.data.heroImage} alt={post.data.title} />
       </figure>

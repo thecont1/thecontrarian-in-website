@@ -2,6 +2,8 @@ import { Fragment, Suspense, lazy, useEffect, useRef, useState } from "react";
 import CaptionToggle from "./CaptionToggle";
 import { cfImageUrl } from "../../utils/api";
 import { getImageMetadata } from "../../utils/exif";
+import { CR_LOGO_SVG } from "../icons/cr-logo-svg";
+import { openC2PAOverlay } from "../../utils/c2pa.js";
 const InfoPanel = lazy(() => import("./InfoPanel"));
 
 function placeholderSvg(w: number, h: number): string {
@@ -417,14 +419,27 @@ export default function Carousel({ images }: { images: Image[] }) {
       </div>
 
       <div className="carousel-controls">
+        {showInfo && (
+          <button
+            type="button"
+            className="c2pa-indicator carousel-cr-button"
+            onClick={() => openC2PAOverlay(currentImage.src)}
+            aria-label="View Content Credentials"
+            title="Content Credentials"
+          >
+            <span dangerouslySetInnerHTML={{ __html: CR_LOGO_SVG }} />
+            <span className="c2pa-indicator-label">content credentials</span>
+          </button>
+        )}
+
         <button type="button" aria-label="Previous image" onClick={onPrev}>
           <span className="carousel-glyph" aria-hidden="true">
             &lt;
           </span>
         </button>
-        
+
         <CaptionToggle enabled={showInfo} onToggle={onToggleInfo} />
-        
+
         <button type="button" aria-label="Next image" onClick={onNext}>
           <span className="carousel-glyph" aria-hidden="true">
             &gt;
@@ -434,7 +449,7 @@ export default function Carousel({ images }: { images: Image[] }) {
 
       {showInfo && metadata && (
         <Suspense fallback={null}>
-          <InfoPanel metadata={metadata} imageSrc={currentImage.src} onClose={onToggleInfo} />
+          <InfoPanel metadata={metadata} imageSrc={currentImage.src} onClose={onToggleInfo} showCRButton={false} />
         </Suspense>
       )}
       {showInfo && !metadata && <div className="debug-no-meta">Loading metadata…</div>}

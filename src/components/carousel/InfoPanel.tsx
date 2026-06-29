@@ -36,6 +36,7 @@ type Props = {
   metadata: ImageMetadata;
   imageSrc: string;
   onClose?: () => void;
+  showCRButton?: boolean;
 };
 
 type RowData = { label: string; value: string | number };
@@ -123,7 +124,7 @@ const Section = ({ title, rows }: { title: string; rows: RowData[] }) => {
   );
 };
 
-export default function InfoPanel({ metadata, imageSrc, onClose }: Props) {
+export default function InfoPanel({ metadata, imageSrc, onClose, showCRButton = true }: Props) {
   const photo = metadata.photography || {};
   const exif = metadata.exif || {};
   
@@ -224,14 +225,16 @@ export default function InfoPanel({ metadata, imageSrc, onClose }: Props) {
       <Section title="Credits" rows={creditRows} />
 
       {/* C2PA Content Credentials button */}
-      <button 
-        className="c2pa-indicator info-panel-cr-button"
-        onClick={handleCRClick}
-        aria-label="View Content Credentials"
-      >
-        <span dangerouslySetInnerHTML={{ __html: CR_LOGO_SVG }} />
-        <span className="c2pa-indicator-label">content credentials</span>
-      </button>
+      {showCRButton && (
+        <button
+          className="c2pa-indicator info-panel-cr-button"
+          onClick={handleCRClick}
+          aria-label="View Content Credentials"
+        >
+          <span dangerouslySetInnerHTML={{ __html: CR_LOGO_SVG }} />
+          <span className="c2pa-indicator-label">content credentials</span>
+        </button>
+      )}
     </div>
   );
 }

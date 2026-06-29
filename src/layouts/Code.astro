@@ -184,7 +184,7 @@ async function renderLocalMarkdownFallback(markdownUrl: string): Promise<string 
     const resp = await fetch(markdownUrl, { headers: { Accept: 'text/markdown,text/plain' } });
     if (!resp.ok) return null;
     const markdown = await resp.text();
-    const html = marked.parse(markdown);
+    const html = await marked.parse(markdown);
     return simpleSanitizeHtml(html);
   } catch (err) {
     console.error('[Code.astro] Local markdown fallback failed:', err);
@@ -210,7 +210,7 @@ function sanitizeFlatwriteCss(css: string) {
     .replace(/@charset\b[^;]*;/gi, '')
     .replace(/@namespace\b[^;]*;/gi, '')
     .replace(/@font-face\s*\{[^}]*\}/gi, '')
-    .replace(/url\(\s*(['"]?)(?!data:)([^)\1]+)\1\s*\)/gi, 'url()');
+    .replace(/url\(\s*(?!data:)[^)]*\s*\)/gi, 'url()');
   return cleaned.trim();
 }
 

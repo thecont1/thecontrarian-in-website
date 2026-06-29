@@ -200,11 +200,17 @@
     0 0 48px rgba(208, 75, 54, 0.25);
 }
 
-.carousel-controls button:nth-child(2) {
+.carousel-controls button[aria-label="Previous image"],
+.carousel-controls button[aria-label="Next image"],
+.carousel-controls .caption-toggle {
+  animation-delay: 0ms;
+}
+
+.carousel-controls button[aria-label="Previous image"] {
   animation-delay: 160ms;
 }
 
-.carousel-controls button:nth-child(3) {
+.carousel-controls .caption-toggle {
   animation-delay: 320ms;
 }
 
@@ -220,6 +226,92 @@
   color: var(--controls-glyph);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: transform 160ms ease, opacity 160ms ease;
+}
+
+/* Content Credentials button positioned to the left of the < i > controls */
+.carousel-controls .carousel-cr-button {
+  position: relative;
+  z-index: auto;
+  height: var(--controls-hit);
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+  padding: 0 0.9rem;
+  display: inline-flex;
+  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.8);
+  color: #d04b36;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--controls-shadow);
+  filter: none;
+  animation: carousel-bob 2.6s ease-in-out infinite;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 150ms ease;
+}
+
+.carousel-controls .carousel-cr-button svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.carousel-controls .carousel-cr-button .c2pa-indicator-label {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.carousel-controls .carousel-cr-button:hover,
+.carousel-controls .carousel-cr-button:focus-visible {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(208, 75, 54, 0.4);
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 3px rgba(208, 75, 54, 0.14),
+    0 0 18px rgba(208, 75, 54, 0.45),
+    0 0 48px rgba(208, 75, 54, 0.25),
+    0 4px 12px rgba(208, 75, 54, 0.2);
+}
+
+.carousel-controls .carousel-cr-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .carousel-controls .carousel-cr-button {
+    background: rgba(255, 255, 255, 0.22);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel-controls .carousel-cr-button {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .carousel-controls .carousel-cr-button {
+    width: 48px;
+    min-width: 48px;
+    max-width: 48px;
+    height: 48px;
+    padding: 0;
+  }
+
+  .carousel-controls .carousel-cr-button .c2pa-indicator-label {
+    display: none;
+  }
 }
 
 .carousel-controls button:hover .carousel-glyph,
@@ -332,12 +424,12 @@ body.controls-visible .carousel-controls {
 
   color: #fff;
   background: rgba(90, 90, 90, 0.3);
-  /* Each letter gets a solid 1.5px black stroke so the text is
+  /* Each letter gets a solid 0.2px black stroke so the text is
      readable against a white background (e.g. while the first carousel
      image is still loading) and on top of the frosted-curtain backdrop
      once the image is in. A subtle dark drop shadow adds depth on
      darker, more uniform backgrounds. */
-  -webkit-text-stroke: 0.5px #000;
+  -webkit-text-stroke: 0.2px #000;
   text-shadow:
     -1px -1px 0 #000,
     1px -1px 0 #000,
