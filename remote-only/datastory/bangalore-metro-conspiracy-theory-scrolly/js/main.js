@@ -1,12 +1,36 @@
-/* main.js — Progress bar, TOC nav, init */
+/* main.js — Hero counter, progress bar, TOC nav, init */
 (function() {
-  // ── Progress Bar ──────────────────────────────────────────────────
+  // ── Hero Counter Animation ────────────────────────────────────────
+  function initHeroCounter() {
+    const counter = document.getElementById('hero-counter');
+    if (!counter) return;
+    const target = METRO_DATA.meta.cumulativeRidership;
+    counter.setAttribute('data-target', target);
+    
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      counter.textContent = target.toLocaleString();
+      return;
+    }
+
+    const duration = 2000;
+    const start = performance.now();
+    function tick(now) {
+      const elapsed = now - start;
+      const t = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const value = Math.floor(eased * target);
+      counter.textContent = value.toLocaleString();
+      if (t < 1) requestAnimationFrame(tick);
+      else counter.textContent = target.toLocaleString();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ── Progress Bar (9-segment, handled by scrolly.js) ───────────────
   function updateProgressBar() {
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const scrolled = window.scrollY;
-    const pct = scrollHeight > 0 ? (scrolled / scrollHeight) * 100 : 0;
-    const fill = document.getElementById("progress-fill");
-    if (fill) fill.style.width = pct + "%";
+    // Progress bar segments are now managed by scrolly.js based on active act.
+    // This function is kept for backward compatibility but does nothing.
   }
 
   // ── Contents Sidebar Toggle ───────────────────────────────────────
@@ -95,7 +119,6 @@
   function onScroll() {
     if (!ticking) {
       requestAnimationFrame(() => {
-        updateProgressBar();
         updateActiveTOC();
         ticking = false;
       });
@@ -105,10 +128,10 @@
 
   // ── Init ──────────────────────────────────────────────────────────
   function init() {
+    initHeroCounter();
     initContents();
     initMobileMenu();
     window.addEventListener("scroll", onScroll, { passive: true });
-    updateProgressBar();
 
     // Initialize Scrollama after DOM is ready
     if (typeof Scrolly !== "undefined") {
@@ -126,7 +149,6 @@
       gsap.from(".datastory-header .post-subtitle", { y: 20, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out" });
       gsap.from(".datastory-header .post-author-line", { y: 15, opacity: 0, duration: 0.6, delay: 0.5, ease: "power3.out" });
       gsap.from(".datastory-header .post-date-line", { y: 15, opacity: 0, duration: 0.6, delay: 0.6, ease: "power3.out" });
-      gsap.from(".datastory-header .post-hero", { opacity: 0, duration: 1, delay: 0.4, ease: "power2.out" });
     }
   }
 

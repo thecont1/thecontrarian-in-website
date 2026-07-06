@@ -4,8 +4,11 @@ const Charts = (function() {
   let currentSvg = null;
 
   function clear() {
-    d3.select("#chart-svg-wrapper").selectAll("*").remove();
+    const wrapper = document.getElementById("chart-svg-wrapper");
+    d3.select(wrapper).selectAll("*").remove();
     tooltip.classed("visible", false);
+    wrapper.setAttribute("role", "img");
+    wrapper.setAttribute("aria-label", "Data visualization chart");
   }
 
   function getDims() {
@@ -29,14 +32,17 @@ const Charts = (function() {
   // ── S1: Earliest vs Latest payment breakdown ──────────────────────
   function s1Intro() {
     clear();
-    const {w,h,m} = getDims();
-    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`);
-    svg.append("text").attr("x",w/2).attr("y",h/2).attr("text-anchor","middle")
-       .attr("fill","#666").attr("font-size","14px")
-       .text("Namma Metro publishes daily ridership by payment method");
-    svg.append("text").attr("x",w/2).attr("y",h/2+25).attr("text-anchor","middle")
-       .attr("fill","#5dade2").attr("font-size","12px")
-       .text("Source: english.bmrc.co.in/ridership/");
+    const wrapper = document.getElementById("chart-svg-wrapper");
+    const {w,h} = getDims();
+    const img = document.createElement("img");
+    img.src = "images/nammametro_datapage.png";
+    img.alt = "Screenshot of the BMRCL ridership data page at english.bmrc.co.in/ridership showing daily ridership broken down by payment methods";
+    img.style.width = "100%";
+    img.style.height = "auto";
+    img.style.borderRadius = "8px";
+    img.style.border = "1px solid var(--token-border, #ddd)";
+    img.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
+    wrapper.appendChild(img);
   }
 
   function s1Record(record, label) {
@@ -65,8 +71,79 @@ const Charts = (function() {
         .on("mouseout",hideTip);
   }
 
-  function s1Earliest() { s1Record(METRO_DATA.section1.earliestRecord, "Earliest Record"); }
-  function s1Latest() { s1Record(METRO_DATA.section1.latestRecord, "Latest Record"); }
+  function s1Records() {
+    clear();
+    const {w,h,m} = getDims();
+    const earliest = METRO_DATA.section1.earliestRecord;
+    const latest = METRO_DATA.section1.latestRecord;
+    const keys = ["totalSmartCards","totalNCMC","totalTokens","totalQR","groupTicket","oneDayPass","threeDayPass","fiveDayPass"];
+    const labels = ["Smart Cards","NCMC","Tokens","QR","Group","1-Day","3-Day","5-Day"];
+    const colors = ["#8b2183","#00afff","#ff6600","#ffcb1c","#ff66dd","#33ff33","#9966ff","#ff3333"];
+    const data = keys.map((k,i) => ({
+      label: labels[i],
+      color: colors[i],
+      earliest: earliest[k],
+      latest: latest[k]
+    }));
+    const iw = w-m.l-m.r, ih = h-m.t-m.b;
+    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`);
+    const g = svg.append("g").attr("transform",`translate(${m.l},${m.t})`);
+
+    const x0 = d3.scaleBand().domain(data.map(d=>d.label)).range([0, iw]).padding(0.2);
+    const x1 = d3.scaleBand().domain(["earliest","latest"]).range([0, x0.bandwidth()]).padding(0.15);
+    const maxVal = d3.max(data, d => Math.max(d.earliest, d.latest));
+    const y = d3.scaleLinear().domain([0, maxVal*1.15]).range([ih, 0]);
+
+    g.append("text").attr("x",iw/2).attr("y",-10).attr("text-anchor","middle").attr("class","chart-title-text")
+     .text("Payment Methods: First Day vs Last Day");
+
+    g.append("g").attr("class","axis").call(d3.axisLeft(y).tickFormat(fmtKShort));
+    g.append("g").attr("class","axis").attr("transform",`translate(0,${ih})`).call(d3.axisBottom(x0));
+
+    const groups = g.selectAll(".bar-group").data(data).enter().append("g")
+      .attr("class","bar-group").attr("transform",d=>`translate(${x0(d.label)},0)`);
+
+    const barsE = groups.append("rect")
+      .attr("class","bar bar-earliest")
+      .attr("x", x1("earliest")).attr("width", x1.bandwidth())
+      .attr("y", ih).attr("height", 0)
+      .attr("fill", d => d.color).attr("opacity", 0.5);
+    barsE.transition().duration(600).delay((d,i)=>i*60)
+      .attr("y", d=>y(d.earliest)).attr("height", d=>ih-y(d.earliest));
+
+    const barsL = groups.append("rect")
+      .attr("class","bar bar-latest")
+      .attr("x", x1("latest")).attr("width", x1.bandwidth())
+      .attr("y", ih).attr("height", 0)
+      .attr("fill", d => d.color);
+    barsL.transition().duration(600).delay((d,i)=>i*60+300)
+      .attr("y", d=>y(d.latest)).attr("height", d=>ih-y(d.latest));
+
+    groups.selectAll(".bar-label-e").data(d=>[d]).enter().append("text")
+      .attr("class","bar-label").attr("x", x1("earliest")+x1.bandwidth()/2)
+      .attr("y", d=>y(d.earliest)-4).attr("text-anchor","middle").attr("font-size","9px")
+      .text(d=>fmtKShort(d.earliest)).style("opacity",0)
+      .transition().duration(400).delay((d,i)=>i*60+700).style("opacity",1);
+
+    groups.selectAll(".bar-label-l").data(d=>[d]).enter().append("text")
+      .attr("class","bar-label").attr("x", x1("latest")+x1.bandwidth()/2)
+      .attr("y", d=>y(d.latest)-4).attr("text-anchor","middle").attr("font-size","9px")
+      .text(d=>fmtKShort(d.latest)).style("opacity",0)
+      .transition().duration(400).delay((d,i)=>i*60+900).style("opacity",1);
+
+    const legend = g.append("g").attr("transform",`translate(${iw-180},${-8})`);
+    legend.append("rect").attr("x",0).attr("y",0).attr("width",12).attr("height",12).attr("fill","#666").attr("opacity",0.5);
+    legend.append("text").attr("x",18).attr("y",10).attr("font-size","11px").attr("fill","#333").text("Oct 26, 2024 (First Day)");
+    legend.append("rect").attr("x",0).attr("y",18).attr("width",12).attr("height",12).attr("fill","#666");
+    legend.append("text").attr("x",18).attr("y",28).attr("font-size","11px").attr("fill","#333").text("May 5, 2025 (Last Day)");
+
+    groups.selectAll("rect").on("mouseover",(e,d)=>{
+      const isEarliest = e.target.classList.contains("bar-earliest");
+      const val = isEarliest ? d.earliest : d.latest;
+      const date = isEarliest ? "Oct 26, 2024" : "May 5, 2025";
+      showTip(`<strong>${d.label}</strong> — ${date}<br>${fmtK(val)} riders`, e);
+    }).on("mouseout",hideTip);
+  }
 
   function s1Missing() {
     clear();
@@ -91,7 +168,8 @@ const Charts = (function() {
     const {w,h} = getDims();
     const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`);
     svg.append("text").attr("x",w/2).attr("y",h/2).attr("text-anchor","middle").attr("fill","#666").attr("font-size","14px").text("The Dataset at a Glance");
-    svg.append("text").attr("x",w/2).attr("y",h/2+25).attr("text-anchor","middle").attr("fill","#5dade2").attr("font-size","12px").text("~190 days of ridership data (Oct 2024 – May 2025)");
+    svg.append("text").attr("x",w/2).attr("y",h/2+25).attr("text-anchor","middle").attr("fill","#5dade2").attr("font-size","12px").text(`${METRO_DATA.meta.totalDays} days of ridership data (Oct 2024 – May 2025)`);
+    svg.append("text").attr("x",w/2).attr("y",h/2+50).attr("text-anchor","middle").attr("fill","#5dade2").attr("font-size","12px").text(`${(METRO_DATA.meta.cumulativeRidership/1e6).toFixed(1)}M cumulative riders`);
   }
 
   // ── S2: Top/Bottom 10 bar charts ──────────────────────────────────
@@ -638,27 +716,278 @@ const Charts = (function() {
     });
   }
 
+  // ── S1: Calendar heatmap ──────────────────────────────────────────
+  function s1Calendar(substep) {
+    clear();
+    const {w,h,m} = getDims();
+    const data = METRO_DATA.section1.calendarData;
+    const iw=w-m.l-m.r, ih=h-m.t-m.b;
+    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`);
+    const g = svg.append("g").attr("transform",`translate(${m.l},${m.t})`);
+    g.append("text").attr("x",iw/2).attr("y",-10).attr("text-anchor","middle").attr("class","chart-title-text")
+      .text(substep === 1 ? "Calendar Heatmap — Missing Days Highlighted" : "Calendar Heatmap — Daily Total Ridership");
+
+    // Group by week (columns) and day-of-week (rows)
+    const cellSize = Math.min(iw / 28, ih / 8);
+    const startDate = new Date("2024-10-26");
+    const endDate = new Date("2025-05-05");
+    const days = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const iso = d.toISOString().slice(0, 10);
+      const found = data.find(x => x.date === iso);
+      days.push({ date: iso, total: found ? found.total : null, missing: !found, dow: d.getDay() });
+    }
+
+    // Color scale
+    const maxTotal = d3.max(data, d => d.total) || 900000;
+    const color = d3.scaleSequential(d3.interpolateRgbBasis(["#f5f5f5","#ffcb1c","#ff6600","#ff3333"])).domain([0, maxTotal]);
+
+    // Week labels (months)
+    const monthLabels = {};
+    days.forEach(d => {
+      const dt = new Date(d.date);
+      const monthKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0');
+      if (!monthLabels[monthKey]) monthLabels[monthKey] = { label: dt.toLocaleString('en', {month:'short'}), firstWeek: Math.floor((dt - startDate) / (7 * 86400000)) };
+    });
+
+    // Draw cells
+    days.forEach((d, i) => {
+      const week = Math.floor((new Date(d.date) - startDate) / (7 * 86400000));
+      const dow = d.dow;
+      const cx = week * (cellSize + 1);
+      const cy = dow * (cellSize + 1);
+
+      if (d.missing) {
+        g.append("rect").attr("x",cx).attr("y",cy).attr("width",cellSize).attr("height",cellSize)
+          .attr("class","cal-cell missing").attr("rx",2);
+        if (substep === 1) {
+          g.append("rect").attr("x",cx-1).attr("y",cy-1).attr("width",cellSize+2).attr("height",cellSize+2)
+            .attr("fill","none").attr("stroke","var(--anomaly)").attr("stroke-width",1.5).attr("stroke-dasharray","2,2").attr("rx",3);
+        }
+      } else {
+        g.append("rect").attr("x",cx).attr("y",cy).attr("width",cellSize).attr("height",cellSize)
+          .attr("class","cal-cell").attr("fill",color(d.total)).attr("rx",2)
+          .style("opacity",0).transition().delay(i*3).duration(200).style("opacity",1);
+        g.append("rect").attr("x",cx).attr("y",cy).attr("width",cellSize).attr("height",cellSize)
+          .attr("fill","transparent").attr("data-date",d.date)
+          .on("mouseover",(e)=>showTip(`<strong>${d.date}</strong><br/>Riders: ${fmtK(d.total)}`,e))
+          .on("mouseout",hideTip);
+      }
+    });
+
+    // DOW labels
+    const dowLabels = ['S','M','T','W','T','F','S'];
+    dowLabels.forEach((l, i) => {
+      g.append("text").attr("x",-8).attr("y",i*(cellSize+1)+cellSize/2+3).attr("text-anchor","end")
+        .attr("class","cal-dow-label").text(l);
+    });
+
+    // Month labels
+    Object.entries(monthLabels).forEach(([key, val]) => {
+      g.append("text").attr("x",val.firstWeek*(cellSize+1)).attr("y",-5).attr("class","cal-month-label").text(val.label);
+    });
+
+    // Legend
+    if (substep === 1) {
+      g.append("text").attr("x",iw-100).attr("y",ih-5).attr("class","cal-legend-text")
+        .text("🔴 Missing data");
+    }
+  }
+
+  // ── S2: Milestone line chart ──────────────────────────────────────
+  function s2Milestone(substep) {
+    clear();
+    const {w,h,m} = getDims();
+    const data = METRO_DATA.section2.ridershipTimeline.filter(d=>d.total);
+    const iw=w-m.l-m.r, ih=h-m.t-m.b;
+    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`);
+    const g = svg.append("g").attr("transform",`translate(${m.l},${m.t})`);
+    g.append("text").attr("x",iw/2).attr("y",-10).attr("text-anchor","middle").attr("class","chart-title-text")
+      .text(substep === 0 ? "Daily Ridership — 700K Milestone" : "Daily Ridership — 900K Record!");
+
+    const x = d3.scaleTime().domain(d3.extent(data,d=>new Date(d.date))).range([0,iw]);
+    const y = d3.scaleLinear().domain([400000, 950000]).range([ih,0]);
+    g.append("g").attr("class","axis").attr("transform",`translate(0,${ih})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %d")));
+    g.append("g").attr("class","axis").call(d3.axisLeft(y).tickFormat(d=>(d/1000).toFixed(0)+"K"));
+
+    // 700K threshold line
+    g.append("line").attr("x1",0).attr("x2",iw).attr("y1",y(700000)).attr("y2",y(700000))
+      .attr("stroke","#ff6600").attr("stroke-width",1.5).attr("stroke-dasharray","5,3");
+    g.append("text").attr("x",iw-5).attr("y",y(700000)-5).attr("text-anchor","end").attr("fill","#ff6600").attr("font-size","10px").text("700K threshold");
+
+    // Data line
+    const line = d3.line().x(d=>x(new Date(d.date))).y(d=>y(d.total)).curve(d3.curveMonotoneX);
+    const path = g.append("path").datum(data).attr("fill","none").attr("stroke","#00afff").attr("stroke-width",2).attr("d",line);
+    const len = path.node().getTotalLength();
+    path.attr("stroke-dasharray",len).attr("stroke-dashoffset",len).transition().duration(1500).attr("stroke-dashoffset",0);
+
+    // Points
+    g.selectAll(".point").data(data).enter().append("circle").attr("class","point")
+      .attr("cx",d=>x(new Date(d.date))).attr("cy",d=>y(d.total)).attr("r",2).attr("fill","#00afff").style("opacity",0)
+      .transition().delay(1200).duration(300).style("opacity",0.6);
+    g.selectAll(".point").on("mouseover",(e,d)=>showTip(`<strong>${d.date}</strong> (${d.dayOfWeek})<br/>Riders: ${fmtK(d.total)}`,e)).on("mouseout",hideTip);
+
+    // Substep 1: 900K pulsing dot
+    if (substep >= 1) {
+      const recordDay = data.find(d => d.total > 900000);
+      if (recordDay) {
+        g.append("circle").attr("cx",x(new Date(recordDay.date))).attr("cy",y(recordDay.total))
+          .attr("r",5).attr("fill","#ff3333").attr("stroke","#fff").attr("stroke-width",2).attr("class","anomaly-dot");
+        g.append("text").attr("x",x(new Date(recordDay.date))).attr("y",y(recordDay.total)-15)
+          .attr("text-anchor","middle").attr("fill","#ff3333").attr("font-size","11px").attr("font-weight","bold")
+          .text("900K! " + recordDay.date);
+      }
+    }
+  }
+
+  // ── S4: Band callout cards ────────────────────────────────────────
+  function s4Bands(substep) {
+    clear();
+    const {w,h,m} = getDims();
+    const data = METRO_DATA.section4.crossoverTable;
+    const iw=w-m.l-m.r, ih=h-m.t-m.b;
+    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`);
+    const g = svg.append("g").attr("transform",`translate(${m.l},${m.t})`);
+
+    const bandNames = ['Weekday (Mon–Thu)','Weekend Lite (Fri–Sat)','Weekend (Sun)'];
+    const bandColors = ['var(--band-weekday)','var(--band-weekendlite)','var(--band-weekend)'];
+    const bandIcons = ['💼','🍻','🛌🏼'];
+    const bandDescs = [
+      'Commuter ridership dominates. Smart Cards & NCMC peak.',
+      'Crossover occurs. Casual ridership rises as commuters decline.',
+      'Commuters plummet ~60%. Casual ridership reaches peak levels.'
+    ];
+    const bandStats = [
+      { commute: 453955, casual: 404532 },
+      { commute: 393122, casual: 421667 },
+      { commute: 183740, casual: 454563 }
+    ];
+
+    const title = substep === 0 ? '💼 Weekday — Just Another Manic Monday' :
+                  substep === 1 ? '🍻 Weekend Lite — Should I Stay or Should I Go?' :
+                  '🛌🏼 Weekend — A Day of Rest';
+    g.append("text").attr("x",iw/2).attr("y",-10).attr("text-anchor","middle").attr("class","chart-title-text").text(title);
+
+    // Draw three band summary cards
+    const cardW = iw / 3 - 10;
+    data.forEach((d, i) => {
+      if (i >= 3) return; // Only show Mon, Fri, Sun as band representatives
+      const cx = i * (cardW + 15);
+      const isActive = i === substep;
+      const bandIdx = i;
+
+      // Card background
+      g.append("rect").attr("x",cx).attr("y",0).attr("width",cardW).attr("height",ih)
+        .attr("rx",8).attr("fill", isActive ? bandColors[bandIdx].replace('var(','rgba(').replace(')',',0.08)') : 'rgba(0,0,0,0.02)')
+        .attr("stroke", isActive ? bandColors[bandIdx].replace('var(','').replace(')','') : 'var(--border)')
+        .attr("stroke-width", isActive ? 2 : 1)
+        .style("opacity", isActive ? 1 : 0.4)
+        .transition().duration(400).style("opacity", isActive ? 1 : 0.4);
+
+      // Band name
+      g.append("text").attr("x",cx+cardW/2).attr("y",25).attr("text-anchor","middle")
+        .attr("font-size","14px").attr("font-weight","bold")
+        .attr("fill", isActive ? bandColors[bandIdx].replace('var(','').replace(')','') : 'var(--muted)')
+        .text(bandIcons[bandIdx] + ' ' + bandNames[bandIdx]);
+
+      // Stats
+      const stats = bandStats[bandIdx];
+      g.append("text").attr("x",cx+cardW/2).attr("y",55).attr("text-anchor","middle")
+        .attr("font-size","11px").attr("fill","var(--muted)").text("Commute: " + fmtK(stats.commute));
+      g.append("text").attr("x",cx+cardW/2).attr("y",72).attr("text-anchor","middle")
+        .attr("font-size","11px").attr("fill","var(--muted)").text("Casual: " + fmtK(stats.casual));
+
+      // Mini bar comparison
+      const barH = 80;
+      const barY = 90;
+      const maxVal = Math.max(stats.commute, stats.casual, 500000);
+      const commuteH = (stats.commute / maxVal) * barH;
+      const casualH = (stats.casual / maxVal) * barH;
+
+      g.append("rect").attr("x",cx+cardW/2-25).attr("y",barY+barH-commuteH).attr("width",20).attr("height",commuteH)
+        .attr("fill","var(--c-commute)").attr("rx",3).style("opacity",isActive?1:0.3);
+      g.append("rect").attr("x",cx+cardW/2+5).attr("y",barY+barH-casualH).attr("width",20).attr("height",casualH)
+        .attr("fill","var(--c-casual)").attr("rx",3).style("opacity",isActive?1:0.3);
+
+      g.append("text").attr("x",cx+cardW/2-15).attr("y",barY+barH+15).attr("text-anchor","middle")
+        .attr("font-size","9px").attr("fill","var(--muted)").text("Commute");
+      g.append("text").attr("x",cx+cardW/2+15).attr("y",barY+barH+15).attr("text-anchor","middle")
+        .attr("font-size","9px").attr("fill","var(--muted)").text("Casual");
+
+      // Description
+      if (isActive) {
+        const desc = bandDescs[bandIdx].split('. ');
+        desc.forEach((line, li) => {
+          g.append("text").attr("x",cx+cardW/2).attr("y",barY+barH+35+li*14).attr("text-anchor","middle")
+            .attr("font-size","10px").attr("fill","var(--text)").text(line + (li < desc.length-1 ? '.' : ''));
+        });
+      }
+    });
+  }
+
   // ── Chart registry ────────────────────────────────────────────────
   const registry = {
-    "s1-intro": s1Intro, "s1-earliest": s1Earliest, "s1-latest": s1Latest,
-    "s1-missing": s1Missing, "s1-glance": s1Glance,
-    "s2-intro": s2Intro, "s2-top10": s2Top10, "s2-bottom10": s2Bottom10,
+    "s1-intro": s1Intro, "s1-records": s1Records,
+    "s1-calendar": s1Calendar, "s1-glance": s1Glance,
+    "s2-intro": s2Intro, "s2-milestone": s2Milestone, "s2-top10": s2Top10, "s2-bottom10": s2Bottom10,
     "s3-7days": s3_7days, "s3-dow": s3Dow, "s3-payment": s3Payment,
-    "s4-intro": s4Intro, "s4-crossover": s4Crossover,
+    "s4-intro": s4Intro, "s4-crossover": s4Crossover, "s4-bands": s4Bands,
     "s5-monthly": s5Monthly, "s5-boxplot": s5Boxplot, "s5-ebbflow": s5EbbFlow, "s5-wave": s5Wave,
-    "s6-sankranti": s6Sankranti, "s6-towers": s6Towers,
+    "s6-sankranti": s6Sankranti, "s6-towers": s6Towers, "s6-split": s6Towers,
     "s7-visitor": s7Visitor,
     "s8-intro": s8Intro, "s8-trend": s8Trend, "s8-who": s8Who,
     "s8-ci": ()=>s8CI99(), "s8-heatmap": s8Heatmap,
     "s9-curious": s9Curious, "s9-patterns": s9Patterns, "s9-hypothesis": s9Hypothesis
   };
 
-  function render(chartKey) {
+  // Sub-step aware chart functions (support update without full re-render)
+  const substepCharts = {
+    "s1-calendar": s1Calendar,
+    "s2-milestone": s2Milestone,
+    "s4-bands": s4Bands,
+    "s3-7days": s3_7days,
+    "s3-dow": s3Dow,
+    "s3-payment": s3Payment,
+    "s4-crossover": s4Crossover,
+    "s5-monthly": s5Monthly,
+    "s5-boxplot": s5Boxplot,
+    "s5-wave": s5Wave,
+    "s6-sankranti": s6Sankranti,
+    "s6-towers": s6Towers,
+    "s7-visitor": s7Visitor,
+    "s8-trend": s8Trend,
+    "s8-ci": s8CI99,
+    "s8-heatmap": s8Heatmap,
+    "s9-curious": s9Curious,
+    "s9-hypothesis": s9Hypothesis
+  };
+
+  function render(chartKey, substep) {
     const fn = registry[chartKey];
-    if (fn) fn();
-    else { clear(); const {w,h}=getDims(); d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`)
-      .append("text").attr("x",w/2).attr("y",h/2).attr("text-anchor","middle").attr("fill","#666").text("Chart: "+chartKey); }
+    if (fn) {
+      if (substepCharts[chartKey]) {
+        fn(substep || 0);
+      } else {
+        fn();
+      }
+    } else {
+      clear();
+      const {w,h} = getDims();
+      d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`)
+        .append("text").attr("x",w/2).attr("y",h/2).attr("text-anchor","middle").attr("fill","#666").text("Chart: "+chartKey);
+    }
   }
 
-  return { render, clear };
+  function update(chartKey, substep, direction) {
+    // For sub-step updates, re-render with the new substep value.
+    // This is simpler than mutating existing SVG and works reliably.
+    const fn = substepCharts[chartKey];
+    if (fn) {
+      fn(substep);
+    } else {
+      render(chartKey, substep);
+    }
+  }
+
+  return { render, update, clear };
 })();
