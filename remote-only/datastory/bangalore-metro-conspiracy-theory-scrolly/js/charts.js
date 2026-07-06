@@ -96,8 +96,7 @@ const Charts = (function() {
     const x = d3.scaleLinear().domain([0, maxVal * 1.1]).range([0, iw]);
     const y = d3.scaleBand().domain(data.map(d => d.date)).range([0, ih]).padding(0.35);
 
-    g.append("text").attr("x", iw/2).attr("y", -10).attr("text-anchor", "middle").attr("class", "chart-title-text")
-      .text("Payment Methods: First Day vs Last Day");
+    // Title is shown in the right-column panel, so no SVG title here.
 
     g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`)
       .call(d3.axisBottom(x).tickFormat(fmtKShort));
@@ -131,10 +130,20 @@ const Charts = (function() {
       .style("opacity", 0)
       .transition().duration(400).delay(600).style("opacity", 1);
 
-    const legend = g.append("g").attr("transform", `translate(${iw - 120}, ${-8})`);
+    const legend = g.append("g").attr("class", "legend");
+    const horizontal = iw >= 400;
+    const itemWidth = 80;
+    const itemGap = 14;
+    const itemHeight = 18;
+    const legendWidth = horizontal ? stack.length * itemWidth + (stack.length - 1) * itemGap : itemWidth;
+    const legendX = (iw - legendWidth) / 2;
+    const legendY = ih + 28;
+    legend.attr("transform", `translate(${legendX}, ${legendY})`);
     stack.forEach((s, i) => {
-      legend.append("rect").attr("x", 0).attr("y", i * 18).attr("width", 12).attr("height", 12).attr("fill", s.color);
-      legend.append("text").attr("x", 18).attr("y", i * 18 + 10).attr("font-size", "11px").attr("fill", "#333").text(s.label);
+      const x = horizontal ? i * (itemWidth + itemGap) : 0;
+      const y = horizontal ? 0 : i * itemHeight;
+      legend.append("rect").attr("x", x).attr("y", y).attr("width", 12).attr("height", 12).attr("fill", s.color);
+      legend.append("text").attr("x", x + 16).attr("y", y + 10).attr("font-size", "11px").attr("fill", "#333").text(s.label);
     });
   }
 
@@ -159,61 +168,98 @@ const Charts = (function() {
   function s1Glance(substep) {
     substep = substep || 0;
     clear();
-    const allData = METRO_DATA.section2.ridershipTimeline;
-    const data = allData.map((d, i) => ({ ...d, index: i }));
-    const windowSize = substep === 0 ? 7 : substep === 1 ? 30 : data.length;
-    const activeStart = data.length - windowSize;
-    data.forEach((d, i) => { d.active = i >= activeStart; });
 
     const {w,h,m} = getDims();
     const iw = w - m.l - m.r, ih = h - m.t - m.b;
     const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox", `0 0 ${w} ${h}`);
     const g = svg.append("g").attr("transform", `translate(${m.l},${m.t})`);
 
-    const title = substep === 0 ? "Latest Week" : substep === 1 ? "Last 30 Days" : "All Time";
-    g.append("text").attr("x", iw/2).attr("y", -10).attr("text-anchor", "middle")
-     .attr("class", "chart-title-text").text(title);
+    // Build a full calendar timeline from the first to last recorded date.
+    // Missing days are filled with total=0 so the bar chart shows gaps.
+    const records = METRO_DATA.section2.ridershipTimeline;
+    const firstDate = new Date(records[0].date);
+    const lastDate = new Date(records[records.length - 1].date);
+    const dayMs = 24 * 60 * 60 * 1000;
+    const totalDays = Math.round((lastDate - firstDate) / dayMs) + 1;
+    const recordMap = new Map(records.map(d => [d.date, d]));
+    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const fullData = [];
+    for (let i = 0; i < totalDays; i++) {
+      const dt = new Date(firstDate.getTime() + i * dayMs);
+      const iso = dt.toISOString().split("T")[0];
+      const rec = recordMap.get(iso);
+      fullData.push({
+        date: iso,
+        total: rec ? rec.total : 0,
+        dayOfWeek: rec ? rec.dayOfWeek : weekdays[dt.getDay()],
+        missing: !rec
+      });
+    }
+
+    // Five cards: all time, 30 days, one week, 30 days, all time.
+    const configs = [
+      { size: totalDays, title: "All Time" },
+      { size: 30, title: "Last 30 Days" },
+      { size: 7, title: "Latest Week" },
+      { size: 30, title: "Last 30 Days" },
+      { size: totalDays, title: "All Time" }
+    ];
+    const cfg = configs[substep] || configs[0];
+    const windowSize = cfg.size;
+    const activeStart = fullData.length - windowSize;
+    const data = fullData.slice(activeStart).map((d, i) => ({ ...d, index: i }));
 
     const x = d3.scaleBand().domain(data.map(d => d.date)).range([0, iw]).padding(0.1);
     const maxVal = d3.max(data, d => d.total);
     const y = d3.scaleLinear().domain([0, maxVal * 1.1]).range([ih, 0]);
 
     g.append("g").attr("class", "axis")
-     .call(d3.axisLeft(y).tickFormat(fmtKShort).ticks(6));
+      .call(d3.axisLeft(y).tickFormat(fmtKShort).ticks(6));
 
-    const tickValues = substep === 2
-      ? data.filter(d => new Date(d.date).getDay() === 1).map(d => d.date)
-      : data.filter(d => d.active && (substep === 0 || (d.index - activeStart) % 3 === 0)).map(d => d.date);
+    let tickValues;
+    if (windowSize <= 7) {
+      tickValues = data.map(d => d.date);
+    } else if (windowSize <= 30) {
+      tickValues = data.filter((d, i) => i % 5 === 0 || i === data.length - 1).map(d => d.date);
+    } else {
+      tickValues = data.filter((d, i) => {
+        const dt = new Date(d.date);
+        return dt.getDate() === 1 || i === 0;
+      }).map(d => d.date);
+    }
     const xAxis = g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`)
       .call(d3.axisBottom(x).tickFormat(d => {
         const dt = new Date(d);
         return dt.toLocaleDateString('en', { month: 'short', day: 'numeric' });
       }).tickValues(tickValues));
     xAxis.selectAll("text")
-      .style("font-size", substep === 2 ? "8px" : "10px")
-      .attr("transform", substep === 2 ? "rotate(-45)" : null)
-      .style("text-anchor", substep === 2 ? "end" : "middle");
+      .style("font-size", windowSize > 30 ? "8px" : "10px")
+      .attr("transform", windowSize > 30 ? "rotate(-45)" : null)
+      .style("text-anchor", windowSize > 30 ? "end" : "middle");
 
     const bars = g.selectAll(".glance-bar").data(data).enter().append("rect")
-      .attr("class", "glance-bar")
+      .attr("class", d => "glance-bar" + (d.missing ? " missing" : ""))
       .attr("x", d => x(d.date)).attr("width", x.bandwidth())
       .attr("y", ih).attr("height", 0)
-      .attr("fill", d => d.active ? "var(--accent)" : "rgba(0,0,0,0.06)")
+      .attr("fill", d => d.missing ? "rgba(0,0,0,0.12)" : "var(--accent)")
       .attr("stroke", "none");
 
-    bars.filter(d => !d.active)
-      .attr("y", d => y(d.total))
-      .attr("height", d => Math.max(0, ih - y(d.total)));
+    bars.filter(d => d.missing)
+      .attr("y", ih - 3)
+      .attr("height", 3);
 
-    bars.filter(d => d.active)
+    bars.filter(d => !d.missing)
       .transition().duration(600)
-      .delay((d, i) => (d.index - activeStart) * (substep === 2 ? 3 : 30))
+      .delay((d, i) => i * (windowSize > 30 ? 8 : 30))
       .attr("y", d => y(d.total))
       .attr("height", d => Math.max(0, ih - y(d.total)));
 
     bars.on("mouseover", (e, d) => {
-      if (!d.active) return;
-      showTip(`<strong>${d.date}</strong> (${d.dayOfWeek})<br>${fmtK(d.total)} riders`, e);
+      if (d.missing) {
+        showTip(`<strong>${d.date}</strong> (${d.dayOfWeek})<br>Missing data`, e);
+      } else {
+        showTip(`<strong>${d.date}</strong> (${d.dayOfWeek})<br>${fmtK(d.total)} riders`, e);
+      }
     }).on("mouseout", hideTip);
   }
 

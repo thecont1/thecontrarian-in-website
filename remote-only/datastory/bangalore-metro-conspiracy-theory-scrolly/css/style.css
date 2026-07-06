@@ -482,6 +482,22 @@ code {
   padding: 2rem 2rem 4rem;
   max-width: 650px;
   order: 1;
+  font-weight: 400;
+}
+
+.narrative .step h3,
+.narrative .step h4,
+.narrative .step big,
+.narrative .callout h3,
+.narrative .callout h4,
+.narrative details summary,
+.narrative .data-table th {
+  font-weight: 500;
+}
+
+.narrative strong,
+.narrative b {
+  font-weight: 500;
 }
 
 /* Chart Panel — RIGHT side, sticky */
@@ -495,8 +511,8 @@ code {
   justify-content: center;
   padding: 2rem 1rem;
   background: var(--paper);
-  border-left: 1px solid var(--border);
-  overflow: hidden;
+  border-left: none;
+  overflow: visible;
   order: 2;
 }
 
@@ -532,6 +548,7 @@ code {
   width: 100%;
   min-height: 350px;
   flex: 1;
+  overflow: visible;
 }
 
 #chart-svg-wrapper {
@@ -543,6 +560,7 @@ code {
   width: 100%;
   height: auto;
   display: block;
+  overflow: visible;
 }
 
 #chart-caption {

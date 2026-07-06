@@ -147,51 +147,29 @@
         </details>
       </div>
 
-      <div class="step" data-chart="s1-calendar" data-substep="0">
-        <h3>The Dataset at a Glance</h3>
-        <p>Over <strong>150 days</strong> of collected data (Oct 2024 – May 2025), here's a calendar view of total daily ridership. Each cell represents one day.</p>
-      </div>
-
-      <div class="step" data-chart="s1-calendar" data-substep="1">
-        <h3>Missing Days</h3>
-        <p>Every now and then, NammaMetro fails to report ridership numbers. This usually happens when the individual tasked with manually updating (!!!) the data page goes on leave.</p>
-        <div class="callout callout-warn">
-          <span class="callout-label">⚠️</span>
-          <p>Looks like a mouth with a few broken teeth! What sort of data imputation makes sense here?</p>
-          <p>When the dataset grows large enough over several months, it makes sense to fill unreported dates with an average of similar days, e.g. If a weekday Tuesday was missing, we would take the average of the last 4-6 available weekday Tuesdays.</p>
-        </div>
-        <details open>
-          <summary>📊 Missing Data — Last 10 Dates</summary>
-          <table class="data-table"><thead><tr>
-            <th>Record Date</th><th>Day of Week</th><th>Total Riders</th>
-          </tr></thead><tbody>
-            <tr><td>2025-04-12</td><td>Saturday</td><td>&lt;NA&gt;</td></tr>
-            <tr><td>2025-04-13</td><td>Sunday</td><td>&lt;NA&gt;</td></tr>
-            <tr><td>2025-04-15</td><td>Tuesday</td><td>&lt;NA&gt;</td></tr>
-            <tr><td>2025-04-17</td><td>Thursday</td><td>&lt;NA&gt;</td></tr>
-            <tr><td>2025-04-18</td><td>Friday</td><td>&lt;NA&gt;</td></tr>
-            <tr><td>2025-04-20</td><td>Sunday</td><td>&lt;NA&gt;</td></tr>
-            <tr><td>2025-04-21</td><td>Monday</td><td>&lt;NA&gt;</td></tr>
-            <tr><td>2025-04-24</td><td>Thursday</td><td>&lt;NA&gt;</td></tr>
-            <tr><td>2025-05-01</td><td>Thursday</td><td>&lt;NA&gt;</td></tr>
-            <tr><td>2025-05-03</td><td>Saturday</td><td>&lt;NA&gt;</td></tr>
-          </tbody></table>
-        </details>
-      </div>
-
       <div class="step" data-chart="s1-glance" data-substep="0">
-        <h3>The Dataset at a Glance — 1 Week</h3>
-        <p>Let's start by looking at just the last <strong>7 days</strong> of data. Each bar shows total daily ridership. Can you spot the weekend dips?</p>
+        <h3>The Dataset at a Glance</h3>
+        <p>From <strong>Oct 26, 2024</strong> to <strong>May 5, 2025</strong> the dataset spans 192 days. Each bar is one day; the empty slots are the 42 days when NammaMetro did not report ridership.</p>
       </div>
 
       <div class="step" data-chart="s1-glance" data-substep="1">
-        <h3>Expanding to 30 Days</h3>
-        <p>Now zooming out to the last <strong>30 days</strong>. The plot frame stays exactly the same; we just reveal more bars. Notice the regular sawtooth pattern — that's the commute/casual cycle.</p>
+        <h3>Zooming In: Last 30 Days</h3>
+        <p>Narrowing the view to the last 30 days. The weekday/weekend rhythm is clear, and missing reports still show up as gaps.</p>
       </div>
 
       <div class="step" data-chart="s1-glance" data-substep="2">
-        <h3>The Entire Dataset</h3>
-        <p>Finally, here's the full <strong>150 days</strong> of collected ridership data (Oct 2024 – May 2025). Only Mondays are labelled on the x-axis. The gaps are the missing days we identified earlier.</p>
+        <h3>Latest Week</h3>
+        <p>Just the last 7 days. The weekend dip is now obvious, and any missing day is an empty slot in the row.</p>
+      </div>
+
+      <div class="step" data-chart="s1-glance" data-substep="3">
+        <h3>Pulling Back: Last 30 Days</h3>
+        <p>Stepping back out to the 30-day window shows the regular rise and fall of commuter traffic.</p>
+      </div>
+
+      <div class="step" data-chart="s1-glance" data-substep="4">
+        <h3>Full View Again</h3>
+        <p>Returning to the full 192-day window: 150 reported days and the rest missing.</p>
         <figure class="photo-figure">
           <img src="images/photo_DSF1740.jpg" alt="View from Sri Balagangadharanatha Swamiji Station, Hosahalli - Purple Line" loading="lazy" width="600" height="400">
           <figcaption class="photo-caption">View from <code>Ⓜ️ Sri Balagangadharanatha Swamiji Station, Hosahalli</code> 🟣 Purple Line</figcaption>

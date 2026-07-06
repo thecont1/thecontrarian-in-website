@@ -40,8 +40,8 @@ const Scrolly = (function() {
 
   // Scoreboard focus mapping: which payment methods to highlight per chart key
   const scoreboardFocus = {
-    "s1-earliest":   ["smartCards","ncmc","tokens","qr","groupTicket"],
-    "s1-latest":     ["smartCards","ncmc","tokens","qr","groupTicket"],
+    "s1-earliest":   ["smartCards","ncmc","tokens","qr"],
+    "s1-latest":     ["smartCards","ncmc","tokens","qr"],
     "s3-payment":    ["smartCards","ncmc","tokens","qr"],
     "s4-crossover":  ["smartCards","tokens"],
     "s6-towers":     ["smartCards","ncmc","tokens","qr"],
