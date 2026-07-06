@@ -76,73 +76,66 @@ const Charts = (function() {
     const {w,h,m} = getDims();
     const earliest = METRO_DATA.section1.earliestRecord;
     const latest = METRO_DATA.section1.latestRecord;
-    const keys = ["totalSmartCards","totalNCMC","totalTokens","totalQR","groupTicket","oneDayPass","threeDayPass","fiveDayPass"];
-    const labels = ["Smart Cards","NCMC","Tokens","QR","Group","1-Day","3-Day","5-Day"];
-    const colors = ["#8b2183","#00afff","#ff6600","#ffcb1c","#ff66dd","#33ff33","#9966ff","#ff3333"];
-    const data = keys.map((k,i) => ({
-      label: labels[i],
-      color: colors[i],
-      earliest: earliest[k],
-      latest: latest[k]
-    }));
-    const iw = w-m.l-m.r, ih = h-m.t-m.b;
-    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`);
-    const g = svg.append("g").attr("transform",`translate(${m.l},${m.t})`);
+    const stack = [
+      { key: "smartCards", label: "Smart Cards", color: "#8b2183" },
+      { key: "tokens", label: "Tokens", color: "#ff6600" },
+      { key: "qr", label: "QR", color: "#ffcb1c" },
+      { key: "ncmc", label: "NCMC", color: "#00afff" }
+    ];
+    const smartCards = r => r.storedValueCard + r.oneDayPass + r.threeDayPass + r.fiveDayPass;
+    const data = [
+      { date: "Oct 26, 2024", smartCards: smartCards(earliest), tokens: earliest.totalTokens, qr: earliest.totalQR, ncmc: earliest.totalNCMC },
+      { date: "May 5, 2025", smartCards: smartCards(latest), tokens: latest.totalTokens, qr: latest.totalQR, ncmc: latest.totalNCMC }
+    ];
+    const iw = w - m.l - m.r, ih = h - m.t - m.b;
+    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox", `0 0 ${w} ${h}`);
+    const g = svg.append("g").attr("transform", `translate(${m.l},${m.t})`);
 
-    const x0 = d3.scaleBand().domain(data.map(d=>d.label)).range([0, iw]).padding(0.2);
-    const x1 = d3.scaleBand().domain(["earliest","latest"]).range([0, x0.bandwidth()]).padding(0.15);
-    const maxVal = d3.max(data, d => Math.max(d.earliest, d.latest));
-    const y = d3.scaleLinear().domain([0, maxVal*1.15]).range([ih, 0]);
+    const series = d3.stack().keys(stack.map(d => d.key)).order(d3.stackOrderNone).offset(d3.stackOffsetNone)(data);
+    const maxVal = d3.max(series, s => d3.max(s, d => d[1]));
+    const x = d3.scaleLinear().domain([0, maxVal * 1.1]).range([0, iw]);
+    const y = d3.scaleBand().domain(data.map(d => d.date)).range([0, ih]).padding(0.35);
 
-    g.append("text").attr("x",iw/2).attr("y",-10).attr("text-anchor","middle").attr("class","chart-title-text")
-     .text("Payment Methods: First Day vs Last Day");
+    g.append("text").attr("x", iw/2).attr("y", -10).attr("text-anchor", "middle").attr("class", "chart-title-text")
+      .text("Payment Methods: First Day vs Last Day");
 
-    g.append("g").attr("class","axis").call(d3.axisLeft(y).tickFormat(fmtKShort));
-    g.append("g").attr("class","axis").attr("transform",`translate(0,${ih})`).call(d3.axisBottom(x0));
+    g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`)
+      .call(d3.axisBottom(x).tickFormat(fmtKShort));
+    g.append("g").attr("class", "axis").call(d3.axisLeft(y));
 
-    const groups = g.selectAll(".bar-group").data(data).enter().append("g")
-      .attr("class","bar-group").attr("transform",d=>`translate(${x0(d.label)},0)`);
+    const groups = g.selectAll(".stack-group").data(series).enter().append("g")
+      .attr("class", "stack-group")
+      .attr("fill", d => stack.find(s => s.key === d.key).color);
 
-    const barsE = groups.append("rect")
-      .attr("class","bar bar-earliest")
-      .attr("x", x1("earliest")).attr("width", x1.bandwidth())
-      .attr("y", ih).attr("height", 0)
-      .attr("fill", d => d.color).attr("opacity", 0.5);
-    barsE.transition().duration(600).delay((d,i)=>i*60)
-      .attr("y", d=>y(d.earliest)).attr("height", d=>ih-y(d.earliest));
+    const bars = groups.selectAll("rect").data(d => d).enter().append("rect")
+      .attr("y", d => y(d.data.date))
+      .attr("height", y.bandwidth())
+      .attr("x", 0)
+      .attr("width", 0);
+    bars.transition().duration(800).delay((d, i) => i * 120)
+      .attr("x", d => x(d[0]))
+      .attr("width", d => x(d[1]) - x(d[0]));
 
-    const barsL = groups.append("rect")
-      .attr("class","bar bar-latest")
-      .attr("x", x1("latest")).attr("width", x1.bandwidth())
-      .attr("y", ih).attr("height", 0)
-      .attr("fill", d => d.color);
-    barsL.transition().duration(600).delay((d,i)=>i*60+300)
-      .attr("y", d=>y(d.latest)).attr("height", d=>ih-y(d.latest));
+    bars.on("mouseover", (e, d) => {
+      const key = d3.select(e.target.parentNode).datum().key;
+      const meta = stack.find(s => s.key === key);
+      showTip(`<strong>${meta.label}</strong> — ${d.data.date}<br>${fmtK(d[1] - d[0])} riders`, e);
+    }).on("mouseout", hideTip);
 
-    groups.selectAll(".bar-label-e").data(d=>[d]).enter().append("text")
-      .attr("class","bar-label").attr("x", x1("earliest")+x1.bandwidth()/2)
-      .attr("y", d=>y(d.earliest)-4).attr("text-anchor","middle").attr("font-size","9px")
-      .text(d=>fmtKShort(d.earliest)).style("opacity",0)
-      .transition().duration(400).delay((d,i)=>i*60+700).style("opacity",1);
+    g.selectAll(".bar-total").data(data).enter().append("text")
+      .attr("class", "bar-label")
+      .attr("x", d => x(d.smartCards + d.tokens + d.qr + d.ncmc) + 6)
+      .attr("y", d => y(d.date) + y.bandwidth()/2 + 4)
+      .attr("font-size", "11px").attr("fill", "#333")
+      .text(d => fmtKShort(d.smartCards + d.tokens + d.qr + d.ncmc))
+      .style("opacity", 0)
+      .transition().duration(400).delay(600).style("opacity", 1);
 
-    groups.selectAll(".bar-label-l").data(d=>[d]).enter().append("text")
-      .attr("class","bar-label").attr("x", x1("latest")+x1.bandwidth()/2)
-      .attr("y", d=>y(d.latest)-4).attr("text-anchor","middle").attr("font-size","9px")
-      .text(d=>fmtKShort(d.latest)).style("opacity",0)
-      .transition().duration(400).delay((d,i)=>i*60+900).style("opacity",1);
-
-    const legend = g.append("g").attr("transform",`translate(${iw-180},${-8})`);
-    legend.append("rect").attr("x",0).attr("y",0).attr("width",12).attr("height",12).attr("fill","#666").attr("opacity",0.5);
-    legend.append("text").attr("x",18).attr("y",10).attr("font-size","11px").attr("fill","#333").text("Oct 26, 2024 (First Day)");
-    legend.append("rect").attr("x",0).attr("y",18).attr("width",12).attr("height",12).attr("fill","#666");
-    legend.append("text").attr("x",18).attr("y",28).attr("font-size","11px").attr("fill","#333").text("May 5, 2025 (Last Day)");
-
-    groups.selectAll("rect").on("mouseover",(e,d)=>{
-      const isEarliest = e.target.classList.contains("bar-earliest");
-      const val = isEarliest ? d.earliest : d.latest;
-      const date = isEarliest ? "Oct 26, 2024" : "May 5, 2025";
-      showTip(`<strong>${d.label}</strong> — ${date}<br>${fmtK(val)} riders`, e);
-    }).on("mouseout",hideTip);
+    const legend = g.append("g").attr("transform", `translate(${iw - 120}, ${-8})`);
+    stack.forEach((s, i) => {
+      legend.append("rect").attr("x", 0).attr("y", i * 18).attr("width", 12).attr("height", 12).attr("fill", s.color);
+      legend.append("text").attr("x", 18).attr("y", i * 18 + 10).attr("font-size", "11px").attr("fill", "#333").text(s.label);
+    });
   }
 
   function s1Missing() {
@@ -166,69 +159,62 @@ const Charts = (function() {
   function s1Glance(substep) {
     substep = substep || 0;
     clear();
-    const {w,h,m} = getDims();
     const allData = METRO_DATA.section2.ridershipTimeline;
+    const data = allData.map((d, i) => ({ ...d, index: i }));
+    const windowSize = substep === 0 ? 7 : substep === 1 ? 30 : data.length;
+    const activeStart = data.length - windowSize;
+    data.forEach((d, i) => { d.active = i >= activeStart; });
 
-    let data, title, yMin;
-    if (substep === 0) {
-      data = allData.slice(-7);
-      title = "Last 7 Days (1 Week)";
-      yMin = 0;
-    } else if (substep === 1) {
-      data = allData.slice(-28);
-      title = "Last 28 Days (4 Weeks)";
-      yMin = 450000;
-    } else {
-      data = allData;
-      title = "Entire Dataset (150 Days)";
-      yMin = 0;
-    }
-
+    const {w,h,m} = getDims();
     const iw = w - m.l - m.r, ih = h - m.t - m.b;
     const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox", `0 0 ${w} ${h}`);
     const g = svg.append("g").attr("transform", `translate(${m.l},${m.t})`);
 
-    g.append("text").attr("x", iw / 2).attr("y", -10).attr("text-anchor", "middle")
+    const title = substep === 0 ? "Latest Week" : substep === 1 ? "Last 30 Days" : "All Time";
+    g.append("text").attr("x", iw/2).attr("y", -10).attr("text-anchor", "middle")
      .attr("class", "chart-title-text").text(title);
 
     const x = d3.scaleBand().domain(data.map(d => d.date)).range([0, iw]).padding(0.1);
     const maxVal = d3.max(data, d => d.total);
-    const y = d3.scaleLinear().domain([yMin, maxVal * 1.1]).range([ih, 0]);
-
-    const purples = d3.scaleSequential(d3.interpolatePurples).domain([0, data.length]);
-
-    g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`)
-     .call(d3.axisBottom(x).tickFormat(d => {
-       const dt = new Date(d);
-       return dt.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-     }).tickValues(data.filter((d, i) => {
-       if (substep <= 1) return true;
-       return new Date(d.date).getDay() === 1;
-     }).map(d => d.date)))
-     .selectAll("text").style("font-size", substep === 2 ? "8px" : "10px");
+    const y = d3.scaleLinear().domain([0, maxVal * 1.1]).range([ih, 0]);
 
     g.append("g").attr("class", "axis")
      .call(d3.axisLeft(y).tickFormat(fmtKShort).ticks(6));
+
+    const tickValues = substep === 2
+      ? data.filter(d => new Date(d.date).getDay() === 1).map(d => d.date)
+      : data.filter(d => d.active && (substep === 0 || (d.index - activeStart) % 3 === 0)).map(d => d.date);
+    const xAxis = g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`)
+      .call(d3.axisBottom(x).tickFormat(d => {
+        const dt = new Date(d);
+        return dt.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+      }).tickValues(tickValues));
+    xAxis.selectAll("text")
+      .style("font-size", substep === 2 ? "8px" : "10px")
+      .attr("transform", substep === 2 ? "rotate(-45)" : null)
+      .style("text-anchor", substep === 2 ? "end" : "middle");
 
     const bars = g.selectAll(".glance-bar").data(data).enter().append("rect")
       .attr("class", "glance-bar")
       .attr("x", d => x(d.date)).attr("width", x.bandwidth())
       .attr("y", ih).attr("height", 0)
-      .attr("fill", (d, i) => purples(i))
+      .attr("fill", d => d.active ? "var(--accent)" : "rgba(0,0,0,0.06)")
       .attr("stroke", "none");
 
-    bars.transition().duration(600).delay((d, i) => i * (substep === 2 ? 3 : 30))
-      .attr("y", d => y(d.total)).attr("height", d => Math.max(0, ih - y(d.total)));
+    bars.filter(d => !d.active)
+      .attr("y", d => y(d.total))
+      .attr("height", d => Math.max(0, ih - y(d.total)));
 
-    bars.on("mouseover", (e, d) => showTip(
-      `<strong>${d.date}</strong> (${d.dayOfWeek})<br>${fmtK(d.total)} riders`, e
-    )).on("mouseout", hideTip);
+    bars.filter(d => d.active)
+      .transition().duration(600)
+      .delay((d, i) => (d.index - activeStart) * (substep === 2 ? 3 : 30))
+      .attr("y", d => y(d.total))
+      .attr("height", d => Math.max(0, ih - y(d.total)));
 
-    if (yMin > 0) {
-      g.append("text").attr("x", 4).attr("y", y(yMin) - 4)
-       .attr("font-size", "9px").attr("fill", "var(--text-dim)")
-       .text(`y-axis starts at ${fmtKShort(yMin)} to amplify variation`);
-    }
+    bars.on("mouseover", (e, d) => {
+      if (!d.active) return;
+      showTip(`<strong>${d.date}</strong> (${d.dayOfWeek})<br>${fmtK(d.total)} riders`, e);
+    }).on("mouseout", hideTip);
   }
 
   // ── S2: Top/Bottom 10 bar charts ──────────────────────────────────

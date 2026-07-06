@@ -66,11 +66,12 @@ const Scrolly = (function() {
     
     if (values) {
       const fmt = v => v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
-      document.getElementById('chip-smartCards').textContent = fmt(values.totalSmartCards);
-      document.getElementById('chip-ncmc').textContent = fmt(values.totalNCMC);
-      document.getElementById('chip-tokens').textContent = fmt(values.totalTokens);
-      document.getElementById('chip-qr').textContent = fmt(values.totalQR);
-      document.getElementById('chip-groupTicket').textContent = fmt(values.groupTicket);
+      const setChip = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = fmt(val); };
+      setChip('chip-smartCards', values.totalSmartCards);
+      setChip('chip-ncmc', values.totalNCMC);
+      setChip('chip-tokens', values.totalTokens);
+      setChip('chip-qr', values.totalQR);
+      setChip('chip-groupTicket', values.groupTicket);
       document.getElementById('scoreboard-date').textContent = values.date;
     } else {
       document.getElementById('scoreboard-date').textContent = 'Oct 26, 2024 – May 5, 2025';
@@ -140,11 +141,13 @@ const Scrolly = (function() {
     // Add active class to current step
     element.classList.add("active");
 
-    // GSAP entrance animation
+    // GSAP entrance animation: scroll in from the direction of travel
     if (typeof gsap !== "undefined") {
+      gsap.killTweensOf(element);
+      const fromY = direction === "down" ? 60 : -60;
       gsap.fromTo(element,
-        { opacity: 0.4, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+        { opacity: 0, y: fromY },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", overwrite: true }
       );
     }
 
@@ -166,8 +169,22 @@ const Scrolly = (function() {
   }
 
   function handleStepExit(response) {
-    const { element } = response;
-    element.classList.remove("active");
+    const { element, direction } = response;
+
+    // GSAP exit animation: scroll out and vanish before removing the active state
+    if (typeof gsap !== "undefined") {
+      gsap.killTweensOf(element);
+      const toY = direction === "down" ? -60 : 60;
+      gsap.to(element, {
+        opacity: 0, y: toY, duration: 0.5, ease: "power2.in",
+        onComplete: () => {
+          element.classList.remove("active");
+          gsap.set(element, { y: 0 });
+        }
+      });
+    } else {
+      element.classList.remove("active");
+    }
   }
 
   function init() {
