@@ -126,9 +126,21 @@
     }
   }
 
+  // ── Data Tables: open by default + horizontal scroll ────────────────
+  function initDataTables() {
+    document.querySelectorAll('details').forEach(d => d.setAttribute('open', ''));
+    document.querySelectorAll('table.data-table').forEach(table => {
+      if (table.parentElement.classList.contains('table-wrapper')) return;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-wrapper';
+      table.parentNode.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+    });
+  }
+
   // ── Init ──────────────────────────────────────────────────────────
   function init() {
-    initHeroCounter();
+    initDataTables();
     initContents();
     initMobileMenu();
     window.addEventListener("scroll", onScroll, { passive: true });

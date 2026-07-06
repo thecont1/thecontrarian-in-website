@@ -13,7 +13,7 @@ const Scrolly = (function() {
     "s2-intro":      { title: "NammaMetro Ridership Milestone", section: "Act 2 — Getting Crowded" },
     "s2-milestone":  { title: "Ridership Milestone Timeline", section: "Act 2 — Getting Crowded" },
     "s2-top10":      { title: "Top 10 Busiest Days", section: "Act 2 — Getting Crowded" },
-    "s2-bottom10":   { title: "10 Least Busy Days", section: "Act 2 — Getting Crowded" },
+    "s2-bottom10":   { title: "Top 10 vs 10 Least Busy Days", section: "Act 2 — Getting Crowded" },
     "s3-7days":      { title: "Last 7 Days Ridership", section: "Act 3 — One Week" },
     "s3-dow":        { title: "Ridership by Day of Week", section: "Act 3 — One Week" },
     "s3-payment":    { title: "Payment Method by Day of Week", section: "Act 3 — One Week" },

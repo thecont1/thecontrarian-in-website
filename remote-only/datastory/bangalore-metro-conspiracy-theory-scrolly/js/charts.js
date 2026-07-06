@@ -163,13 +163,72 @@ const Charts = (function() {
     });
   }
 
-  function s1Glance() {
+  function s1Glance(substep) {
+    substep = substep || 0;
     clear();
-    const {w,h} = getDims();
-    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox",`0 0 ${w} ${h}`);
-    svg.append("text").attr("x",w/2).attr("y",h/2).attr("text-anchor","middle").attr("fill","#666").attr("font-size","14px").text("The Dataset at a Glance");
-    svg.append("text").attr("x",w/2).attr("y",h/2+25).attr("text-anchor","middle").attr("fill","#5dade2").attr("font-size","12px").text(`${METRO_DATA.meta.totalDays} days of ridership data (Oct 2024 – May 2025)`);
-    svg.append("text").attr("x",w/2).attr("y",h/2+50).attr("text-anchor","middle").attr("fill","#5dade2").attr("font-size","12px").text(`${(METRO_DATA.meta.cumulativeRidership/1e6).toFixed(1)}M cumulative riders`);
+    const {w,h,m} = getDims();
+    const allData = METRO_DATA.section2.ridershipTimeline;
+
+    let data, title, yMin;
+    if (substep === 0) {
+      data = allData.slice(-7);
+      title = "Last 7 Days (1 Week)";
+      yMin = 0;
+    } else if (substep === 1) {
+      data = allData.slice(-28);
+      title = "Last 28 Days (4 Weeks)";
+      yMin = 450000;
+    } else {
+      data = allData;
+      title = "Entire Dataset (150 Days)";
+      yMin = 0;
+    }
+
+    const iw = w - m.l - m.r, ih = h - m.t - m.b;
+    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox", `0 0 ${w} ${h}`);
+    const g = svg.append("g").attr("transform", `translate(${m.l},${m.t})`);
+
+    g.append("text").attr("x", iw / 2).attr("y", -10).attr("text-anchor", "middle")
+     .attr("class", "chart-title-text").text(title);
+
+    const x = d3.scaleBand().domain(data.map(d => d.date)).range([0, iw]).padding(0.1);
+    const maxVal = d3.max(data, d => d.total);
+    const y = d3.scaleLinear().domain([yMin, maxVal * 1.1]).range([ih, 0]);
+
+    const purples = d3.scaleSequential(d3.interpolatePurples).domain([0, data.length]);
+
+    g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`)
+     .call(d3.axisBottom(x).tickFormat(d => {
+       const dt = new Date(d);
+       return dt.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+     }).tickValues(data.filter((d, i) => {
+       if (substep <= 1) return true;
+       return new Date(d.date).getDay() === 1;
+     }).map(d => d.date)))
+     .selectAll("text").style("font-size", substep === 2 ? "8px" : "10px");
+
+    g.append("g").attr("class", "axis")
+     .call(d3.axisLeft(y).tickFormat(fmtKShort).ticks(6));
+
+    const bars = g.selectAll(".glance-bar").data(data).enter().append("rect")
+      .attr("class", "glance-bar")
+      .attr("x", d => x(d.date)).attr("width", x.bandwidth())
+      .attr("y", ih).attr("height", 0)
+      .attr("fill", (d, i) => purples(i))
+      .attr("stroke", "none");
+
+    bars.transition().duration(600).delay((d, i) => i * (substep === 2 ? 3 : 30))
+      .attr("y", d => y(d.total)).attr("height", d => Math.max(0, ih - y(d.total)));
+
+    bars.on("mouseover", (e, d) => showTip(
+      `<strong>${d.date}</strong> (${d.dayOfWeek})<br>${fmtK(d.total)} riders`, e
+    )).on("mouseout", hideTip);
+
+    if (yMin > 0) {
+      g.append("text").attr("x", 4).attr("y", y(yMin) - 4)
+       .attr("font-size", "9px").attr("fill", "var(--text-dim)")
+       .text(`y-axis starts at ${fmtKShort(yMin)} to amplify variation`);
+    }
   }
 
   // ── S2: Top/Bottom 10 bar charts ──────────────────────────────────
@@ -203,7 +262,52 @@ const Charts = (function() {
     svg.append("text").attr("x",w/2).attr("y",h/2+30).attr("text-anchor","middle").attr("fill","#666").attr("font-size","13px").text("By Dec 2024, it crossed 900,000!");
   }
   function s2Top10() { s2Bars(METRO_DATA.section2.top10Busiest, "Top 10 Busiest Days", "#ffcb1c"); }
-  function s2Bottom10() { s2Bars(METRO_DATA.section2.bottom10LeastBusy, "10 Least Busy Days", "#00afff"); }
+
+  function s2CompareBars() {
+    clear();
+    const topData = METRO_DATA.section2.top10Busiest;
+    const bottomData = METRO_DATA.section2.bottom10LeastBusy;
+    const {w,h,m} = getDims();
+    const iw = w - m.l - m.r, ih = h - m.t - m.b;
+    const svg = d3.select("#chart-svg-wrapper").append("svg").attr("viewBox", `0 0 ${w} ${h}`);
+    const g = svg.append("g").attr("transform", `translate(${m.l},${m.t})`);
+    g.append("text").attr("x", iw/2).attr("y", -10).attr("text-anchor", "middle").attr("class", "chart-title-text").text("Top 10 vs 10 Least Busy Days");
+
+    const maxVal = d3.max([...topData, ...bottomData], d => d.totalRiders);
+    const x = d3.scaleLinear().domain([0, maxVal * 1.05]).range([0, iw]);
+    const y0 = d3.scaleBand().domain(d3.range(1, 11)).range([0, ih]).padding(0.25);
+    const y1 = d3.scaleBand().domain(["top", "bottom"]).range([0, y0.bandwidth()]).padding(0.1);
+
+    const colorMap = { top: "#ffcb1c", bottom: "#00afff" };
+    const labelMap = { top: "Top 10", bottom: "Least 10" };
+    const data = [];
+    for (let i = 1; i <= 10; i++) {
+      data.push({ rank: i, series: "top", value: topData[i-1].totalRiders, date: topData[i-1].date, dayOfWeek: topData[i-1].dayOfWeek });
+      data.push({ rank: i, series: "bottom", value: bottomData[i-1].totalRiders, date: bottomData[i-1].date, dayOfWeek: bottomData[i-1].dayOfWeek });
+    }
+
+    g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(x).tickFormat(d => (d/1000).toFixed(0) + "K"));
+    g.append("g").attr("class", "axis").call(d3.axisLeft(y0).tickFormat(d => "Rank " + d));
+    g.append("text").attr("x", iw/2).attr("y", ih + 40).attr("text-anchor", "middle").attr("class", "axis-label").text("Total Riders");
+
+    const bars = g.selectAll(".bar").data(data).enter().append("rect").attr("class", "bar")
+      .attr("y", d => y0(d.rank) + y1(d.series)).attr("height", y1.bandwidth()).attr("x", 0).attr("width", 0).attr("fill", d => colorMap[d.series]);
+    bars.transition().duration(800).delay((d, i) => i * 40).attr("width", d => x(d.value));
+
+    g.selectAll(".bar-label").data(data).enter().append("text").attr("class", "bar-label")
+      .attr("x", d => x(d.value) + 5).attr("y", d => y0(d.rank) + y1(d.series) + y1.bandwidth()/2 + 4)
+      .text(d => fmtKShort(d.value)).style("opacity", 0)
+      .transition().duration(400).delay((d, i) => i * 40 + 500).style("opacity", 1);
+
+    bars.on("mouseover", (e, d) => showTip(`<strong>${labelMap[d.series]} — Rank ${d.rank}</strong><br>${d.date} (${d.dayOfWeek})<br>${fmtK(d.value)} riders`, e)).on("mouseout", hideTip);
+
+    const lg = g.append("g").attr("class", "legend").attr("transform", `translate(${iw - 110}, 0)`);
+    ["top", "bottom"].forEach((s, i) => {
+      lg.append("rect").attr("x", 0).attr("y", i * 18).attr("width", 12).attr("height", 12).attr("fill", colorMap[s]);
+      lg.append("text").attr("x", 18).attr("y", i * 18 + 10).attr("font-size", "11px").attr("fill", "#333").text(labelMap[s]);
+    });
+  }
+  function s2Bottom10() { s2CompareBars(); }
 
   // ── S3: Weekly patterns ───────────────────────────────────────────
   function s3_7days() {
@@ -943,6 +1047,7 @@ const Charts = (function() {
   // Sub-step aware chart functions (support update without full re-render)
   const substepCharts = {
     "s1-calendar": s1Calendar,
+    "s1-glance": s1Glance,
     "s2-milestone": s2Milestone,
     "s4-bands": s4Bands,
     "s3-7days": s3_7days,

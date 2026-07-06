@@ -70,17 +70,6 @@
   <div class="progress-segment" data-act="9"><span class="progress-segment-tooltip">Act 9 — Conspiracy</span></div>
 </div>
 
-<!-- ═══ Hero Section ═══ -->
-<section class="hero" id="hero">
-  <div class="hero-kicker">Data Story</div>
-  <h1 class="hero-title">NammaMetro: The Conspiracy Theory</h1>
-  <div class="hero-counter" id="hero-counter" data-target="0">0</div>
-  <div class="hero-counter-label">cumulative riders analyzed</div>
-  <p class="hero-subtitle">Did BMRCL stage a payments disruption to nudge users toward smart cards? A data-driven investigation into the February 2025 fare hike.</p>
-  <div class="hero-byline">By Mahesh Shantaram · February 8, 2025</div>
-  <div class="hero-scroll-hint">Scroll to explore</div>
-</section>
-
 <!-- ═══ Datastory Header ═══ -->
 <header class="datastory-header" id="top">
   <div class="post-kicker">
@@ -93,7 +82,7 @@
     <span class="author-name">Mahesh Shantaram</span>
   </div>
   <div class="post-date-line">
-    <time datetime="2025-02-08T00:00:00.000Z">February 8, 2025</time>
+    <time datetime="2025-05-06T00:00:00.000Z">May 6, 2025</time>
   </div>
 </header>
 
@@ -109,11 +98,6 @@
       </div>
       <div class="scoreboard" id="scoreboard">
         <span class="scoreboard-date" id="scoreboard-date">Oct 26, 2024 – May 5, 2025</span>
-        <span class="payment-chip" data-method="smartCards">SC <span class="payment-chip-value" id="chip-smartCards">—</span></span>
-        <span class="payment-chip" data-method="ncmc">NCMC <span class="payment-chip-value" id="chip-ncmc">—</span></span>
-        <span class="payment-chip" data-method="tokens">Tokens <span class="payment-chip-value" id="chip-tokens">—</span></span>
-        <span class="payment-chip" data-method="qr">QR <span class="payment-chip-value" id="chip-qr">—</span></span>
-        <span class="payment-chip" data-method="groupTicket">Group <span class="payment-chip-value" id="chip-groupTicket">—</span></span>
       </div>
       <div id="chart-container">
         <div id="chart-svg-wrapper"></div>
@@ -145,7 +129,7 @@
         <h3>First Day vs Last Day</h3>
         <p>The dataset spans from <strong>October 26, 2024</strong> to <strong>May 5, 2025</strong> — 150 days of collected data. Here's a side-by-side comparison of payment methods on the first and last recorded days.</p>
         <p>Notably, <strong>NCMC usage grew 52%</strong> (7,444 → 11,352) while Smart Cards saw a more modest <strong>18% increase</strong>. Tokens and QR remained relatively stable.</p>
-        <details>
+        <details open>
           <summary>📊 Earliest Record — Oct 26, 2024</summary>
           <table class="data-table"><thead><tr>
             <th>Record Date</th><th>Total Smart Cards</th><th>Stored Value Card</th><th>One Day Pass</th><th>Three Day Pass</th><th>Five Day Pass</th><th>Total Tokens</th><th>Total NCMC</th><th>Group Ticket</th><th>Total QR</th><th>QR NammaMetro</th><th>QR WhatsApp</th><th>QR Paytm</th>
@@ -153,7 +137,7 @@
             <td>26-10-2024</td><td>353,460</td><td>352,496</td><td>853</td><td>43</td><td>68</td><td>241,883</td><td>7,444</td><td>512</td><td>177,279</td><td>49,351</td><td>95,571</td><td>32,357</td>
           </tr></tbody></table>
         </details>
-        <details>
+        <details open>
           <summary>📊 Latest Record — May 5, 2025</summary>
           <table class="data-table"><thead><tr>
             <th>Record Date</th><th>Total Smart Cards</th><th>Stored Value Card</th><th>One Day Pass</th><th>Three Day Pass</th><th>Five Day Pass</th><th>Total Tokens</th><th>Total NCMC</th><th>Group Ticket</th><th>Total QR</th><th>QR NammaMetro</th><th>QR WhatsApp</th><th>QR Paytm</th>
@@ -176,7 +160,7 @@
           <p>Looks like a mouth with a few broken teeth! What sort of data imputation makes sense here?</p>
           <p>When the dataset grows large enough over several months, it makes sense to fill unreported dates with an average of similar days, e.g. If a weekday Tuesday was missing, we would take the average of the last 4-6 available weekday Tuesdays.</p>
         </div>
-        <details>
+        <details open>
           <summary>📊 Missing Data — Last 10 Dates</summary>
           <table class="data-table"><thead><tr>
             <th>Record Date</th><th>Day of Week</th><th>Total Riders</th>
@@ -196,7 +180,18 @@
       </div>
 
       <div class="step" data-chart="s1-glance" data-substep="0">
-        <h3>The Dataset at a Glance</h3>
+        <h3>The Dataset at a Glance — 1 Week</h3>
+        <p>Let's start by looking at just the last <strong>7 days</strong> of data. Each bar shows total daily ridership. Can you spot the weekend dips?</p>
+      </div>
+
+      <div class="step" data-chart="s1-glance" data-substep="1">
+        <h3>Expanding to 1 Month</h3>
+        <p>Now zooming out to the last <strong>28 days (4 weeks)</strong>. The y-axis is truncated to 450K to amplify the weekly rhythm. Notice the regular sawtooth pattern — that's the commute/casual cycle.</p>
+      </div>
+
+      <div class="step" data-chart="s1-glance" data-substep="2">
+        <h3>The Entire Dataset</h3>
+        <p>Finally, here's the full <strong>150 days</strong> of collected ridership data (Oct 2024 – May 2025). Only Mondays are labelled on the x-axis. The gaps are the missing days we identified earlier.</p>
         <figure class="photo-figure">
           <img src="images/photo_DSF1740.jpg" alt="View from Sri Balagangadharanatha Swamiji Station, Hosahalli - Purple Line" loading="lazy" width="600" height="400">
           <figcaption class="photo-caption">View from <code>Ⓜ️ Sri Balagangadharanatha Swamiji Station, Hosahalli</code> 🟣 Purple Line</figcaption>
@@ -231,7 +226,7 @@
 
       <div class="step" data-chart="s2-top10" data-substep="0">
         <h3>Top 10 Busiest Days — The Commuters</h3>
-        <details>
+        <details open>
           <summary>📊 Top 10 Busiest Days</summary>
           <table class="data-table"><thead><tr>
             <th>#</th><th>Record Date</th><th>Day of Week</th><th>Total Riders</th>
@@ -258,7 +253,7 @@
           <figcaption class="photo-caption">Sunday Shoppers on Avenue Road <code>Ⓜ️ Chickpete Metro Station</code> 🟢 Green Line</figcaption>
           <p class="photo-credit">© 2023 Mahesh Shantaram. All Rights Reserved.</p>
         </figure>
-        <details>
+        <details open>
           <summary>📊 10 Least Busy Days</summary>
           <table class="data-table"><thead><tr>
             <th>#</th><th>Record Date</th><th>Day of Week</th><th>Total Riders</th>
@@ -290,7 +285,7 @@
       <div class="step" data-chart="s3-7days" data-substep="0">
         <h3>Total Daily Ridership over the Last 7 days</h3>
         <p>Weekdays (Mon–Thu) show the highest ridership, driven by daily commuters.</p>
-        <details>
+        <details open>
           <summary>📊 Last 7 Days Ridership</summary>
           <table class="data-table"><thead><tr>
             <th>Record Date</th><th>Day of Week</th><th>Total Riders</th>
@@ -327,7 +322,7 @@
           <li><strong>operational planning</strong> — "Are there systematic differences between different days of the week?"</li>
           <li><strong>recovery patterns</strong> — "Are there lasting impacts from major events?"</li>
         </ul>
-        <details>
+        <details open>
           <summary>📊 Day of Week Sample Counts</summary>
           <table class="data-table"><thead><tr><th>Day of Week</th><th>Count</th></tr></thead><tbody>
             <tr><td>Monday</td><td>22</td></tr>
@@ -362,7 +357,7 @@
             <li>Tokens and QR payments, typically used by non-regular metro riders, reach peak usage on Sundays. This suggests weekend and holiday demand is driven by casual users.</li>
           </ul>
         </div>
-        <details>
+        <details open>
           <summary>📊 Ridership by Day of Week and Payment Method (Averaged Nov 9 2024 – Jan 31 2025)</summary>
           <table class="data-table"><thead><tr>
             <th>Day of Week</th><th>Smart Cards</th><th>NCMC</th><th>Tokens</th><th>QR</th><th>Group Ticket</th><th>Total Riders</th>
@@ -428,7 +423,7 @@
           <p><strong>🛌🏼 Weekend – A Day of Rest For Coders (But Not QR Coders)</strong></p>
           <p>The starkest contrast appears on Sundays, where the two rider categories tell very different stories. Commuter numbers plummet to their lowest point while casual ridership reaches peak levels.</p>
         </div>
-        <details>
+        <details open>
           <summary>📊 Commute vs Casual by Traffic Band</summary>
           <table class="data-table"><thead><tr>
             <th>Day of Week</th><th>Traffic Band</th><th>Commute</th><th>Casual</th><th>Total</th>
@@ -477,7 +472,7 @@
       <div class="step" data-chart="s5-monthly" data-substep="0">
         <p>Remember that NammaMetro fails to report ridership numbers on some days, so the monthly ridership totals calculated from the data is going to be only an approximate. However, we can still identify trends and patterns by analysing data movement on a granular level.</p>
         <p>Here are the official monthly ridership stats as reported by BMRCL:</p>
-        <details>
+        <details open>
           <summary>📊 Official Monthly Ridership</summary>
           <table class="data-table"><thead><tr><th>Month</th><th>Ridership</th></tr></thead><tbody>
             <tr><td>2024 July</td><td>23,633,166</td></tr>
@@ -489,7 +484,7 @@
             <tr><td>2025 January</td><td>24,914,736</td></tr>
           </tbody></table>
         </details>
-        <details>
+        <details open>
           <summary>📊 Estimated Monthly Totals (from available data + extrapolation)</summary>
           <table class="data-table"><thead><tr>
             <th>Year-Month</th><th>Monthly Total (millions)</th><th>Daily Average (thousands)</th>
@@ -538,7 +533,7 @@
             <li><strong>When and How:</strong> These two plots taken together tell a more complete story — the area chart shows "when" patterns occur while the boxplot shows "how distributed" the data is within each month.</li>
           </ol>
         </div>
-        <details>
+        <details open>
           <summary>📊 R² Interpretation Scale</summary>
           <table class="data-table"><thead><tr>
             <th>R² Range</th><th>Interpretation</th><th>Use Case</th>
@@ -779,7 +774,7 @@
       <div class="step" data-chart="s8-ci" data-substep="0">
         <h3>How badly did it hurt?</h3>
         <p>To quantify the impact of the fare hike, we conducted statistical hypothesis testing at a 99% confidence level for weekdays and a 95% confidence level for weekends.</p>
-        <details>
+        <details open>
           <summary>📊 99% Confidence Level — Weekday</summary>
           <table class="data-table"><thead><tr>
             <th>Traffic Band</th><th>Metric</th><th>Pre-Event Mean</th><th>Post-Event Mean</th><th>Change %</th><th>CI Range</th><th>Significant?</th>
@@ -792,7 +787,7 @@
             <tr><td>Weekday</td><td>Casual</td><td>389,195</td><td>341,176</td><td>-12.3%</td><td>[-14.0%, -10.7%]</td><td>⬇︎</td></tr>
           </tbody></table>
         </details>
-        <details>
+        <details open>
           <summary>📊 95% Confidence Level — Weekend Lite</summary>
           <table class="data-table"><thead><tr>
             <th>Traffic Band</th><th>Metric</th><th>Pre-Event Mean</th><th>Post-Event Mean</th><th>Change %</th><th>CI Range</th><th>Significant?</th>
@@ -928,7 +923,7 @@
           <tr><td>H₁</td><td>There is a significant difference in the mean transaction volume before and after Jan 14. Any observed difference indicates a systematic shift in commuter behavior.</td></tr>
         </tbody></table>
         <p><strong>Confidence Level:</strong> 99.9% (α = 0.001)</p>
-        <details>
+        <details open>
           <summary>📊 99.9% Confidence Level — Pre/Post Smart Card Surge</summary>
           <table class="data-table"><thead><tr>
             <th>Traffic Band</th><th>Metric</th><th>Pre-Event Mean</th><th>Post-Event Mean</th><th>Change %</th><th>CI Range</th><th>Significant?</th>

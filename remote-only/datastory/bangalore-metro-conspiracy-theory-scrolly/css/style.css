@@ -378,8 +378,13 @@ code {
 /* ── Datastory Header ─────────────────────────────────────────────── */
 .datastory-header {
   background: var(--paper);
-  padding: 7rem 2rem 0;
+  padding: 0 2rem;
   text-align: center;
+  min-height: calc(100vh - var(--site-header-height));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .post-kicker {
@@ -597,21 +602,28 @@ code {
 
 /* ── Steps ────────────────────────────────────────────────────────── */
 .step {
-  margin: 0 auto 3rem;
+  margin: 0 auto;
   padding: 1.5rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  opacity: 0.4;
-  transition: opacity 0.5s ease, border-color 0.5s ease, transform 0.5s ease;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, border-color 0.5s ease, transform 0.5s ease, visibility 0s linear 0.5s;
   transform: translateY(20px);
+  min-height: calc(100vh - var(--site-header-height, 64px) - 2rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .step.active {
   opacity: 1;
+  visibility: visible;
   border-color: var(--accent);
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: opacity 0.5s ease, border-color 0.5s ease, transform 0.5s ease, visibility 0s linear 0s;
 }
 
 .step h3 {
@@ -745,6 +757,16 @@ details[open] summary {
 
 .data-table tbody tr:hover {
   background: rgba(139,33,131,0.05);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0.5rem 0;
+}
+
+.table-wrapper .data-table {
+  min-width: 100%;
 }
 
 /* ── Photos ───────────────────────────────────────────────────────── */
@@ -1346,7 +1368,7 @@ details[open] summary {
   #chart-container { min-height: 300px; }
   #chart-svg-wrapper { min-height: 300px; }
 
-  .step { padding: 1rem; margin-bottom: 2rem; }
+  .step { padding: 1rem; min-height: auto; }
   .datastory-header { padding: 5rem 1rem 0; }
   .post-hero { margin: 0 -1rem; width: calc(100% + 2rem); }
 
@@ -1386,7 +1408,7 @@ details[open] summary {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-  .step { opacity: 1; transform: none; }
+  .step { opacity: 1; transform: none; visibility: visible; }
   .hero-counter, .hero-kicker, .hero-title, .hero-subtitle, .hero-byline { opacity: 1; }
   .anomaly-dot, .crossover-circle { animation: none; }
 }
