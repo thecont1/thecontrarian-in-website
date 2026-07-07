@@ -37,6 +37,11 @@ export interface FeaturedSection {
  * Featured items for "The Projects" section on the homepage.
  * Order matters - items appear in the order listed here.
  */
+export const FEATURED_ITEMS: FeaturedItem[] = [
+  { type: "essay", slug: "fictional"},
+  { type: "datastory", slug: "nammametro", displayTitle: "The NammaMetro Ridership Inspector"},
+];
+
 export const FEATURED_SECTIONS: FeaturedSection[] = [
   {
     title: "Data Science",
