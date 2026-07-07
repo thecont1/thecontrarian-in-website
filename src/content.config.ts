@@ -8,7 +8,8 @@ const geographyEnum = z.enum([
 ]);
 const themeEnum = z.enum([
   "weddings", "travel", "society", "justice", "technology", "motorcycling", "patriarchy", "reporting",
-  "humour", "interview", "lore", "night", "racism", "india", "portraits", "religion", "politics", "nationalism", "history"
+  "humour", "interview", "lore", "night", "racism", "india", "portraits", "religion", "politics", "nationalism", "history",
+  "book", "photobook", "prize"
 ]);
 const containerEnum = z.enum([
   "matrimania", "the-african-portraits", "last-days-of-manmohan", "magazine-work",
@@ -109,7 +110,7 @@ const photogallerySchema = z.object({
   date: z.date().optional(),
   layoutType: z.enum(["tile", "one-up", "carousel"]).default("tile"),
   geography: z.array(geographyEnum).max(3).optional().default([]),
-  theme: z.array(themeEnum).max(6).optional().default([]),
+  theme: z.array(themeEnum).max(7).optional().default([]),
   images: z.array(z.object({
     src: z.string(),
     caption: z.string().optional(),

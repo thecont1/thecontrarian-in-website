@@ -73,6 +73,7 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
     items: [
       { type: "photogallery", slug: "the-african-portraits", label: "Series" },
       { type: "longform", slug: "the-burden-of-being-seen-and-heard", displayTitle: "The _____ Burden of Being Seen and Heard", label: "Long Read"},
+      { type: "photogallery", slug: "the-african-portraits-book", label: "Book" },
     ]
   },
 
