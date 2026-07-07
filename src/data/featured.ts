@@ -37,24 +37,34 @@ export interface FeaturedSection {
  * Featured items for "The Projects" section on the homepage.
  * Order matters - items appear in the order listed here.
  */
-export const FEATURED_ITEMS: FeaturedItem[] = [
-  { type: "essay", slug: "fictional"},
-  { type: "datastory", slug: "nammametro", displayTitle: "The NammaMetro Ridership Inspector"},
-];
-
 export const FEATURED_SECTIONS: FeaturedSection[] = [
   {
-    title: "Photography",
+    title: "Data Science",
     items: [
-      { type: "photogallery", slug: "ayodhya", label: "Album" },
-      { type: "photogallery", slug: "kashmir", label: "Album" },
+      { type: "datastory", slug: "bangalore-metro-conspiracy-theory"},
+      { type: "datastory", slug: "bangalore-metro-phenomena-inspector"},
+      { type: "datastory", slug: "traffic-monitor-lizard"},
+      { type: "datastory", slug: "rolling-relative-route-scoring-system"},
+      { type: "datastory", slug: "aditya-L1-solar-explorer"},
     ]
   },
 
   {
-    title: "A Life Worth Living Twice",
+    title: "Open Source",
+    items: [
+      { type: "code", slug: "flatwrite"},
+      { type: "code", slug: "traffic-oracle"},
+      { type: "code", slug: "india-votes-data"},
+      { type: "code", slug: "c2pa-viewer"},
+      { type: "code", slug: "ngl-storyteller"},
+    ]
+  },
+
+  {
+    title: "Tall Tales",
     items: [
       { type: "essay", slug: "ayodhya", label: "Politics" },
+      { type: "photogallery", slug: "kashmir", label: "Album" },
       { type: "post", slug: "writefathername", label: "Patriarchy" },
     ]
   },
@@ -77,25 +87,4 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
     ]
   },
 
-  {
-    title: "Data Science",
-    items: [
-      { type: "datastory", slug: "bangalore-metro-conspiracy-theory"},
-      { type: "datastory", slug: "bangalore-metro-phenomena-inspector"},
-      { type: "datastory", slug: "traffic-monitor-lizard"},
-      { type: "datastory", slug: "rolling-relative-route-scoring-system"},
-      { type: "datastory", slug: "aditya-L1-solar-explorer"},
-    ]
-  },
-
-  {
-    title: "Open Source",
-    items: [
-      { type: "code", slug: "flatwrite"},
-      { type: "code", slug: "traffic-oracle"},
-      { type: "code", slug: "india-votes-data"},
-      { type: "code", slug: "c2pa-viewer"},
-      { type: "code", slug: "ngl-storyteller"},
-    ]
-  },
 ];

@@ -5,7 +5,7 @@ metaDescription: "A data-driven investigation into Bangalore Metro ridership pat
 author: "Mahesh Shantaram"
 status: published
 date: 2025-02-08
-heroImage: "/library/throwaways/dataset-cover.jpg"
+heroImage: "/library/throwaways/homepage/bangalore-metro-conspiracy-theory.jpg"
 geography: ["bangalore", "india"]
 theme: ["datastory", "public transport", "data analysis", "investigation", "fare hike"]
 notebook:
