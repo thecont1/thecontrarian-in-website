@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NammaMetro: The Conspiracy Theory — A scrollytelling investigation</title>
+    <meta name="description" content="A data-driven investigation into Bangalore Metro ridership patterns, payment methods, and the conspiracy theory behind the February 2025 fare hike. Scrollytelling version." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700;800;900&family=DM+Sans:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="/styles/reset.css" />
+    <link rel="stylesheet" href="/styles/typography.css" />
+    <link rel="stylesheet" href="/styles/scrolly.css" />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <header class="site-header" id="site-header">
+      <div class="site-header-inner">
+        <a href="/" class="site-title">thecontrarian.in</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="/#">Home</a>
+          <a href="/#projects">The Projects</a>
+          <a href="/#about">About Me</a>
+          <a href="/#contact">Contact</a>
+        </nav>
+        <div class="site-actions" aria-hidden="true"></div>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ============================================================
+           DATASTORY HEADER (matches thecontrarian.in's datastory layout)
+           ============================================================ -->
+      <header class="datastory-header">
+        <div class="kicker">
+          <span class="kicker__chip">Data Story</span>
+        </div>
+        <h1 class="title">NammaMetro: The Conspiracy Theory 😈</h1>
+        <p class="subtitle">
+          Did BMRCL stage a payments disruption to nudge users toward smart cards?
+          A 191-day investigation into Bangalore Metro's payment systems, anchored on
+          a two-day anomaly in January 2025 that the data, as it stands, does not refute.
+        </p>
+        <p class="byline"><span class="by">By</span> <span class="author">Mahesh Shantaram</span></p>
+        <p class="date"><time datetime="2025-02-08">February 8, 2025</time></p>
+        <figure class="hero">
+          <img
+            src="/images/photo_MS202303-DerSpiegel0259.jpg"
+            alt="NammaMetro's Prime Minister visit at Whitefield (Kadugodi) Metro Terminus"
+            loading="eager"
+          />
+        </figure>
+      </header>
+
+      <!-- ============================================================
+           CHAPTER 1 — One Day on NammaMetro
+           ============================================================ -->
+      <article class="chapter" data-chapter="1-one-day">
+        <h2 class="chapter__title">1. One Day on NammaMetro</h2>
+        <p class="chapter__lead">Let's take a look at the source of data that informs the analysis to follow.</p>
+        <p>BMRCL publishes a daily breakdown of ridership by payment methods used by passengers entering the system.<sup class="fn-slot" data-fn-id="bmrcl-data"></sup></p>
+        <figure class="datastory-photo datastory-photo--orange">
+          <img src="/images/nammametro_datapage.png" alt="BMRCL Daily Ridership data page" loading="lazy" />
+          <figcaption>View from Sri Balagangadharanatha Swamiji Station, Hosahalli <code>Ⓜ️ Hosahalli</code> 🟣 Purple Line<br /><small><i>© 2023 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
+        </figure>
+        <p>Looks like a mouth with a few broken teeth! Every now and then, NammaMetro fails to report ridership numbers — usually when the individual tasked with manually updating the data page goes on leave.</p>
+        <p class="callout callout--key">This dataset forms the foundation for every analysis that follows.</p>
+        <h3>120 days at a glance</h3>
+        <p>Each cell below is a day in the editorial window (Nov 16 2024 → Apr 14 2025). Rows are days of the week — Monday at the top, Sunday at the bottom. Darker purple = more riders; light cells = days BMRCL didn't publish.</p>
+        <div class="viz" data-viz="calendar-strip"></div>
+        <p class="viz__caption">120 days, laid out as a Mon-to-Sun calendar. Color = total ridership on a Namma Metro purple scale.</p>
+        <h3>A single day, broken down</h3>
+        <p>Below: a representative weekday, with the 7 payment modes stacked by share of the day's total. Smart Cards (the closed-loop channel) still account for the majority of rides — but the QR and NCMC channels are the ones to watch.</p>
+        <div class="viz" data-viz="stacked-bar"></div>
+        <p class="viz__caption">A representative weekday — 7 payment modes stacked by share.</p>
+      </article>
+
+      <!-- ============================================================
+           CHAPTER 2 — "The Metro is Getting Crowded!"
+           ============================================================ -->
+      <article class="chapter" data-chapter="2-crowded">
+        <h2 class="chapter__title">2. "The Metro is Getting Crowded!"</h2>
+        <p class="chapter__lead">In December 2024, NammaMetro's single-day ridership crossed 900,000 for the first time. The ridership hit a record of 700,000 passengers in October 2023. It took just a little over a year to add 200,000 riders/day to the system.<sup class="fn-slot" data-fn-id="namma-metro-record"></sup></p>
+        <p>Sundays, holidays, and major festivals are when people take a break from the metro.</p>
+        <div class="viz" data-viz="top-10-busy"></div>
+        <p class="viz__caption">The 10 busiest weekdays (Mon–Thu) in the editorial window.</p>
+        <div class="viz" data-viz="top-10-quiet"></div>
+        <p class="viz__caption">The 10 least busy days in the editorial window — mostly Sundays and holidays.</p>
+        <figure class="datastory-photo datastory-photo--pink">
+          <img src="/images/photo_MS202303-DerSpiegel1021.jpg" alt="Sunday Shoppers on Avenue Road" loading="lazy" />
+          <figcaption>Sunday Shoppers on Avenue Road <code>Ⓜ️ Chickpete Metro Station</code> 🟢 Green Line<br /><small><i>© 2023 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
+        </figure>
+      </article>
+
+      <!-- ============================================================
+           CHAPTER 3 — One Week on NammaMetro
+           ============================================================ -->
+      <article class="chapter" data-chapter="3-one-week">
+        <h2 class="chapter__title">3. One Week on NammaMetro</h2>
+        <p class="chapter__lead">From late October to early February, the metro carried about 8 lakh riders a day. The rhythm was the rhythm of a working city.</p>
+        <div class="viz" data-viz="last-7-days"></div>
+        <p class="viz__caption">The most recent 7 days in the data.</p>
+        <h3>By day of week</h3>
+        <p>Ridership has a strong weekly cycle. Weekdays look like weekdays; weekends look like weekends. The interesting story is which channels dominate on which days.</p>
+        <div class="viz" data-viz="dow-averages"></div>
+        <p class="callout callout--key">
+          <strong>👆🏼 Surprising find:</strong> Smart Card and NCMC usage peaks during the week; Tokens and QR peaks on weekends.
+        </p>
+        <p>From Monday to Thursday, Smart Card and NCMC usage — typically used by regular metro riders commuting to work — averages ~450,000 and ~12,000 respectively. Tokens and QR payments, typically used by non-regular metro riders, reach peak usage on Sundays. <strong>Weekend and holiday demand is driven by casual users</strong> — road users who switch to public transport on the weekends.</p>
+      </article>
+
+      <!-- ============================================================
+           CHAPTER 4 — Three Traffic Bands, Two Kinds of Patrons
+           ============================================================ -->
+      <article class="chapter" data-chapter="4-traffic-bands">
+        <h2 class="chapter__title">4. Three Traffic Bands, Two Kinds of Patrons, One Metro</h2>
+        <p class="chapter__lead">Ridership starts to dip on Fridays (perhaps due to liberal work-from-office policies in the IT industry or commuters preferring to use their personal vehicles.) For another segment of workers, Saturdays are as much a working day as the rest of the week.</p>
+        <p>On Sundays, Smart Cards+NCMC usage sees a <strong>~60% drop</strong> from average Weekday levels. Tokens+QR <strong>increases by ~15%</strong>. This confirms the presence of two distinct types of users: <strong>Commuters</strong> and <strong>Casual Users</strong>.</p>
+        <div class="viz" data-viz="commute-vs-casual"></div>
+        <p class="callout callout--key">
+          <strong>💡 Three Traffic Bands</strong> — Weekday (Mon–Thu), Weekend Lite (Fri–Sat), Weekend (Sun). The visualisation validates the hypothesis about Bangalore's distinct traffic bands and rider categories.
+        </p>
+        <p class="callout callout--key">
+          <strong>💡 Two Kinds of Patrons</strong> — NammaMetro thus exhibits a dual role: <em>a commuter necessity on weekdays</em>, and <em>a weekend leisure service</em>.
+        </p>
+        <figure class="datastory-photo datastory-photo--cyan">
+          <img src="/images/photo_MS202303-DerSpiegel0360.jpg" alt="Benniganahalli Lake at Tin Factory Junction" loading="lazy" />
+          <figcaption>Benniganahalli Lake at Tin Factory Junction <code>Ⓜ️ Benniganahalli</code> 🟣 Purple Line<br /><small><i>© 2023 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
+        </figure>
+      </article>
+
+      <!-- ============================================================
+           CHAPTER 5 — One Month on NammaMetro
+           ============================================================ -->
+      <article class="chapter" data-chapter="5-one-month">
+        <h2 class="chapter__title">5. One Month on NammaMetro</h2>
+        <p class="chapter__lead">Remember that NammaMetro fails to report ridership numbers on some days, so the monthly ridership totals calculated from the data are only approximate. However, we can still identify trends and patterns by analysing data movement on a granular level.</p>
+        <p>The plot below reveals strong weekly cycles — each weekend dip is followed by a sharp recovery, demonstrating the metro's vital role in weekday commuting. The high variability in aggregate data suggests we should segment our analysis to reveal patterns currently masked by day-to-day fluctuations.</p>
+        <div class="viz" data-viz="monthly-boxplot"></div>
+        <p class="viz__caption">Distribution of daily ridership by month. The box shows the IQR; the line inside is the median; dots are outliers.</p>
+        <p>A striking <strong>inverse relationship</strong> exists between commuter and casual users — reinforcing the dual nature of the metro system. The total ridership line shows how the two segments combine to create a more stable overall pattern despite their individual volatility.</p>
+        <div class="viz" data-viz="commute-casual-wave"></div>
+        <p class="callout callout--note">
+          <strong>📘 Notes</strong> — Data gaps are shown with dashed lines, maintaining data integrity while still allowing for trend analysis. February 2025 has a narrower box than December 2024, suggesting more consistent day-to-day ridership despite lower overall numbers.
+        </p>
+      </article>
+
+      <!-- ============================================================
+           CHAPTER 6 — The Long Weekend and Other Phenomena
+           ============================================================ -->
+      <article class="chapter" data-chapter="6-long-weekend">
+        <h2 class="chapter__title">6. The Long Weekend and Other Phenomena</h2>
+        <p class="chapter__lead">Holidays and cultural events have dramatically different impacts on different user segments. The separate but complementary views of Commute and Casual ridership expose patterns that would be completely hidden in the aggregate data.</p>
+        <figure class="datastory-photo datastory-photo--magenta">
+          <img src="/images/photo_DSF2070.jpg" alt="Sankranti Day at Gandhi Bazaar" loading="lazy" />
+          <figcaption>Sankranti Day at Gandhi Bazaar <code>Ⓜ️ National College</code> 🟢 Green Line<br /><small><i>© 2024 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
+        </figure>
+        <h3>Sankranti and Something Else</h3>
+        <p>Inverse Relationship: The separate ridership trends for Casual and Commute users confirm a pattern we've observed before — when Commuters drop, Casual riders rise. However, there are moments — like Sankranti — when this balance breaks down.</p>
+        <div class="viz" data-viz="sankranti-week"></div>
+        <p class="callout callout--note">
+          <strong>📘 Notes</strong> — The Sankranti week (Jan 14–19, 2025) shows a striking anomaly. On Wednesday Jan 15, the Token system appears to have experienced a sudden drop; on Thursday Jan 16, the QR (NammaMetro) channel collapses while Smart Card surges correspondingly. We'll return to this in Chapter 9.
+        </p>
+      </article>
+
+      <!-- ============================================================
+           CHAPTER 7 — Metro Enables the Visitor Economy
+           ============================================================ -->
+      <article class="chapter" data-chapter="7-visitor-economy">
+        <h2 class="chapter__title">7. Metro Enables the Visitor Economy</h2>
+        <p class="chapter__lead">Bangalore is a rising destination for major sporting and entertainment events, and the city's public and private infrastructure is constantly being upgraded to support these industries.</p>
+        <p>On Jan 25, Karnataka played (and won!) against Punjab in the Ranji Trophy at Bangalore's (metro-accessible) Chinnaswamy Stadium. A couple of weeks later, Ed Sheeran enthralled audiences at the (metro-accessible) NICE Grounds. The spike in 1/3/5 day passes suggests that the city welcomed a wave of visitors who relied on the metro to get around.</p>
+        <figure class="datastory-photo datastory-photo--red">
+          <img src="/images/photo_MS202303-DerSpiegel1047.jpg" alt="Fans queue up outside Chinnaswamy Stadium" loading="lazy" />
+          <figcaption>Fans queue up outside Chinnaswamy Stadium before the start of an IPL match <code>Ⓜ️ Cubbon Park</code> 🟣 Purple Line<br /><small><i>© 2023 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
+        </figure>
+        <div class="viz" data-viz="event-ridership"></div>
+        <p class="callout callout--note">
+          <strong>📘 Notes</strong> — Vertical bands mark event days. Primary events (red) include the Ed Sheeran concert, Aero India, and the Ranji Trophy match. Dashed grey bands are secondary events.
+        </p>
+      </article>
+
+      <!-- ============================================================
+           CHAPTER 8 — Fare Hike of February 2025
+           ============================================================ -->
+      <article class="chapter" data-chapter="8-fare-hike">
+        <h2 class="chapter__title">8. Fare Hike of February 2025 — Impact Analysis</h2>
+        <p class="chapter__lead">Following recommendations of a fare fixation committee, BMRCL revised its fares for the first time since 2017. The new fares took effect on <strong>February 9, 2025</strong>.<sup class="fn-slot" data-fn-id="the-hindu-fare-hike"></sup></p>
+        <p>The decision proved to be hugely unpopular with regular metro users, rudely surprising many commuters at the turnstiles on Monday morning, as well as public transportation activists.<sup class="fn-slot" data-fn-id="indian-express-4pct"></sup></p>
+        <figure class="datastory-photo datastory-photo--amber">
+          <img src="/images/photo_MS202303-DerSpiegel0259.jpg" alt="The public gather to catch a glimpse of the Prime Minister" loading="lazy" />
+          <figcaption>The public gather to catch a glimpse of the Prime Minister who was in the city to inaugurate the under-construction Whitefield segment of the Purple Line and the National Common Mobility Card (NCMC). <code>Ⓜ️ Whitefield (Kadugodi) Metro Terminus</code> 🟣 Purple Line<br /><small><i>© 2023 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
+        </figure>
+
+        <h3>Did it hurt?</h3>
+        <p>To assess the immediate impact of the fare hike, we analyzed ridership trends over a six-week window — three weeks before and after the fare revision on February 9, 2025.</p>
+        <div class="viz" data-viz="fare-hike-line"></div>
+        <p class="callout callout--key">
+          <strong>✅ Ridership decline is evident.</strong> The trendline suggests a sustained drop rather than a random fluctuation. <strong>📉 Sharp immediate fall.</strong> In the week following the fare hike, ridership plunged significantly, suggesting a strong commuter response to the price change.
+        </p>
+
+        <h3>Who did it hurt?</h3>
+        <p>The drop in weekday ridership was primarily driven by <strong>daily commuters</strong> who reduced their Metro usage more significantly than casual riders. Casual ridership showed some resilience, likely due to weekend trips and one-off events. Smart Card users remain the majority, but the decline in token-based payments suggests infrequent riders reduced trips.</p>
+        <p>A drop in QR and NCMC-based transactions indicates a potential pullback from occasional users. (The NCMC disruption in March 2025 is a separate incident, documented in news reports.<sup class="fn-slot" data-fn-id="times-now-ncmc"></sup>)</p>
+        <div class="viz" data-viz="payment-mix-shift"></div>
+
+        <h3>How badly did it hurt?</h3>
+        <p>To quantify the impact, we conducted statistical hypothesis testing at a 99% confidence level for weekdays and a 95% confidence level for weekends.</p>
+        <div class="viz" data-viz="ci-bars"></div>
+        <p class="callout callout--key">
+          <strong>🛜 NCMC Growth Amid Decline</strong> — NCMC usage surged +39.4% (CI: +33.0% to +45.7%) across both Weekday and Weekend Lite bands while all other payment methods declined. <strong>🚇 Smart Card Decline Severe</strong> — Despite the 5-10% discount benefit, Smart Card use dropped by 9.4% (CI: -12.2% to -6.6%).<sup class="fn-slot" data-fn-id="bangalore-mirror-glitch"></sup>
+        </p>
+
+        <figure class="datastory-photo datastory-photo--orange">
+          <img src="/images/MS202303-DerSpiegel0135.jpg" alt="Sunset at KR Pura junction" loading="lazy" />
+          <figcaption>Sunset at KR Pura junction. <code>Ⓜ️ Krishnarajapura Metro Station</code> 🟣 Purple Line<br /><small><i>© 2023 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
+        </figure>
+      </article>
+
+      <!-- ============================================================
+           CHAPTER 9 — The Conspiracy Theory 😈
+           ============================================================ -->
+      <article class="chapter" data-chapter="9-conspiracy">
+        <h2 class="chapter__title">9. The Conspiracy Theory 😈</h2>
+        <p class="chapter__lead">So far we've established the system, the patterns, the post-fare-hike impact. Now we ask the harder question: was the shift toward Smart Cards the inevitable result of the hike, or was there a quieter nudge already underway?</p>
+
+        <h3>The Curious Case of Jan 15–16</h3>
+        <p>Let's start with what is plainly visible in the data.</p>
+        <ol>
+          <li>In any normal week, Smart Cards, QR, and Token payments average 450K, 190K, and 200K respectively.</li>
+          <li>On <strong>Wednesday, January 15</strong>, when people were getting back to work after an extended Sankranti holiday, something <strong>disrupted the Token system</strong>, causing a sharp drop to just 84K transactions — less than half the usual.</li>
+          <li>The very next day, <strong>Thursday January 16</strong>, the <strong>QR payment system collapsed</strong> to 12K — accompanied by an <strong>astronomical surge in Smart Cards</strong> to 631K.</li>
+        </ol>
+        <div class="viz" data-viz="jan-15-16-case"></div>
+        <p class="callout callout--key">
+          <strong>👆🏼 Jan 15</strong>: Notice the sudden <strong>drop in Tokens</strong> and sharp <strong>rise in Smart Cards</strong>.<br />
+          <strong>👇🏼 Jan 16</strong>: A <strong>collapse in QR payments</strong> is accompanied by an <strong>astronomical surge in Smart Cards</strong>.
+        </p>
+
+        <h3>Payment Disruptions: Examining the Patterns</h3>
+        <p>Before drawing conclusions, let's lay out the key observations and assumptions.</p>
+        <ol>
+          <li><strong>Highly Unusual Sequence of Events</strong> — A breakdown in the Token system on January 15, immediately followed by a QR payment failure on January 16, is an unusual sequence. Both disruptions resolved fully and immediately after just one day, which is not typical of independent technical failures, where we'd expect staggered recovery times. <span class="highlight">The likelihood of two unrelated failures occurring on consecutive days is low.</span></li>
+          <li><strong>Migration, not Abandonment</strong> — Smart Card usage didn't drop during this period; it surged. This suggests that riders migrated <em>from</em> Token and QR <em>to</em> Smart Card, rather than abandoning the metro entirely.</li>
+        </ol>
+        <div class="viz" data-viz="pre-vs-post-bars"></div>
+
+        <h3>Putting the Hypothesis to the Test</h3>
+        <p>To confirm whether these changes were natural variations or an engineered shift, we put our hypothesis to a statistically rigorous test.</p>
+        <div class="viz" data-viz="hypothesis-ci-bars"></div>
+        <p class="callout callout--key">
+          <strong>Key Findings</strong>
+          <ul>
+            <li>Token usage dropped sharply (-10.7%, CI: -13.2% to -8.2%) exactly when Smart Cards surged (+9.7%, CI: +5.3% to +14.1%).</li>
+            <li>This isn't just a random fluctuation — it indicates a <strong>systematic shift in commuter behavior</strong>.</li>
+            <li>Interestingly, QR payments show a significant uptick (+15.1%) only during Weekend Lite periods, while NCMC transactions saw strong growth across the board.</li>
+          </ul>
+        </p>
+        <p class="callout callout--key">
+          <strong>🤔 The Unanswered Questions</strong>
+          <ul>
+            <li>Was this a <strong>deliberate nudge</strong> to increase Smart Card adoption in the lead-up to a fare hike?</li>
+            <li>Or was it a series of unrelated technical failures that happened to align in a way that benefited Smart Cards?</li>
+            <li>The data shows the <em>what</em>. It does not, on its own, show the <em>why</em>.</li>
+          </ul>
+        </p>
+        <figure class="datastory-photo datastory-photo--blue">
+          <img src="/images/photo_TheWork09b-obv.jpg" alt="NammaMetro is an immovable property of citizens in an ever-changing Bangalore landscape" loading="lazy" />
+          <figcaption>NammaMetro is an immovable property of the citizens in an ever-changing Bangalore landscape.<br /><small><i>© 2021 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
+        </figure>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-socials">
+          <a href="https://x.com/thecontrarian" target="_blank" rel="noopener" aria-label="X (Twitter)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href="https://www.linkedin.com/in/mahesh-shantaram" target="_blank" rel="noopener" aria-label="LinkedIn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          </a>
+          <a href="https://wa.me/919980129770" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          </a>
+          <a href="https://www.instagram.com/thesquarerootofindia/" target="_blank" rel="noopener" aria-label="WhatsApp" aria-label="Instagram">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069ZM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0Zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324ZM12 16a4 4 0 110-8 4 4 0 010 8Zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881Z"/></svg>
+          </a>
+          <a href="https://github.com/thecont1" target="_blank" rel="noopener" aria-label="GitHub">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+          </a>
+        </div>
+        <p>© <span id="copyright-year"></span> Mahesh Shantaram. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
