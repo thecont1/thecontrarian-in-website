@@ -8,9 +8,9 @@ date: 2025-04-05
 heroImage: "/library/throwaways/bengaluru-metro-bridge.jpg"
 geography: ["bangalore", "india"]
 theme: ["datastory", "public transport", "data analysis"]
-notebook:
-  engine: "jupyter"
-  entry: "https://github.com/thecont1/namma-metro-ridership-tracker/blob/main/ridership_4analysis.ipynb"
-  excludeCodeCells: true
+format: notebook
+engine: "jupyter"
+entry: "https://github.com/thecont1/namma-metro-ridership-tracker/blob/main/ridership_4analysis.ipynb"
+excludeCodeCells: true
 toc: true
 ---

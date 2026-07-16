@@ -4,8 +4,9 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
+    "predev": "node scripts/build_scrolly.mjs",
     "enrich": "node scripts/enrich-code.mjs",
-    "prebuild": "node scripts/enrich-code.mjs",
+    "prebuild": "node scripts/enrich-code.mjs && node scripts/build_scrolly.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
@@ -15,6 +16,7 @@
     "extract:exif": "python scripts/build_exif.py",
     "r2:upload": "bash scripts/upload_to_r2.sh",
     "render:notebooks": "python scripts/render_notebook.py",
+    "build:scrolly": "node scripts/build_scrolly.mjs",
     "test": "echo 'No tests configured'"
   },
   "dependencies": {

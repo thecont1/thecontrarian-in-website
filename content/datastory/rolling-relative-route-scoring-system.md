@@ -8,8 +8,8 @@ heroImage: ""
 geography: ["india"]
 theme: ["traffic", "statistics", "scoring"]
 toc: true
-notebook:
-  engine: jupyter
-  entry: "https://github.com/thecont1/traffic-monitor-lizard/blob/main/traffic_analysis_examples.ipynb"
-  excludeCodeCells: false
+format: notebook
+engine: jupyter
+entry: "https://github.com/thecont1/traffic-monitor-lizard/blob/main/traffic_analysis_examples.ipynb"
+excludeCodeCells: false
 ---

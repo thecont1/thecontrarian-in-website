@@ -8,9 +8,8 @@ date: 2025-02-08
 heroImage: "/library/throwaways/dataset-cover.jpg"
 geography: ["bangalore", "india"]
 theme: ["datastory", "public transport", "data analysis", "investigation", "fare hike"]
-notebook:
-  engine: "jupyter"
-  entry: "https://github.com/thecont1/namma-metro-ridership-tracker/blob/main/ridership_3analysis.ipynb"
-  excludeCodeCells: true
+format: scrolly
+source: "./remote-only/datastory/bangalore-metro-conspiracy-theory"
+baseUrl: "/datastory/bangalore-metro-conspiracy-theory/"
 toc: true
 ---

@@ -7,9 +7,9 @@ date: 2025-09-25
 heroImage: "/library/throwaways/image9-spacewoman.jpg"
 geography: ["bangalore", "india"]
 theme: ["traffic", "urban"]
-notebook:
-  engine: "jupyter"
-  entry: "https://github.com/thecont1/traffic-monitor-lizard/blob/main/traffic_visual.ipynb"
-  excludeCodeCells: true
+format: notebook
+engine: "jupyter"
+entry: "https://github.com/thecont1/traffic-monitor-lizard/blob/main/traffic_visual.ipynb"
+excludeCodeCells: true
 toc: false
 ---

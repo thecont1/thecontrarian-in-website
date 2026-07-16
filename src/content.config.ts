@@ -8,7 +8,8 @@ const geographyEnum = z.enum([
 ]);
 const themeEnum = z.enum([
   "weddings", "travel", "society", "justice", "technology", "motorcycling", "patriarchy", "reporting",
-  "humour", "interview", "lore", "night", "racism", "india", "portraits", "religion", "politics", "nationalism", "history"
+  "humour", "interview", "lore", "night", "racism", "india", "portraits", "religion", "politics", "nationalism", "history",
+  "book", "photobook", "prize", "mfa", "thesis", "digital", "photography", "essay"
 ]);
 const containerEnum = z.enum([
   "matrimania", "the-african-portraits", "last-days-of-manmohan", "magazine-work",
@@ -74,18 +75,41 @@ const codeSchema = z.object({
   license: z.string().optional(),
 });
 
-const datastorySchema = z.object({
+// ---------------------------------------------------------------------------
+// Datastory schema — a discriminated union on `format`.
+// ---------------------------------------------------------------------------
+//
+// Two variants share the same base fields (title, subtitle, author, status,
+// heroImage, geography, theme, date, toc, lightbox, etc.) and add their own
+// format-specific fields at the TOP LEVEL (no `notebook:` or `scrolly:`
+// wrapper — the discriminator is the format field itself).
+//
+// The format NEVER appears in the public URL, title, listing, or any
+// public-facing artifact. It is a build-time choice only. The slug in
+// the .md file is the URL slug, regardless of format.
+//
+// Notebook variant:
+//
+//   format: notebook
+//   engine: jupyter | marimo
+//   entry: <live url to .ipynb file>
+//   excludeCodeCells: true|false   (optional, default false)
+//
+// Scrolly variant:
+//
+//   format: scrolly
+//   source: <path to the scrolly project directory>
+//   baseUrl: <URL prefix under which the scrolly is served>
+//
+// ---------------------------------------------------------------------------
+
+const datastoryBaseSchema = z.object({
   title: z.string(),
   subtitle: z.string().optional(),
   metaDescription: z.string().max(160).optional(),
   author: z.string(),
   status: z.enum(["private", "draft", "published"]),
   heroImage: z.string().optional(),
-  notebook: z.object({
-    engine: z.enum(["marimo", "jupyter"]),
-    entry: z.string(),
-    excludeCodeCells: z.boolean().optional().default(false),
-  }),
   geography: z.array(geographyEnum).max(2).optional().default([]),
   theme: z.array(z.string()).max(5).optional().default([]),
   date: z.date().optional(),
@@ -96,6 +120,31 @@ const datastorySchema = z.object({
   backgroundColor: z.string().optional(),
   showhero: z.boolean().optional().default(true),
 });
+
+const datastoryNotebookSchema = datastoryBaseSchema.extend({
+  format: z.literal("notebook"),
+  engine: z.enum(["marimo", "jupyter"]),
+  entry: z.string(),
+  excludeCodeCells: z.boolean().optional().default(false),
+});
+
+const datastoryScrollySchema = datastoryBaseSchema.extend({
+  format: z.literal("scrolly"),
+  // Path to the scrolly project directory (relative to the Astro project
+  // root, or absolute). Must contain its own package.json, vite.config.js,
+  // src/, public/data/, etc.
+  source: z.string(),
+  // URL prefix under which the scrolly is served. Same as the slug's URL
+  // path. The build script invokes `vite build --base=<baseUrl>` so the
+  // scrolly's own vite.config.js `base` is overridden at production build
+  // time.
+  baseUrl: z.string(),
+});
+
+const datastorySchema = z.discriminatedUnion("format", [
+  datastoryNotebookSchema,
+  datastoryScrollySchema,
+]);
 
 const photogallerySchema = z.object({
   status: z.enum(["private", "draft", "published"]),
