@@ -1,5 +1,59 @@
 # Changelog
 
+## v0.6 — Architectural refactor: scrolly source colocation, public/ stays clean (2026-07-17)
+
+The scrolly is now fully self-contained: source lives next to the `.md` entry, build output stays in the scrolly's own `dist/`, and **nothing the scrolly produces lands in the Astro project's `public/`**. `public/` is reserved for site assets only — fonts, image archive, `.htaccess`, `_headers`, `ads.txt`, `robots.txt`, `favicon`. No page content.
+
+### Why
+
+The previous design copied the Vite build output into `public/datastory/<slug>/` and let Astro's static file priority serve it directly. Two issues with that: (1) the `index.html` in `public/` was "site content" living in a folder that should only hold assets, and (2) Astro's build emitted a noisy warning about the dynamic route being shadowed by a static file in `public/`. Both are now gone.
+
+### Where things live now
+
+```
+content/datastory/
+  bangalore-metro-conspiracy-theory.md           # entry
+  bangalore-metro-conspiracy-theory/             # scrolly Vite project (source)
+    package.json
+    vite.config.js
+    src/                                          # chapters, viz, motion, components
+    public/data/                                  # scrolly's own Vite public (JSONs)
+    images/                                       # 13 photo assets
+    .gitignore                                    # gitignores dist/ + public/data/*.json
+    dist/                                         # Vite build output (gitignored)
+      index.html
+      assets/
+      data/
+```
+
+- The scrolly's Vite project sits next to its `.md` entry. `source:` in the frontmatter is now `./bangalore-metro-conspiracy-theory` (relative to the `.md`'s directory).
+- Vite's `--base=/datastory/<slug>/` is unchanged — the deployed URL is the same.
+- `public/` (at the Astro project root) is now scrolly-free.
+
+### Build pipeline changes
+
+- `scripts/build_scrolly.mjs` no longer copies `dist/*` into `public/`. Vite builds into the scrolly's own `dist/` and stops there.
+- `src/pages/datastory/[...slug].astro` now reads `<source>/dist/index.html` (not `public/<baseUrl>/index.html`) and returns it as a `Response`. Astro writes the response body to `dist/datastory/<slug>/index.html`.
+- `scripts/scaffold-integration.ts` adds an `astro:build:done` hook that copies the scrolly's `dist/{assets,data}/` into `dist/datastory/<slug>/{assets,data}/` so the bundled JS/CSS and fetched JSONs land alongside the route's HTML.
+- `scripts/scaffold-integration.ts` adds an `astro:server:setup` Vite middleware that serves `/datastory/<slug>/<file>` from `<source>/dist/<file>` in dev mode. The dev server then serves both the route's HTML response and the bundled assets without `public/` pollution.
+
+### Other small fixes that came along
+
+- `src/content.config.ts` — the content collection glob was `**/*.{md,mdx}` (recursive). Now `*.{md,mdx}` (top-level only). Without this, the scrolly's own `README.md` was being picked up as a datastory entry and failing schema validation. The new pattern means scrolly subdirectories are properly excluded.
+- `.gitignore` — drops `public/datastory/`, adds `content/datastory/*/dist/` and `content/datastory/*/node_modules/` so any scrolly's own build artifacts are ignored at the project level too.
+- `remote-only/datastory/` is gone (the live-site mirror dir is back to its original purpose: `.htaccess`, `_headers`, `ads.txt`, `favicon.ico`, `robots.txt` only).
+- `remote-only/datastory/bangalore-metro-conspiracy-theory-scrolly/` (the previous-name version with the `-scrolly` suffix) is also gone.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory.md` — `source:` updated to relative path
+- `content/datastory/bangalore-metro-conspiracy-theory/` (the whole Vite project) — moved from `remote-only/datastory/bangalore-metro-conspiracy-theory/`
+- `scripts/build_scrolly.mjs` — drop the dist → public/ copy
+- `src/pages/datastory/[...slug].astro` — read from `<source>/dist/index.html`
+- `scripts/scaffold-integration.ts` — add `findScrollyEntries()`, `copyScrollyAssets()`, `setupScrollyMiddleware()`, hook them into `astro:build:done` and `astro:server:setup`
+- `src/content.config.ts` — glob to top-level only
+- `.gitignore` — drop `public/datastory/`, add `content/datastory/*/dist/`
+
 ## v0.5 — 50-block reveal, hero excluded, prominent citation title (2026-07-16)
 
 The image reveal is now 50 random blocks (up from 20) with a tighter scroll range. The hero image is excluded from the animation — it loads normally on page load. The citation popover's title is now the visual hero of the card: prominent serif, bold, never truncated.
