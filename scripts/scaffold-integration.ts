@@ -566,6 +566,22 @@ export default function scaffoldIntegration() {
             setTimeout(() => enrichCodeFile(filePath), 300);
           });
 
+          // Scrolly: also watch the .md entry for each scrolly. The .md
+          // lives at content/datastory/<slug>.md (a sibling of the
+          // scrolly's source dir) — outside the scrolly's own source
+          // dir, so the source-dir watcher doesn't see it. We need to
+          // re-patch the built HTML when the title/description in the
+          // .md changes.
+          for (const e of findScrollyEntries()) {
+            const mdFile = path.join(DATASTORY_DIR, `${e.slug}.md`);
+            if (!fs.existsSync(mdFile)) continue;
+            const mdWatcher = chokidar.watch(mdFile, {
+              persistent: true,
+              ignoreInitial: true,
+            });
+            mdWatcher.on('change', () => rebuildScrolly(`md changed: ${e.slug}.md`));
+          }
+
           // Scrolly: watch each scrolly source dir and rebuild on change
           setupScrollyWatcher();
         }

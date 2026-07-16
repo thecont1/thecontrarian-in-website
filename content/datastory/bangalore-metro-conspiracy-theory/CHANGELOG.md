@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.7 — Article title now sources from the .md (2026-07-17)
+
+The article's title, meta description, and H1 are no longer hardcoded in `index.html`. They are patched at build time from the .md frontmatter (`title:` and `metaDescription:`), so the .md is the single source of truth for what the article is called.
+
+### What changed
+
+- The previous `<title>` had a format leak: `NammaMetro: The Conspiracy Theory — A scrollytelling investigation`. The "— A scrollytelling investigation" suffix is now gone. The `<title>` is exactly the .md's `title:`.
+- The previous `<meta name="description">` had a similar leak: `... Scrollytelling version.`. Now exactly the .md's `metaDescription:`.
+- The previous `<h1 class="title">` was `NammaMetro: The Conspiracy Theory 😈` (with the editorial emoji). The .md's title is now `NammaMetro: The Conspiracy Theory 😈` — same emoji, but the .md is the source. Change the .md, the article follows.
+
+### Files touched
+
+- `scripts/build_scrolly.mjs` — new `patchScrollyHtml()` step runs after `vite build`, replaces `<title>`, `<meta name="description">`, and `<h1 class="title">` in the built HTML with the .md's values. `escapeHtml()` handles special characters in attributes.
+- `scripts/scaffold-integration.ts` — added a per-scrolly chokidar watcher on the .md file so dev mode re-patches the HTML when the title/description in the .md changes (no manual rebuild needed).
+- `content/datastory/bangalore-metro-conspiracy-theory.md` — `title:` updated to `NammaMetro: The Conspiracy Theory 😈` to preserve the H1 emoji (the .md is the source now, so the emoji lives there).
+- `content/datastory/bangalore-metro-conspiracy-theory.notebook.html` — deleted. Dead weight: the entry is `format: scrolly`, not notebook. `render_notebook.py` skips scrolly entries and won't regenerate it.
+
 ## v0.6 — Architectural refactor: scrolly source colocation, public/ stays clean (2026-07-17)
 
 The scrolly is now fully self-contained: source lives next to the `.md` entry, build output stays in the scrolly's own `dist/`, and **nothing the scrolly produces lands in the Astro project's `public/`**. `public/` is reserved for site assets only — fonts, image archive, `.htaccess`, `_headers`, `ads.txt`, `robots.txt`, `favicon`. No page content.

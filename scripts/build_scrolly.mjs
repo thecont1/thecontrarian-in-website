@@ -32,7 +32,7 @@
  * "scrolly" only appears here in this internal script.
  */
 
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, resolve, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -96,9 +96,85 @@ async function findScrollyEntries() {
       source: data.source,
       sourceAbs,
       baseUrl: data.baseUrl,
+      frontmatter: data,
     });
   }
   return entries;
+}
+
+// ---------------------------------------------------------------------------
+// HTML patching: replace hardcoded title/description/H1 with .md values.
+// ---------------------------------------------------------------------------
+
+function escapeHtml(s) {
+  if (typeof s !== "string") return "";
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function patchScrollyHtml(distDir, fm, slug) {
+  const indexHtml = join(distDir, "index.html");
+  if (!existsSync(indexHtml)) {
+    log(`  ${slug}: no dist/index.html, skipping HTML patch`);
+    return;
+  }
+  const title = fm.title;
+  const description = fm.metaDescription || fm.subtitle;
+  if (!title) {
+    throw new Error(`${slug}: .md frontmatter is missing 'title' — cannot patch scrolly HTML`);
+  }
+  let html = await readFile(indexHtml, "utf8");
+  const before = html;
+
+  // <title>...</title>
+  if (/<title>[^<]*<\/title>/.test(html)) {
+    html = html.replace(
+      /<title>[^<]*<\/title>/,
+      `<title>${escapeHtml(title)}</title>`,
+    );
+  } else {
+    log(`  ${slug}: warn — no <title> tag found in dist/index.html`);
+  }
+
+  // <meta name="description" content="..." />
+  if (description) {
+    if (/<meta name="description" content="[^"]*" \/>/.test(html)) {
+      html = html.replace(
+        /<meta name="description" content="[^"]*" \/>/,
+        `<meta name="description" content="${escapeHtml(description)}" />`,
+      );
+    } else if (/<meta name="description" content="[^"]*">/.test(html)) {
+      // Some templates use the unclosed form.
+      html = html.replace(
+        /<meta name="description" content="[^"]*">/,
+        `<meta name="description" content="${escapeHtml(description)}">`,
+      );
+    } else {
+      log(`  ${slug}: warn — no <meta name="description"> found in dist/index.html`);
+    }
+  } else {
+    log(`  ${slug}: warn — .md has no metaDescription or subtitle; keeping scrolly's default description`);
+  }
+
+  // <h1 class="title">...</h1> (the visible article title in the body)
+  if (/<h1 class="title">[^<]*<\/h1>/.test(html)) {
+    html = html.replace(
+      /<h1 class="title">[^<]*<\/h1>/,
+      `<h1 class="title">${escapeHtml(title)}</h1>`,
+    );
+  } else {
+    log(`  ${slug}: warn — no <h1 class="title"> found in dist/index.html`);
+  }
+
+  if (html === before) {
+    log(`  ${slug}: HTML patch no-op (nothing matched)`);
+    return;
+  }
+  await writeFile(indexHtml, html, "utf8");
+  log(`  ${slug}: patched <title>, <meta description>, <h1.title> from .md frontmatter`);
 }
 
 // ---------------------------------------------------------------------------
@@ -114,7 +190,7 @@ function run(cmd, cwd) {
   execSync(cmd, { cwd, stdio: "inherit", env: process.env });
 }
 
-async function buildOne({ slug, source, sourceAbs, baseUrl }) {
+async function buildOne({ slug, source, sourceAbs, baseUrl, frontmatter }) {
   log(`${slug}`);
   log(`  source:  ${source}`);
   log(`  baseUrl: ${baseUrl}`);
@@ -154,6 +230,17 @@ async function buildOne({ slug, source, sourceAbs, baseUrl }) {
   if (!distStat.isDirectory()) {
     throw new Error(`dist/ is not a directory: ${distDir}`);
   }
+
+  // 4. Patch the built HTML with the .md frontmatter so the article's
+  // title and description are sourced from the .md (not hardcoded in
+  // the scrolly's index.html). Replaces:
+  //   - <title>...</title>
+  //   - <meta name="description" content="..." />
+  //   - <h1 class="title">...</h1>
+  // The format NEVER appears anywhere (no "— A scrollytelling investigation"
+  // suffix, no "Scrollytelling version." in the description). The .md
+  // is the single source of truth.
+  await patchScrollyHtml(distDir, frontmatter, slug);
 
   // Summarise what landed
   const files = await readdir(distDir);
