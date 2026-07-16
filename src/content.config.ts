@@ -190,9 +190,15 @@ const projectSchema = z.object({
   showhero: z.boolean().optional().default(true),
 });
 
+// Content collection glob: only scan top-level .md/.mdx files.
+// Scrolly subdirectories (e.g. content/datastory/<slug>/) hold the
+// scrolly Vite project's own source — README, package notes, etc. —
+// and must NOT be picked up as content entries. Recursion into
+// subdirs was a footgun: a stray README.md in a scrolly's source
+// would be loaded as a datastory entry and fail schema validation.
 const markdownLoader = (collection: string) => glob({
   base: `./content/${collection}`,
-  pattern: "**/*.{md,mdx}",
+  pattern: "*.{md,mdx}",
   generateId: ({ entry }) => entry.replace(/\.(md|mdx)$/i, ""),
 });
 

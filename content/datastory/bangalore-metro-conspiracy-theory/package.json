@@ -1,0 +1,21 @@
+{
+  "name": "namma-metro-scrolly",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A scrollytelling version of the NammaMetro data story. Story-specific code only — motion, footnotes, and base styles live in @thecontrarian/scrollytelling-core (a sibling workspace package).",
+  "scripts": {
+    "data": "node scripts/fetch-data.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "dependencies": {
+    "@thecontrarian/scrollytelling-core": "workspace:*",
+    "d3": "^7.9.0",
+    "gsap": "^3.13.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

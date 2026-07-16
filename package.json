@@ -2,6 +2,10 @@
   "name": "thecontrarian.in-gpt5.2",
   "type": "module",
   "version": "0.0.1",
+  "workspaces": [
+    "packages/*",
+    "content/datastory/*"
+  ],
   "scripts": {
     "dev": "astro dev",
     "predev": "node scripts/build_scrolly.mjs",
@@ -36,6 +40,7 @@
     "zod-to-json-schema": "^3.25.1"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.9"
+    "@types/js-yaml": "^4.0.9",
+    "unist-util-visit": "^5.1.0"
   }
 }

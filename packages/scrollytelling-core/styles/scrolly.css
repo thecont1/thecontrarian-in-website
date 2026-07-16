@@ -1,0 +1,894 @@
+/* scrolly.css — datastory design (matched to thecontrarian.in's datastory layout)
+   ------------------------------------------------------------------------
+   Reference: src/styles/datastory.css in the Astro project.
+   The header is white paper with a 3px top rule, "Data Story" kicker chip,
+   Inter 900 title, Fraunces italic subtitle, byline, date. Below: full-bleed
+   hero image (no overlay). Content in a 960px column on light surface.
+*/
+
+:root {
+  --paper: #fff;
+  --ink: #0a0a0a;
+  --ink-muted: #2a2a2a;
+  --surface: #f5f5f5;
+  --hairline: #e5e5e5;
+  --muted: #555;
+  --muted-2: #999;
+  --accent: #d04b36;
+  /* Story-specific brand colour. Each scrolly sets this on :root in
+     its own index.html (or a small story-specific stylesheet) to
+     match the story's subject. Default is NammaMetro purple. */
+  --accent-color: #5E2D8C;
+
+  --site-header-height: 64px;
+  --content-max: 960px;
+
+  --font-display: "Fraunces", "Iowan Old Style", "Apple Garamond", "Baskerville", "Georgia", serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-header: "DM Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  background: var(--paper);
+  /* Prevent horizontal scroll from the chapter ::before which uses
+     `width: 100vw` to bleed past the content column. */
+  overflow-x: hidden;
+}
+
+/* ======================================================
+   SITE HEADER (white-on-dark hero, darkens on scroll)
+   ====================================================== */
+
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.site-header-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  height: var(--site-header-height);
+  padding: 0 2rem;
+  background: transparent;
+  transition: background 220ms linear;
+}
+
+.site-header a,
+.site-header button {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  transition: color 220ms linear;
+  pointer-events: auto;
+}
+
+.site-title {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  border: 2px solid #fff;
+  background: rgba(0, 0, 0, 0.22);
+  font-family: var(--font-header);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  min-height: 44px;
+  text-shadow: none;
+}
+
+.site-nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2.2rem;
+}
+
+.site-nav a {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.site-header.is-scrolled .site-header-inner {
+  background: rgba(75, 85, 99, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+@media (max-width: 768px) {
+  .site-header-inner {
+    padding: 0 0 0 1rem;
+  }
+  .site-nav {
+    display: none;
+  }
+}
+
+/* ======================================================
+   DATASTORY HEADER (matches src/styles/datastory.css)
+   White paper, top rule, kicker chip, Inter 900 title,
+   Fraunces italic subtitle, byline, date.
+   ====================================================== */
+
+.datastory-header {
+  background: var(--paper);
+  padding: calc(var(--site-header-height) + 4rem) 2rem 0;
+  text-align: center;
+}
+
+.datastory-header .kicker {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 3px solid var(--ink);
+  margin-bottom: 2rem;
+}
+
+.datastory-header .kicker__chip {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--ink);
+  padding: 0.3em 0.7em;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.datastory-header .title {
+  font-family: var(--font-body);
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  color: var(--ink);
+  max-width: 18ch;
+  margin: 0 auto 1.5rem;
+}
+
+.datastory-header .subtitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.65);
+  max-width: 55ch;
+  margin: 0 auto 2rem;
+}
+
+.datastory-header .byline {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.datastory-header .byline .by {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--muted-2);
+  margin-right: 0.4rem;
+}
+
+.datastory-header .byline .author {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.datastory-header .date {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+  margin-bottom: 2.5rem;
+}
+
+.datastory-header .hero {
+  margin: 0 auto;
+  max-width: 1080px;            /* a little wider than the 960px content column */
+  width: calc(100% - 2rem);
+  line-height: 0;
+}
+
+.datastory-header .hero img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .datastory-header .hero {
+    margin: 0 -1rem;
+    width: calc(100% + 2rem);
+  }
+  .datastory-header {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* ======================================================
+   CHAPTERS
+   ====================================================== */
+
+main {
+  background: var(--surface);
+}
+
+/* ======================================================
+   ALTERNATING CHAPTER BACKGROUNDS
+   ======================================================
+   Each chapter gets a full-bleed background via a ::before
+   pseudo-element so the colour extends to the viewport edges
+   even though the chapter itself is a narrower centred column.
+   Odd chapters: paper white. Even chapters: a very light
+   hint of the story's accent colour — just enough to read as
+   a new section. The hint is `color-mix(in srgb,
+   var(--accent-color) 5%, #fff)` which lands at a near-white
+   tinted background. Override `--chapter-bg` on either
+   selector to change it. */
+.chapter {
+  width: min(var(--content-max), calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 5rem 0;
+  position: relative;
+  isolation: isolate;       /* keep the ::before's z-index local */
+  --chapter-bg: var(--paper);
+  --chapter-bg-soft: color-mix(in srgb, var(--accent-color) 5%, #fff);
+}
+
+.chapter::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 100%;
+  z-index: -1;
+  background: var(--chapter-bg);
+  /* Subtle inner shadow on the right edge so the section ends with
+     a soft hairlines rather than a hard line meeting the next
+     chapter. The shadow is on the ::before so it sits behind the
+     content. */
+  box-shadow:
+    inset 0 -1px 0 var(--hairline),
+    inset 0  1px 0 var(--hairline);
+}
+
+.chapter:nth-of-type(odd) {
+  --chapter-bg: var(--paper);
+}
+.chapter:nth-of-type(even) {
+  --chapter-bg: var(--chapter-bg-soft);
+}
+
+.chapter__kicker {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: transparent;
+  padding: 0;
+  margin-bottom: 1.25rem;
+}
+
+.chapter__title {
+  font-family: var(--font-body);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink);
+  margin: 0 0 1.5rem;
+  /* Sticky below the site header. The title freezes in place as the
+     user scrolls through the chapter, giving them constant context
+     about which chapter they're reading. Unsticks automatically when
+     the chapter scrolls out of view (position: sticky's natural
+     behaviour). The background colour matches the chapter's
+     alternating section colour (`--chapter-bg` inherited from
+     the parent .chapter) so the title blends seamlessly into the
+     section and content scrolling underneath the title is hidden,
+     not visible through it. */
+  position: sticky;
+  top: calc(var(--site-header-height) + 0.5rem);
+  background: var(--chapter-bg, var(--paper));
+  z-index: 50;
+  padding: 0.5rem 0;
+  /* Subtle separator below the title so it reads as a header bar
+     rather than floating text. */
+  box-shadow: 0 1px 0 var(--hairline);
+}
+
+.chapter__lead {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+  line-height: 1.5;
+  color: var(--ink-muted);
+  margin: 0 0 2rem;
+  max-width: 60ch;
+}
+
+.chapter h2 {
+  font-family: var(--font-body);
+  font-size: clamp(1.4rem, 2.5vw, 1.7rem);
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.chapter h3 {
+  font-family: var(--font-body);
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.chapter p {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--ink-muted);
+  margin: 0 0 1.1em;
+}
+
+.chapter p strong { color: var(--ink); }
+
+.chapter ul, .chapter ol {
+  margin: 0 0 1.5em 1.5em;
+  color: var(--ink-muted);
+}
+
+.chapter ul li, .chapter ol li {
+  margin-bottom: 0.5em;
+  line-height: 1.7;
+}
+
+.chapter code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+}
+
+/* ======================================================
+   PHOTO POLAROID
+   ======================================================
+   The drop shadow lives on the <img>, not the <figure>, so it
+   only surrounds the image and never bleeds into the figcaption
+   text below. The colour modifier classes (--orange, --pink, etc.)
+   are kept for semantic HTML and may be used later for tinting,
+   but they no longer carry a drop-shadow filter. */
+
+.datastory-photo {
+  margin: 2.5rem auto;
+  max-width: 75%;
+}
+
+/* Image reveal: 50 blocks fading randomly.
+   The .img-reveal container wraps the <img>, the .img-reveal__base
+   keeps the original image (opacity 0, accessible to screen readers,
+   provides the aspect ratio), and .img-reveal__blocks is a 5×10 grid
+   that draws the image in 50 pieces. Each block is the full image as
+   background, scaled and positioned to show its 1/10 × 1/5 portion.
+   JS sets --img and --x/--y per block, and animates each block's
+   opacity as the user scrolls. */
+.img-reveal {
+  position: relative;
+  width: 100%;
+  max-height: 90vh;
+  border: 0.5px solid #000;
+  filter: drop-shadow(2px 2px 0 #000);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.img-reveal__base {
+  width: 100%;
+  height: auto;
+  max-height: 90vh;
+  display: block;
+  /* Hidden but kept in the accessibility tree for screen readers. */
+  opacity: 0;
+  pointer-events: none;
+}
+
+.img-reveal__blocks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+}
+
+.img-reveal__block {
+  background-color: var(--surface);
+  background-image: var(--img);
+  background-size: 1000% 500%;
+  background-position: var(--x) var(--y);
+  background-repeat: no-repeat;
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 0.1s linear;
+}
+
+/* Static images that are part of the content are wrapped by JS into
+   .img-reveal; the underlying <img> keeps the .img-reveal__base
+   class. The base image has no visible styles of its own — everything
+   visual comes from the block grid. */
+.datastory-photo img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* The hero image is intentionally NOT animated — it loads normally
+   on page load with no reveal, no mask, no block grid. The .hero
+   figure wraps it; this rule gives the img a sensible default
+   (full-bleed within the 1080px cap, preserving aspect ratio). */
+.datastory-header .hero img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.datastory-photo figcaption {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.85rem;
+  font-style: italic;
+  /* Explicit: no drop-shadow on the caption, ever. */
+  text-shadow: none;
+  filter: none;
+}
+
+/* Legacy colour modifiers are no-ops now. Kept in the markup so the
+   semantic label is still attached to each photo. */
+.datastory-photo--orange,
+.datastory-photo--pink,
+.datastory-photo--cyan,
+.datastory-photo--magenta,
+.datastory-photo--red,
+.datastory-photo--amber,
+.datastory-photo--blue {
+  /* The black drop-shadow on the image above applies to all photos. */
+}
+
+/* ======================================================
+   VIZ CONTAINER
+   ====================================================== */
+
+.viz {
+  margin: 3rem 0 0.5rem;
+  min-height: 320px;
+  position: relative;
+}
+
+.viz svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Calendar cells: focusable for keyboard nav. The native focus ring
+   is suppressed and a custom one drawn instead, matching the chart. */
+.viz .calendar-svg g.cell:focus {
+  outline: none;
+}
+.viz .calendar-svg g.cell:focus rect {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+/* ======================================================
+   CALENDAR TOOLTIP (Ch 1 "120 days at a glance")
+   ====================================================== */
+
+.cal-tooltip {
+  position: absolute;
+  background: var(--paper);
+  border: 0.5px solid #000;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 0.85em 1em 0.7em;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  z-index: 100;
+  pointer-events: none;
+  color: var(--ink);
+  min-width: 160px;
+  transform: translate(-50%, calc(-100% - 8px));
+  line-height: 1.35;
+}
+
+.cal-tooltip--below {
+  transform: translate(-50%, 30px);  /* CELL (22) + 8 gap */
+}
+
+.cal-tooltip__date {
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-align: center;
+  letter-spacing: -0.005em;
+  margin-bottom: 0.1em;
+}
+
+.cal-tooltip__value {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 0.55em;
+}
+
+.cal-tooltip__chart {
+  width: 110px;
+  height: 100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.cal-tooltip__bar-container {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 1px;
+}
+
+.cal-tooltip__bar {
+  width: 36px;
+  background: var(--ink);
+  transition: height 0.18s ease-out, background 0.18s ease-out;
+  min-height: 0;
+}
+
+.cal-tooltip__scale {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--muted-2);
+  margin-top: 0.3em;
+  letter-spacing: 0.02em;
+}
+
+.viz__caption {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+
+/* ======================================================
+   IN-LINE FOOTNOTE POPOVER
+   ====================================================== */
+
+.fn-trigger {
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.7em;
+  text-decoration: underline dotted;
+  vertical-align: super;
+  line-height: 1;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.fn-trigger:hover {
+  color: var(--ink);
+  text-decoration-style: solid;
+}
+
+/* Footnote popover: a horizontal 3:1 rectangle with a thumbnail and
+   OpenGraph-style metadata (title, description, site name, link).
+   Width is fixed; height follows from aspect-ratio.
+   Content is laid out as:
+     [ title  (spans full width, top row)                            ]
+     [ thumb  | description + (siteName | "View source →")            ]
+   The popover is wide and short — never tall, never thin. */
+.fn-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: var(--paper);
+  border: 0.5px solid #000;
+  box-shadow: 3px 3px 0 var(--accent);
+  padding: 0.7em 1.1em;
+  width: 480px;
+  max-width: min(90vw, 520px);
+  aspect-ratio: 3 / 1;
+  z-index: 200;
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 400;
+  text-align: left;
+  line-height: 1.35;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  column-gap: 0.9em;
+  row-gap: 0.35em;
+  align-items: stretch;
+}
+
+.fn-popover__head {
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.fn-popover__title {
+  /* Prominent: serif, bold, larger than the body. The title is the
+     hero of the card; the description and link are supporting.
+     Never truncated — wraps freely to up to 2 lines. */
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.02rem;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  display: block;
+  margin: 0;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  /* Soft cap so a very long title doesn't dominate the popover
+     vertically. 2 lines is plenty for an article headline. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fn-popover__body {
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.8em;
+  align-items: stretch;
+  min-height: 0;
+}
+
+.fn-popover__thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border: 0.5px solid var(--hairline);
+  background: var(--surface);
+  align-self: start;
+  flex-shrink: 0;
+}
+
+.fn-popover__thumb--default {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-color, #5E2D8C);
+  background: color-mix(in srgb, var(--accent-color, #5E2D8C) 6%, var(--paper));
+}
+
+.fn-popover__thumb-svg {
+  width: 36px;
+  height: 36px;
+  display: block;
+}
+
+.fn-popover__text {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.fn-popover__desc {
+  color: var(--ink-muted);
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.3;
+  /* Clamp to 2 lines with ellipsis to keep the 3:1 rectangle clean. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fn-popover__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.3em;
+  font-size: 0.72rem;
+  gap: 0.8em;
+}
+
+.fn-popover__site {
+  color: var(--muted-2);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.fn-popover__link {
+  color: var(--accent);
+  text-decoration: underline;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ======================================================
+   CALLOUTS (preserved from notebook's voice)
+   ====================================================== */
+
+.highlight {
+  background: #fff89e;
+  padding: 0 2px;
+}
+
+.callout {
+  display: block;
+  border-left: 3px solid var(--hairline);
+  padding: 0.75em 1em;
+  margin: 1.5em 0;
+  color: var(--ink-muted);
+  font-size: 0.95em;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.callout--insight { border-left-color: var(--accent); }
+.callout--note    { border-left-color: var(--muted-2); }
+.callout--key     {
+  border-left-color: var(--ink);
+  font-size: 1em;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.callout ul { margin: 0.5em 0 0.5em 1.2em; }
+.callout li { margin-bottom: 0.3em; }
+
+/* ======================================================
+   SITE FOOTER
+   ====================================================== */
+
+.site-footer {
+  font-family: var(--font-display);
+  border-top: 1px solid var(--hairline);
+  background: var(--surface);
+  padding: 1.5rem 4vw;
+  color: var(--muted-2);
+  font-size: 1.25rem;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.footer-socials {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.footer-socials a {
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  transition: color 0.2s;
+}
+
+.footer-socials a:hover {
+  color: var(--accent);
+}
+
+.site-footer p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+@media (max-width: 768px) {
+  .site-footer {
+    font-size: 1rem;
+    padding: 1.25rem 5vw;
+  }
+  .footer-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* ======================================================
+   ACCESSIBILITY
+   ====================================================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  transform: translateY(-200%);
+  padding: 0.85rem 1.1rem;
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 4px;
+  z-index: 40000000;
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
