@@ -131,34 +131,44 @@ _LEGACY_MARKER_END = "<!-- NOTEBOOK_HTML_END -->"
 # ---------------------------------------------------------------------------
 
 def extract_notebook_config(md_text: str) -> tuple[str | None, bool]:
-    """Parse YAML frontmatter and return (notebook.entry, notebook.excludeCodeCells)."""
+    """Parse YAML frontmatter and return (entry, excludeCodeCells).
+
+    Both fields are at the top level of the frontmatter (no `notebook:`
+    wrapper). If `format` is explicitly set to anything other than
+    "notebook" (e.g. "scrolly"), this function returns (None, False)
+    and the file is skipped.
+    """
     m = re.match(r"^---\s*\n(.*?)\n---", md_text, re.DOTALL)
     if not m:
         return None, False
     frontmatter = m.group(1)
-    in_notebook = False
     notebook_url: str | None = None
     exclude_code_cells = False
+    format_value: str | None = None
 
     def _parse_bool(value: str) -> bool:
         return value.strip().lower() in {"true", "yes", "on", "1"}
 
     for line in frontmatter.splitlines():
         stripped = line.strip()
-        if stripped.startswith("notebook:"):
-            in_notebook = True
+        if not stripped or stripped.startswith("#"):
             continue
-        if in_notebook:
-            if stripped.startswith("entry:"):
-                val = stripped.split(":", 1)[1].strip().strip('"').strip("'")
-                notebook_url = val if val else None
-                continue
-            if stripped.startswith("excludeCodeCells:"):
-                val = stripped.split(":", 1)[1].strip().strip('"').strip("'")
-                exclude_code_cells = _parse_bool(val)
-                continue
-            if not line.startswith(" ") and not line.startswith("\t"):
-                in_notebook = False
+        if stripped.startswith("format:"):
+            format_value = stripped.split(":", 1)[1].strip().strip('"').strip("'")
+            continue
+        if stripped.startswith("entry:"):
+            val = stripped.split(":", 1)[1].strip().strip('"').strip("'")
+            notebook_url = val if val else None
+            continue
+        if stripped.startswith("excludeCodeCells:"):
+            val = stripped.split(":", 1)[1].strip().strip('"').strip("'")
+            exclude_code_cells = _parse_bool(val)
+            continue
+
+    # Skip scrolly entries (no notebook to render)
+    if format_value and format_value != "notebook":
+        return None, False
+
     return notebook_url, exclude_code_cells
 
 
@@ -326,12 +336,12 @@ def process_file(md_path: Path, sha_cache: dict, force: bool = False) -> bool:
     notebook_url, exclude_code_cells = extract_notebook_config(md_text)
 
     if not notebook_url:
-        print(f"  Skipping {md_path.name}: no notebook.entry URL")
+        print(f"  Skipping {md_path.name}: no entry URL (likely format=scrolly)")
         return False
 
     print(f"Processing: {md_path.name}")
     if exclude_code_cells:
-        print("  notebook.excludeCodeCells: enabled (code inputs will be hidden)")
+        print("  excludeCodeCells: enabled (code inputs will be hidden)")
 
     # --- SHA-based change detection for GitHub notebooks ---
     html_path = md_path.with_suffix(".notebook.html")

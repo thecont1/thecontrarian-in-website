@@ -1,0 +1,6 @@
+node_modules
+dist
+.DS_Store
+# JSONs are fetched from GitHub on demand. Re-run `npm run data` to refresh.
+public/data/*.json
+!public/data/.gitkeep

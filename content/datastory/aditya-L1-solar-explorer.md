@@ -7,9 +7,9 @@ date: 2025-01-01
 heroImage: "/library/throwaways/homepage/image9-spacewoman.jpg"
 geography: ["india"]
 theme: ["datastory", "space", "heliophysics", "solar"]
-notebook:
-  engine: "jupyter"
-  entry: "https://github.com/thecont1/aditya-L1-solar-explorer/blob/main/sun-explorer.ipynb"
-  excludeCodeCells: true
+format: notebook
+engine: "jupyter"
+entry: "https://github.com/thecont1/aditya-L1-solar-explorer/blob/main/sun-explorer.ipynb"
+excludeCodeCells: true
 toc: true
 ---
