@@ -5,9 +5,9 @@
 // shift on Fri-Sat.
 
 import { loadDailyByMode } from '../data/loaders.js';
-import { ScrollTrigger } from '../motion/scroll-trigger.js';
+import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderStackedArea } from '../viz/stacked-area.js';
-import { wireFootnotes } from '../components/footnote.js';
+import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh4TrafficBands(chapterEl) {
   const daily = await loadDailyByMode();

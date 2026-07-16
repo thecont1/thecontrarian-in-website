@@ -12,13 +12,13 @@ import {
   loadDailyByMode,
   loadSignificantEvents,
 } from '../data/loaders.js';
-import { gsap, ScrollTrigger } from '../motion/scroll-trigger.js';
+import { gsap, ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import {
   renderCalendarStrip,
   extractWindow,
 } from '../viz/calendar-strip.js';
 import { renderStackedBar } from '../viz/stacked-bar.js';
-import { wireFootnotes } from '../components/footnote.js';
+import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 // Pick a representative weekday for the stacked-bar viz. Prefers a
 // recent Wednesday (mid-week, full data), then falls back to any

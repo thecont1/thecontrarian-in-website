@@ -1,5 +1,73 @@
 # Changelog
 
+## v0.8 — Bun workspace + @thecontrarian/scrollytelling-core (2026-07-17)
+
+The scrolly project is now a bun workspace member. The reusable parts — motion (image-reveal, scroll-trigger), the footnote popover, and the base styles (reset, typography, scrolly) — live in a sibling package at `packages/scrollytelling-core/` and are imported as `@thecontrarian/scrollytelling-core`. The scrolly directory now holds only the story-specific code: 9 chapter files, 11 viz modules, the data loader, and `main.js` wiring it together.
+
+### Why
+
+Previously, producing another scrolly meant copying the whole project — 27 source files, 3 styles — and then gutting 80% of it. Only ~300 lines were generic (the motion + footnote + base styles); the rest (~2400 lines) was story-specific. Copying everything was the wrong default.
+
+The core is the 300 generic lines. The scrolly is the 2400 story lines. They live in different places now.
+
+### Workspace layout
+
+```
+thecontrarian.in-gpt5.2/
+  package.json                       (workspaces: ["packages/*", "content/datastory/*"])
+  bun.lock                           (workspace lockfile)
+  packages/
+    scrollytelling-core/
+      package.json                   (@thecontrarian/scrollytelling-core)
+      README.md
+      src/
+        index.js                     (barrel re-exports)
+        motion/
+          image-reveal.js
+          scroll-trigger.js
+        components/
+          footnote.js
+      styles/
+        index.css                    (re-exports the three below)
+        reset.css
+        typography.css
+        scrolly.css
+  content/datastory/
+    bangalore-metro-conspiracy-theory/   (story-specific)
+      package.json                   ("@thecontrarian/scrollytelling-core": "workspace:*")
+      src/
+        main.js                      (imports from core)
+        chapters/                    (9 story files)
+        viz/                         (11 story modules)
+        data/loaders.js
+      index.html                     (sets --accent-color: #5E2D8C)
+```
+
+### Theming
+
+The Namma Metro purple is no longer hardcoded in the core's `scrolly.css`. It now reads `var(--accent-color)` (with `#5E2D8C` as the default). Each scrolly sets this on `:root` in its own `index.html` to match its story's brand. The next scrolly can use a different colour without touching the core.
+
+### Files touched
+
+- **Created** `packages/scrollytelling-core/` — the new shared core
+- **Moved** 6 files from the scrolly to the core (3 motion/footnote, 3 styles)
+- **Modified** the scrolly's `package.json` to add `"@thecontrarian/scrollytelling-core": "workspace:*"`
+- **Modified** the scrolly's `src/main.js` to import CSS and JS from the core
+- **Modified** all 9 chapter files to import `{ wireFootnotes, ScrollTrigger, gsap }` from the core
+- **Modified** the scrolly's `index.html` — removed the 3 `<link rel="stylesheet" href="/styles/*.css">` tags, added `<style>:root { --accent-color: #5E2D8C; }</style>` for the brand colour
+- **Modified** root `package.json` to declare bun workspaces
+- **Modified** root `.gitignore` to ignore `content/datastory/*/node_modules/` (bun's per-workspace install)
+- **Modified** root `package.json` devDeps — added `unist-util-visit` (the remark plugin's direct dep, no longer hoisted by bun the way npm hoisted it)
+- **Bumped** `bun.lock` to the new workspace lockfile
+
+### Bun workspace quirks worth knowing
+
+- Bun's per-workspace installs are local by default. Each member's `node_modules/` has its own copies of overlapping deps. Not a correctness problem, just a disk thing.
+- Bun doesn't hoist transitive deps to the root `node_modules/` the way `npm install` did. The `remark-strip-notebook-html.mjs` plugin imports `unist-util-visit` directly, so it's now an explicit root devDep.
+- `bun.lock` at the project root is the workspace lockfile. Commit it.
+
+Build verified: 27 pages, 0 warnings, served HTML has `--accent-color` set, title and H1 source from .md. The scrolly's bundle size is essentially unchanged (the core gets bundled into the same single JS/CSS asset).
+
 ## v0.7 — Article title now sources from the .md (2026-07-17)
 
 The article's title, meta description, and H1 are no longer hardcoded in `index.html`. They are patched at build time from the .md frontmatter (`title:` and `metaDescription:`), so the .md is the single source of truth for what the article is called.

@@ -1,0 +1,25 @@
+{
+  "name": "@thecontrarian/scrollytelling-core",
+  "version": "0.1.0",
+  "description": "Shared core for thecontrarian.in scrollytelling pieces — motion, footnotes, base styles. Story-specific code (chapters, viz, data) lives in each scrolly's own directory.",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.js",
+    "./motion/image-reveal": "./src/motion/image-reveal.js",
+    "./motion/scroll-trigger": "./src/motion/scroll-trigger.js",
+    "./components/footnote": "./src/components/footnote.js",
+    "./styles": "./styles/index.css",
+    "./styles/reset.css": "./styles/reset.css",
+    "./styles/typography.css": "./styles/typography.css",
+    "./styles/scrolly.css": "./styles/scrolly.css"
+  },
+  "files": [
+    "src",
+    "styles"
+  ],
+  "peerDependencies": {
+    "d3": "^7.9.0",
+    "gsap": "^3.13.0"
+  }
+}

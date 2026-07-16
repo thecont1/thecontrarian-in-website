@@ -4,9 +4,9 @@
 // Two horizontal bar charts, scroll-revealed.
 
 import { loadDailyByMode } from '../data/loaders.js';
-import { ScrollTrigger } from '../motion/scroll-trigger.js';
+import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderHorizontalBar } from '../viz/horizontal-bar.js';
-import { wireFootnotes } from '../components/footnote.js';
+import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh2Crowded(chapterEl) {
   const daily = await loadDailyByMode();

@@ -5,9 +5,9 @@
 // the implication.
 
 import { loadDailyByMode } from '../data/loaders.js';
-import { ScrollTrigger } from '../motion/scroll-trigger.js';
+import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderMultiRidershipLine } from '../viz/multi-ridership-line.js';
-import { wireFootnotes } from '../components/footnote.js';
+import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh6LongWeekend(chapterEl) {
   const daily = await loadDailyByMode();

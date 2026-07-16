@@ -4,10 +4,10 @@
 // Commute vs Casual.
 
 import { loadDailyByMode } from '../data/loaders.js';
-import { ScrollTrigger } from '../motion/scroll-trigger.js';
+import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderBoxplot } from '../viz/boxplot.js';
 import { renderStackedArea } from '../viz/stacked-area.js';
-import { wireFootnotes } from '../components/footnote.js';
+import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh5OneMonth(chapterEl) {
   const daily = await loadDailyByMode();

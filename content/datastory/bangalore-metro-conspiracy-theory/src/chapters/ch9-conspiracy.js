@@ -8,11 +8,11 @@
 //   C. Putting the Hypothesis to the Test — CI bars for each channel.
 
 import { loadDailyByMode, loadHypothesisWindow } from '../data/loaders.js';
-import { ScrollTrigger } from '../motion/scroll-trigger.js';
+import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderMultiRidershipLine } from '../viz/multi-ridership-line.js';
 import { renderBeforeAfter } from '../viz/before-after.js';
 import { renderCIBar } from '../viz/ci-bar.js';
-import { wireFootnotes } from '../components/footnote.js';
+import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh9Conspiracy(chapterEl) {
   const [daily, hypWindow] = await Promise.all([

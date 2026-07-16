@@ -3,9 +3,9 @@
 // Daily ridership with event markers (Ranji Trophy, Ed Sheeran, Aero India).
 
 import { loadDailyByMode, loadSignificantEvents } from '../data/loaders.js';
-import { ScrollTrigger } from '../motion/scroll-trigger.js';
+import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderEventLine } from '../viz/event-line.js';
-import { wireFootnotes } from '../components/footnote.js';
+import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh7VisitorEconomy(chapterEl) {
   const [daily, events] = await Promise.all([

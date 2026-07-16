@@ -3,10 +3,12 @@
 // Chapters are mounted lazily via IntersectionObserver so the initial bundle
 // execution is small. Each chapter's D3 viz only renders when the chapter
 // is about to scroll into view.
+//
+// Story-specific code only. Generic motion / footnotes / base styles
+// come from @thecontrarian/scrollytelling-core (a sibling workspace
+// package at packages/scrollytelling-core/).
 
-import '../styles/reset.css';
-import '../styles/typography.css';
-import '../styles/scrolly.css';
+import '@thecontrarian/scrollytelling-core/styles';
 
 import { mountCh1OneDay } from './chapters/ch1-one-day.js';
 import { mountCh2Crowded } from './chapters/ch2-crowded.js';
@@ -17,7 +19,7 @@ import { mountCh6LongWeekend } from './chapters/ch6-long-weekend.js';
 import { mountCh7VisitorEconomy } from './chapters/ch7-visitor-economy.js';
 import { mountCh8FareHike } from './chapters/ch8-fare-hike.js';
 import { mountCh9Conspiracy } from './chapters/ch9-conspiracy.js';
-import { setupImageReveals } from './motion/image-reveal.js';
+import { setupImageReveals } from '@thecontrarian/scrollytelling-core';
 
 // Footer copyright year
 const yearEl = document.getElementById('copyright-year');

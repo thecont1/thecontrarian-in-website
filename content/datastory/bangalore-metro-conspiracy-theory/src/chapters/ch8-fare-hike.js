@@ -4,11 +4,11 @@
 // "How badly did it hurt?" (CI bars).
 
 import { loadDailyByMode, loadFareHikeWindow } from '../data/loaders.js';
-import { ScrollTrigger } from '../motion/scroll-trigger.js';
+import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderRidershipLine } from '../viz/ridership-line.js';
 import { renderStackedArea } from '../viz/stacked-area.js';
 import { renderCIBar } from '../viz/ci-bar.js';
-import { wireFootnotes } from '../components/footnote.js';
+import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh8FareHike(chapterEl) {
   const [daily, fareHikeWindow] = await Promise.all([

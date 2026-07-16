@@ -1,0 +1,17 @@
+/* styles/index.css — single import for all core scrollytelling styles.
+ *
+ * Each scrolly's main.js does:
+ *   import '@thecontrarian/scrollytelling-core/styles';
+ *
+ * Vite bundles these into one CSS file alongside the scrolly's own
+ * story-specific stylesheets. The order matters: this file sets
+ * defaults (typography, reset, base scrolly layout) that the
+ * scrolly's own styles can override.
+ *
+ * Story-specific theming goes through CSS custom properties —
+ * `--accent-color` is the brand colour and is set on :root in the
+ * scrolly's own index.html (or its own stylesheet).
+ */
+@import './reset.css';
+@import './typography.css';
+@import './scrolly.css';
