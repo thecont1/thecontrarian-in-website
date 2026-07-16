@@ -24,22 +24,30 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site).href;
 /**
  * Scrolly dispatch.
  *
- * Scrolly entries are pre-built into public/<baseUrl>/ by the
- * `scripts/build_scrolly.mjs` prebuild/predev step. We don't re-render
- * them through Astro; we serve the pre-built HTML directly. The format
- * is invisible to the public (same URL, no badge, no marker).
+ * Scrolly entries are pre-built by `scripts/build_scrolly.mjs` (run via
+ * predev/prebuild) into <source>/dist/ — colocated with the scrolly's
+ * Vite project at content/datastory/<slug>/dist/. We read
+ * <source>/dist/index.html and return it as a Response. The bundled
+ * assets (assets/, data/) are copied to dist/datastory/<slug>/{assets,data}/
+ * by the post-build hook in scaffold-integration.ts.
  *
+ * The format is invisible to the public (same URL, no badge, no marker).
  * The route file is shared between notebook and scrolly entries — the
- * dispatcher below picks the right path. In dev, the public/ file is
- * rebuilt on every scrolly source change (see scaffold-integration.ts).
+ * dispatcher below picks the right path.
  */
 if (story.data.format === "scrolly") {
-  // baseUrl is a URL path (starts with "/"), not a filesystem path.
-  // Strip the leading slash to use it as a relative public/ path.
-  const relativePath = story.data.baseUrl.replace(/^\/+/, "");
-  const publicFile = path.resolve(process.cwd(), "public", relativePath, "index.html");
-  if (fs.existsSync(publicFile)) {
-    const html = fs.readFileSync(publicFile, "utf-8");
+  // `source` is a path relative to the .md entry's directory
+  // (content/datastory/). Resolve it against the .md's location, which
+  // for an Astro content collection entry is content/datastory/.
+  const sourcePath = path.resolve(
+    process.cwd(),
+    "content",
+    "datastory",
+    story.data.source,
+  );
+  const scrollyIndex = path.join(sourcePath, "dist", "index.html");
+  if (fs.existsSync(scrollyIndex)) {
+    const html = fs.readFileSync(scrollyIndex, "utf-8");
     return new Response(html, {
       status: 200,
       headers: { "content-type": "text/html; charset=utf-8" },
@@ -52,7 +60,7 @@ if (story.data.format === "scrolly") {
     `<body style="font-family:system-ui;padding:2rem;max-width:60ch">` +
     `<h1>Scrolly build missing</h1>` +
     `<p>The datastory <code>${story.id}</code> is configured as <code>format: scrolly</code> ` +
-    `but the prebuilt file at <code>public/${story.data.baseUrl}index.html</code> does not exist.</p>` +
+    `but the prebuilt file at <code>${scrollyIndex}</code> does not exist.</p>` +
     `<p>Run <code>node scripts/build_scrolly.mjs</code> (or <code>bun run dev</code> / ` +
     `<code>npm run build</code>, which invoke it via predev/prebuild).</p>` +
     `</body>`,

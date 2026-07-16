@@ -9,7 +9,11 @@ heroImage: "/library/throwaways/dataset-cover.jpg"
 geography: ["bangalore", "india"]
 theme: ["datastory", "public transport", "data analysis", "investigation", "fare hike"]
 format: scrolly
-source: "./remote-only/datastory/bangalore-metro-conspiracy-theory"
+# Path to the scrolly Vite project, relative to this .md file's location.
+# The scrolly is a self-contained project with its own package.json, vite.config.js,
+# src/, and public/data/. The Astro build invokes `vite build --base=<baseUrl>` and
+# reads the result from <source>/dist/index.html.
+source: "./bangalore-metro-conspiracy-theory"
 baseUrl: "/datastory/bangalore-metro-conspiracy-theory/"
 toc: true
 ---

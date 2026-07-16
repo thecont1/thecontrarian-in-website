@@ -347,34 +347,37 @@ async function enrichCodeFile(filePath: string) {
   }
 }
 
-/* ── Scrolly watcher (dev only) ────────────────────────────────────────
- *
- * Reads content/datastory/*.md to find entries with `format: scrolly`,
- * then watches each scrolly source directory. On any change in a
- * scrolly source, re-runs `node scripts/build_scrolly.mjs` so the
- * dev server picks up the new public/datastory/<slug>/index.html.
- *
- * Note: predev already runs build_scrolly.mjs once before the dev
- * server starts. The watcher handles in-dev edits.
- * --------------------------------------------------------------------- */
+/* ── Scrolly: discovery ─────────────────────────────────────────────── */
+
+const DATASTORY_DIR = path.resolve(__dirname, '../content/datastory');
+
+interface ScrollyEntry {
+  slug: string;
+  /** Path to the scrolly's Vite project, resolved against the .md entry's location (content/datastory/). */
+  sourceDir: string;
+  /** Public URL prefix under which the scrolly is served, e.g. "/datastory/bangalore-metro-conspiracy-theory/". */
+  baseUrl: string;
+}
+
+function findScrollyEntries(): ScrollyEntry[] {
+  const entries: ScrollyEntry[] = [];
+  if (!fs.existsSync(DATASTORY_DIR)) return entries;
+  for (const file of fs.readdirSync(DATASTORY_DIR)) {
+    if (!file.endsWith('.md')) continue;
+    const slug = file.replace(/\.md$/, '');
+    const { fields } = parseFrontmatter(
+      fs.readFileSync(path.join(DATASTORY_DIR, file), 'utf8'),
+    );
+    if (fields.format !== 'scrolly') continue;
+    if (typeof fields.source !== 'string' || typeof fields.baseUrl !== 'string') continue;
+    const sourceDir = path.resolve(DATASTORY_DIR, fields.source);
+    entries.push({ slug, sourceDir, baseUrl: fields.baseUrl });
+  }
+  return entries;
+}
 
 function findScrollySourceDirs(): string[] {
-  const sources: string[] = [];
-  const dataDir = path.resolve(__dirname, '../content/datastory');
-  if (!fs.existsSync(dataDir)) return sources;
-  for (const file of fs.readdirSync(dataDir)) {
-    if (!file.endsWith('.md')) continue;
-    const { fields } = parseFrontmatter(
-      fs.readFileSync(path.join(dataDir, file), 'utf8'),
-    );
-    if (fields.format === 'scrolly' && typeof fields.source === 'string') {
-      const abs = path.isAbsolute(fields.source)
-        ? fields.source
-        : path.resolve(__dirname, '..', fields.source);
-      if (!sources.includes(abs)) sources.push(abs);
-    }
-  }
-  return sources;
+  return findScrollyEntries().map((e) => e.sourceDir);
 }
 
 function rebuildScrolly(reason: string) {
@@ -428,6 +431,116 @@ function setupScrollyWatcher() {
   }
 }
 
+/* ── Scrolly: post-build asset copy ────────────────────────────────────
+ *
+ * After Astro's static build writes the route Response to
+ * dist/datastory/<slug>/index.html, copy the scrolly's bundled
+ * assets/ and data/ from <source>/dist/ into dist/datastory/<slug>/
+ * so the deployed HTML's relative asset URLs resolve correctly.
+ *
+ * The route itself (src/pages/datastory/[...slug].astro) reads
+ * <source>/dist/index.html and returns it as the Response. Astro
+ * writes the Response body to dist/datastory/<slug>/index.html.
+ * We only handle the auxiliary files here.
+ * --------------------------------------------------------------------- */
+
+function copyDirSync(src: string, dest: string) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const s = path.join(src, entry.name);
+    const d = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirSync(s, d);
+    } else if (entry.isFile()) {
+      fs.copyFileSync(s, d);
+    }
+  }
+}
+
+function copyScrollyAssets(distDir: string, logger: { info: (msg: string) => void }) {
+  const entries = findScrollyEntries();
+  if (entries.length === 0) return;
+  for (const e of entries) {
+    const scrollyDist = path.join(e.sourceDir, 'dist');
+    if (!fs.existsSync(scrollyDist)) {
+      logger.info(`[Scrolly] ${e.slug}: no dist/ found, skipping asset copy (build_scrolly.mjs may not have run)`);
+      continue;
+    }
+    // Copy assets/ and data/ (the bundled JS/CSS chunks and fetched JSONs).
+    // The index.html itself is provided by the route's Response — do not
+    // overwrite it.
+    for (const subdir of ['assets', 'data']) {
+      const srcSub = path.join(scrollyDist, subdir);
+      if (!fs.existsSync(srcSub)) continue;
+      const destSub = path.join(distDir, e.baseUrl.replace(/^\/+/, ''), subdir);
+      copyDirSync(srcSub, destSub);
+      logger.info(`[Scrolly] ${e.slug}: copied ${subdir}/ → ${path.relative(distDir, destSub)}/`);
+    }
+  }
+}
+
+/* ── Scrolly: dev middleware ───────────────────────────────────────────
+ *
+ * In dev, the route serves the scrolly's index.html as a Response.
+ * But the bundled assets (assets/, data/) live on disk inside
+ * <source>/dist/, not in the Astro public/. The dev server normally
+ * only serves static files from public/ — so we register a Vite
+ * middleware that intercepts requests to /<baseUrl>/<subdir>/<file>
+ * and streams the file from <source>/dist/<subdir>/<file>.
+ *
+ * The middleware is only registered for slugs that have a built
+ * dist/ on disk. Files that don't exist fall through to the next
+ * handler (Astro's 404).
+ * --------------------------------------------------------------------- */
+
+const MIME: Record<string, string> = {
+  '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.geojson': 'application/geo+json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.map': 'application/json; charset=utf-8',
+};
+
+function setupScrollyMiddleware(server: any) {
+  const entries = findScrollyEntries().filter((e) =>
+    fs.existsSync(path.join(e.sourceDir, 'dist', 'index.html')),
+  );
+  if (entries.length === 0) return;
+
+  console.log(`[Scrolly] Dev middleware: ${entries.length} scrolly entr${entries.length === 1 ? 'y' : 'ies'}`);
+
+  server.middlewares.use((req: any, res: any, next: any) => {
+    const url = req.url || '';
+    for (const e of entries) {
+      // baseUrl like "/datastory/bangalore-metro-conspiracy-theory/". Strip
+      // trailing slash for the prefix match.
+      const prefix = e.baseUrl.replace(/\/+$/, '');
+      if (!url.startsWith(prefix + '/')) continue;
+      // Skip the index.html path itself — that's handled by the route.
+      const remainder = url.slice(prefix.length + 1).split('?')[0];
+      if (!remainder || remainder === 'index.html') continue;
+      // The scrolly's dist/ has the same internal structure (assets/, data/).
+      const filePath = path.join(e.sourceDir, 'dist', remainder);
+      if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) continue;
+      const ext = path.extname(filePath).toLowerCase();
+      res.statusCode = 200;
+      res.setHeader('content-type', MIME[ext] || 'application/octet-stream');
+      res.setHeader('cache-control', 'no-cache');
+      fs.createReadStream(filePath).pipe(res);
+      return;
+    }
+    next();
+  });
+}
+
 /* ── Integration entry point ─────────────────────────────────────────── */
 
 export default function scaffoldIntegration() {
@@ -456,7 +569,18 @@ export default function scaffoldIntegration() {
           // Scrolly: watch each scrolly source dir and rebuild on change
           setupScrollyWatcher();
         }
-      }
+      },
+      'astro:server:setup': ({ server }: { server: any }) => {
+        // Scrolly: serve bundled assets from <source>/dist/ in dev mode
+        // (the route serves the index.html; the middleware serves the
+        // /assets/ and /data/ subpaths that the HTML references).
+        setupScrollyMiddleware(server);
+      },
+      'astro:build:done': async ({ dir, logger }: { dir: URL; logger: any }) => {
+        const distDir = fileURLToPath(dir);
+        logger.info(`[Scrolly] Copying bundled assets to ${path.relative(process.cwd(), distDir)}/...`);
+        copyScrollyAssets(distDir, logger);
+      },
     }
   };
 }
