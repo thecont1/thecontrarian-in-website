@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.5 — 50-block reveal, hero excluded, prominent citation title (2026-07-16)
+
+The image reveal is now 50 random blocks (up from 20) with a tighter scroll range. The hero image is excluded from the animation — it loads normally on page load. The citation popover's title is now the visual hero of the card: prominent serif, bold, never truncated.
+
+### Image reveal: 50 blocks, tighter range, hero excluded
+
+- The grid is now **5×10 = 50 blocks** (up from 4×5 = 20). Each block is `background-size: 1000% 500%` with a `background-position` targeting its 1/10 × 1/5 portion. The assembly reads as a finer pixelation — the image looks like it resolves out of a denser grid.
+- The trigger end is now **`top 50%`** (was `top 30%`). The reveal completes by the time the top edge of an image reaches 50% of the viewport height, instead of waiting until it's well into view. The 50 blocks share the 90% → 50% scroll range so each gets an equal slice.
+- **The hero image is excluded from the animation.** `setupImageReveals()` now targets only `.datastory-photo img`. The hero (`<figure class="datastory-header .hero">`) loads immediately on page load with no mask, no block grid, no scroll trigger. The CSS rule for `.datastory-header .hero img` is just `width: 100%; height: auto; display: block` — no opacity: 0, no `img-reveal` wrapper.
+
+### Citation popover: prominent title, default OG thumbnail
+
+- The article title is now the visual hero of the card. It uses the **Fraunces** display serif at **1.02rem, weight 700, line-height 1.2**, letter-spacing `-0.005em`. It never truncates — wraps freely to up to 2 lines (clamped via `-webkit-line-clamp: 2`).
+- When a footnote supplies an `og.image`, that's used as the 64×64 thumbnail. When it doesn't, the popover shows a **default document-icon SVG** drawn in Namma Metro purple (`color-mix(in srgb, #5E2D8C 6%, #fff)` background, `currentColor: #5E2D8C` strokes). The icon is a sheet with three lines and a folded corner — the visual metaphor for "an article". Defined as `DEFAULT_THUMB_SVG` in `src/components/footnote.js`.
+
+### Files touched
+
+- `src/motion/image-reveal.js` — `ROWS = 5`, `COLS = 10`, `REVEAL_END = 'top 50%'`, selector narrowed to `.datastory-photo img`
+- `src/components/footnote.js` — `DEFAULT_THUMB_SVG` constant, used when `og.image` is absent
+- `styles/scrolly.css` — 5×10 grid template, `background-size: 1000% 500%`, prominent title styles, default-thumb styles
+
+---
+
 ## v0.4.6 — Alternating chapter backgrounds (2026-07-16)
 
 Chapters now alternate between **paper white** (odd: 1, 3, 5, 7, 9) and a **very light hint of NammaMetro purple** (even: 2, 4, 6, 8) — a `color-mix(in srgb, #5E2D8C 5%, #fff)` that lands at roughly `#f7f4f9`. Just enough to read as a new section without competing with the content.
