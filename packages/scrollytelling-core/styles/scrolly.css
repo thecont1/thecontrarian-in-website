@@ -592,9 +592,11 @@ main {
 
 /* Each row is a "chip" — a 22×22 percentile-coloured square on
    top, with a 2-line date label (day-of-week + "Month DD")
-   below it. The active row gets a 0.5px black border wrapping
-   both the square AND the date label, so the selection reads
-   as a single bounded unit. */
+   below it. Hovering a row draws a 0.5px black box around
+   the chip (square + label) so the currently-selected day
+   reads as a single bounded unit. The chart already follows
+   the cursor on hover, so the box is the "this is the day
+   the chart is showing" marker. */
 .treemap-day-row {
   display: flex;
   flex-direction: column;
@@ -607,7 +609,13 @@ main {
   transition: border-color 0.12s ease-out, background 0.12s ease-out;
 }
 
+/* Hover is the only selection state — no click-to-lock, no
+   separate "active" class. The black border + pale ink
+   background is the "you are pointing at this day" signal,
+   and it follows the cursor as the user sweeps across the
+   7 days. */
 .treemap-day-row:hover {
+  border-color: var(--ink);
   background: rgba(0, 0, 0, 0.04);
 }
 
@@ -634,12 +642,10 @@ main {
   opacity: 0.75;
 }
 
-.treemap-day-row--active {
-  border-color: var(--ink);
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.treemap-day-row--active .treemap-day-row__label {
+/* Hovered row's date label is at full opacity, so the date
+   reads as a "this is the date the chart is showing" pointer
+   rather than a dimmed passive label. */
+.treemap-day-row:hover .treemap-day-row__label {
   opacity: 1;
 }
 

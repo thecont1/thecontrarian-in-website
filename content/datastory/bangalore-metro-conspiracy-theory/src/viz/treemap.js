@@ -231,58 +231,38 @@ export function renderTreemap(container, days, stats) {
     .append('div')
     .attr('class', 'treemap-legend');
 
-  // Day rows: hover drives the chart; click does the same
-  // (so keyboard / touch users get the same interaction).
-  // The active-row border on click is a small "locked in"
-  // indicator — the chart already follows the cursor on
-  // hover, so click doesn't change the visual chart state,
-  // it just adds the border. No tooltip on hover — the
-  // day-row labels already read as "Mon / Dec 08" and the
-  // rectangles' tinted backgrounds read as "this is the
-  // Smart Card area", so a popup would only duplicate
-  // what's already visible. (The tooltip was tried in
-  // v0.17 but its only good place to hang was inside the
-  // chart, where it covered the rectangles — gone in
-  // v0.18.)
+  // Day rows: hover is the only interaction. Hovering a
+  // row drives the chart to that day's mix; the same
+  // hover state also draws the 0.5px black box around the
+  // chip (CSS :hover). No click-to-lock, no separate
+  // "active" class — the box is the "this is the day the
+  // chart is showing" marker, and it follows the cursor.
+  // On mouseleave, the chart stays on the last-hovered day
+  // (no flicker-back). Keyboard / touch users don't have a
+  // way to drive the chart; the box is decoration for the
+  // mouse case. The selector remains focusable for screen
+  // readers, but the rows themselves are not interactive
+  // (no `role="button"`, no `tabindex`).
   const dayRows = selector
     .selectAll('div.treemap-day-row')
     .data(selectorDays)
     .join('div')
     .attr('class', 'treemap-day-row')
-    .attr('role', 'button')
-    .attr('tabindex', 0)
     .attr('aria-label', (d) => `${formatDateLabel(d.date)}, ${formatRiders(d.total)}`)
     .on('mouseenter', function (_event, d) {
       // Live-preview: the chart morphs to this day's mix on
-      // hover. The active-row border (set by click) does NOT
-      // change on hover — the border is the "locked in"
-      // marker, separate from "what the chart is currently
-      // showing".
+      // hover. The CSS :hover state draws the box around
+      // the chip simultaneously — no JS-driven class
+      // toggling needed.
       renderDay(d);
-    })
-    .on('mouseleave', function () {
-      // No tooltip to fade; the chart stays on the
-      // last-hovered day. The user can keep reading the
-      // chart as they move toward the legend or the
-      // article body.
-    })
-    .on('click', function (_event, d) {
-      selectedDay = d;
-      updateSelector();
-      renderDay(d);
-    })
-    .on('keydown', function (event, d) {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        selectedDay = d;
-        updateSelector();
-        renderDay(d);
-      }
     });
+  // (No `mouseleave` handler: the chart stays on the
+  // last-hovered day. No `click` / `keydown` handlers:
+  // hover is the only selection interaction.)
 
   // The date label sits BELOW the square. Two lines: day-of-week
-  // on top, "Month DD" below. The active row's chip (square +
-  // label) is bordered to show the selection.
+  // on top, "Month DD" below. The hovered row's chip (square +
+  // label) is bordered to show the selection (CSS :hover).
   const dayLabel = dayRows
     .append('div')
     .attr('class', 'treemap-day-row__label');
@@ -300,10 +280,6 @@ export function renderTreemap(container, days, stats) {
     .attr('class', 'treemap-day')
     .attr('type', 'button')
     .style('background', (d) => colorForValue(d.total));
-
-  function updateSelector() {
-    dayRows.classed('treemap-day-row--active', (d) => d.date === selectedDay.date);
-  }
 
   // Tiny SVG-icon patterns used as rect fills. Transparent tile bg so
   // rotation doesn't leave seams; paper base lives on the segment rect.
@@ -521,7 +497,6 @@ export function renderTreemap(container, days, stats) {
       .attr('transform', segmentTransform());
   }
 
-  updateSelector();
   renderDay(selectedDay);
 
   function destroy() {

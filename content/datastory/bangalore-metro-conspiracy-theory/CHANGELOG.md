@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.21 — Treemap: hover-only date selector with box around hovered day (2026-07-18)
+
+The treemap's day selector strips out click-to-select and treats hover as the only selection interaction. The chart follows the cursor (already the v0.17 behavior) and a 0.5px black box now draws around the hovered row's chip (square + date label), so the "this is the day the chart is currently showing" marker is unambiguous and follows the mouse as the user sweeps across the 7 days.
+
+### What changed
+
+- **Click and keydown handlers removed.** The day rows are no longer interactive in the keyboard / touch sense — there's no `role="button"`, no `tabindex`. Hover is the only selection interaction. The chart already follows the cursor (v0.17), so click didn't add anything that hover wasn't already doing.
+- **Box around the hovered row.** The 0.5px black border + pale ink background that previously required the `--active` class (set by click) is now driven by CSS `:hover`. The box wraps the entire chip — the 22×22 percentile-coloured square AND the two-line date label — so the selection reads as a single bounded unit, not a square with a label hanging off it.
+- **`.treemap-day-row--active` class removed.** The class and its styles are gone from both the JS (no more `updateSelector`, no more `selectedDay` mutations from click) and the CSS (no more `--active` block). The CSS :hover state is the only selection state.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/treemap.js` — removed the `click` and `keydown` handlers from `dayRows`; removed `role="button"` and `tabindex=0`; removed the `updateSelector` function and its call; the `selectedDay` variable is still used for the initial `renderDay` call but is no longer mutated by user interaction.
+- `packages/scrollytelling-core/styles/scrolly.css` — `.treemap-day-row--active` rules removed; the `.treemap-day-row:hover` block now draws the 0.5px black border + pale ink background; the hover rule's comment updated to reflect "hover is the only selection state".
+
 ## v0.20 — Treemap: revert rectangle tints back to paper (2026-07-18)
 
 Reverts the v0.18 tinted-rectangle change. The treemap rectangles are back to a flat paper base, with the icon pattern (in the channel's full saturation) carrying the mode identity on its own. After sitting with the tinted base for a beat, the user decided the seven competing colour blocks were too busy — the icons alone are enough, and the paper base keeps the chart reading as a single neutral surface.
