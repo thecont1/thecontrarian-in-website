@@ -18,20 +18,7 @@ import {
   renderCalendarStrip,
   extractWindow,
 } from '../viz/calendar-strip.js';
-import { renderStackedBar } from '../viz/stacked-bar.js';
-
-// Pick a representative weekday for the stacked-bar viz. Prefers a
-// recent Wednesday (mid-week, full data), then falls back to any
-// recent Mon–Thu, then to the last day in the data.
-function pickRepresentativeWeekday(daily) {
-  // Walk from the most recent day backwards; first Mon–Thu wins.
-  for (let i = daily.length - 1; i >= 0; i--) {
-    const d = new Date(daily[i].date);
-    const dow = d.getDay();             // 0 = Sun, 1 = Mon, ..., 6 = Sat
-    if (dow >= 1 && dow <= 4) return daily[i];
-  }
-  return daily[daily.length - 1];
-}
+import { renderTreemap } from '../viz/treemap.js';
 
 export async function mountCh1OneDay(chapterEl) {
   // 1. Load data
@@ -43,7 +30,7 @@ export async function mountCh1OneDay(chapterEl) {
 
   // 2. Find the viz container
   const calendarSlot = chapterEl.querySelector('[data-viz="calendar-strip"]');
-  const barSlot = chapterEl.querySelector('[data-viz="stacked-bar"]');
+  const barSlot = chapterEl.querySelector('[data-viz="treemap"]');
   if (!calendarSlot || !barSlot) {
     console.warn('ch1-one-day: viz slots not found in chapter element');
     return;
@@ -53,9 +40,21 @@ export async function mountCh1OneDay(chapterEl) {
   const window = extractWindow(daily);
   const calViz = renderCalendarStrip(calendarSlot, daily, window, stats);
 
-  // 4. Render the single-day stacked bar
-  const repDay = pickRepresentativeWeekday(daily);
-  const barViz = renderStackedBar(barSlot, repDay);
+  // 4. Render the treemap with a 7-day window (Dec 8–14) as the
+  //    day selector. The selector reads whatever days are passed
+  //    in, so the chapter mount picks the window. Each day in
+  //    the window becomes a "chip" in the right-side selector
+  //    (square + day-of-week + month-date); the first day in
+  //    the window is the default selection.
+  const SELECTOR_DATES = [
+    '2024-12-08', '2024-12-09', '2024-12-10', '2024-12-11',
+    '2024-12-12', '2024-12-13', '2024-12-14',
+  ];
+  const daysByDate = new Map(daily.map((d) => [d.date, d]));
+  const selectorDays = SELECTOR_DATES
+    .map((iso) => daysByDate.get(iso))
+    .filter(Boolean);
+  const barViz = renderTreemap(barSlot, selectorDays, stats);
 
   // 5. ScrollTrigger: each viz animates independently as it scrolls into view.
   // The calendar reveal starts when the chart's top enters the bottom
@@ -78,7 +77,7 @@ export async function mountCh1OneDay(chapterEl) {
   const barTrigger = ScrollTrigger.create({
     trigger: barSlot,
     start: 'top 90%',
-    end: 'center center',
+    end: 'top 50%',
     scrub: 0.5,
     onUpdate: (self) => barViz.update(self.progress),
   });
