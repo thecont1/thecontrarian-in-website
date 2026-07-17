@@ -610,3 +610,51 @@ To make a new scrolly from a different notebook:
 6. Update the title in `index.html` and `<title>`
 
 The viz library, motion wrapper, footnote popover, photo polaroid, and site chrome are all reusable as-is.
+
+## v0.9 — Inline footnotes + auto-fetched citation OG (2026-07-17)
+
+The footnote system is now self-contained in `index.html`. Two improvements over the previous design:
+
+### What's new
+
+**Unified footnote trigger.** A single class, `<sup class="fn-footnote">CONTENT</sup>`, replaces the old `<sup class="fn-slot" data-fn-id="...">` + separate JS payload pattern. Two content kinds:
+
+- URL inside the sup → citation popover with OG title/desc/site
+- Plain text inside the sup → text-only footnote popover
+
+The build determines the kind by sniffing whether the content is a URL.
+
+**Auto-fetched citation OG.** A new build script `scripts/fetch_citations.mjs` walks `index.html`, finds every URL footnote, and writes its OG metadata to `<script id="article-citations">` (keyed by URL). The script is idempotent — already-cached URLs aren't re-fetched. To re-fetch (e.g. a page's OG changed), delete the entry and rebuild.
+
+The script runs as a step in `scripts/build_scrolly.mjs`, so every Astro `dev` / `build` invocation picks up new citations automatically.
+
+### How to add a citation now
+
+Just paste the URL into the article body:
+
+```html
+BMRCL publishes a daily breakdown of ridership by payment methods
+<sup class="fn-footnote">https://english.bmrc.co.in/ridership/</sup>.
+```
+
+The build fetches the OG info and writes it to `#article-citations`. The runtime promotes the sup to a numbered button with a popover.
+
+### How to add a pure footnote (no link)
+
+Put text inside the sup:
+
+```html
+The NammaMetro system opened in 2011<sup class="fn-footnote">The system's first section opened on 20 October 2011.</sup>.
+```
+
+The popover shows that text — no link, no thumbnail.
+
+### Files changed
+
+- **Modified** `packages/scrollytelling-core/src/components/footnote.js` — `wireFootnotes(footnotes)` removed; `setupFootnotes()` now reads from `#article-citations` and walks `<sup class="fn-footnote">` instead of `.fn-slot`. Two render branches: citation vs. pure text.
+- **Modified** `packages/scrollytelling-core/src/index.js` — barrel re-export updated.
+- **Modified** `index.html` — 7 `<sup class="fn-slot" data-fn-id="...">` triggers replaced with `<sup class="fn-footnote">URL</sup>`. JSON block renamed from `article-footnotes` to `article-citations`, keyed by URL.
+- **New** `scripts/fetch_citations.mjs` — walks `index.html`, fetches missing URLs' OG, rewrites `#article-citations`. ~150 lines.
+- **Modified** `scripts/build_scrolly.mjs` — runs the citation fetch as a step after `data`, before `vite build`.
+- **Modified** `src/main.js` — calls `setupFootnotes()` once on page load (already there, no change needed).
+- **Modified** `package.json` — added `citations` script (called from `build_scrolly.mjs`).
