@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.16 — Calendar polish: month labels match DOW, tooltip +50%, mean → median (2026-07-18)
+
+Three small visual changes to the Ch 1 calendar, all in service of "the data is the protagonist":
+
+### What changed
+
+- **Month labels match the DOW labels.** The "Nov / Dec / Jan / …" labels above the cells now use the same `font-size: 9` and `font-weight: 400` as the "Mon / Tue / Wed / …" labels in the left gutter. The wider `letter-spacing: 0.18em` (vs 0.04em on the DOW labels) gives the month label just enough breathing room to read as a *section title* rather than a row marker — the two read as one labelling language, not two competing ones. The colour stays `var(--muted-2)` (slightly dimmer than the DOW labels' `var(--muted)`) so the month labels recede one notch without losing the same character.
+- **Tooltip +50%.** The cell-hover tooltip is now 50% larger across the board: width 200px → 300px, chart 168×130 → 252×195, bar 44px → 66px, base font-size 0.78rem → 1.17rem, all inner font-sizes 1.5x. The bar's 0.5px border and 1px paper padding are bumped to 0.75px / 1.5px so the bar reads as a chunky physical object rather than a thin line. The box-shadow lift grows from 3px to 4px to match the larger scale. The padding inside the tooltip scales with the font (1.25em vertical, 1.5em horizontal), so the proportions stay balanced.
+- **Mean → median for the reference line.** The middle reference line in the tooltip chart was `avg` (the dataset's arithmetic mean). It now reads `med` (the dataset's median, the 50th-percentile day). The reasoning: metro ridership is right-skewed (weekend dips + occasional spike days), so the mean gets pulled up by the tails. The median anchors the chart at "what a typical day looks like" — the bar's fill vs the reference line then reads as "normal day" vs "spike day" instead of "below average" vs "above average". This is the rare chart where the *spread* is the story; the median tells the more useful story. The notebook already ships `stats.median` in `daily-stats.json` (802,511 for the Nov 14 → Apr 16 window), so no notebook changes were needed — just the JS / CSS swap.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — month labels: `font-size: 8` → `9`, `font-weight: 500` → `400`, `letter-spacing: 0.05em` → `0.18em`. Reference line: `refAvg = stats.mean` → `refMed = stats.median`, label `'avg'` → `'med'`, key `'avg'` → `'med'`.
+- `packages/scrollytelling-core/styles/scrolly.css` — tooltip `width: 200px` → `300px`, `padding: 0.85em 1em 0.7em` → `1.25em 1.5em 1em`, `font-size: 0.78rem` → `1.17rem`, `box-shadow: 3px 3px 0` → `4px 4px 0`. Date-dow `1.05rem` → `1.58rem`, date-rest `0.7rem` → `1.05rem`. Value `0.72rem` → `1.08rem`, `margin-bottom: 0.55em` → `0.8em`. Chart `168×130` → `252×195`. Bar-container `border-bottom: 1px` → `1.5px`. Bar `width: 44px` → `66px`, `border: 0.5px` → `0.75px`, `padding: 1px` → `1.5px`. Ref rule `1px` → `1.5px`, ref label `0.58rem` → `0.87rem`, label padding `4px` → `6px`. Scale label `0.62rem` → `0.93rem`, `bottom: 4px` → `6px`. CSS class `.cal-tooltip__ref--avg` renamed to `.cal-tooltip__ref--med`.
+
 ## v0.15 — Treemap render fixed (TDZ) + calendar baseline visibility (2026-07-18)
 
 Two regressions from the v0.14 treemap commit, both with the same root cause and the same fix path.

@@ -500,7 +500,13 @@ export function renderCalendarStrip(container, daily, window, stats) {
 
   // 6c. Month labels. For each month-block, a short label ("Nov",
   //     "Dec", "Jan", …) sits in the row above the cells, anchored
-  //     to the first column of that block.
+  //     to the first column of that block. Same font and weight as
+  //     the day-of-week labels to the left of the cells (size 9,
+  //     weight 400) so the two read as a single labelling
+  //     language; the wider letter-spacing (0.18em vs 0.04em on
+  //     the DOW labels) gives the month label just enough
+  //     breathing room to read as a "section title" rather than
+  //     a row marker.
   const monthLabels = monthBlocks.map((block) => {
     const firstCol = columns.find((c) => c.block === block);
     return {
@@ -515,10 +521,10 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .attr('class', 'month-label')
     .attr('x', (d) => d.x)
     .attr('y', LABEL_ROW_HEIGHT - 5)   // baseline ~5px above the top row
-    .attr('font-size', 8)
-    .attr('font-weight', 500)
+    .attr('font-size', 9)
+    .attr('font-weight', 400)
     .attr('fill', 'var(--muted-2)')
-    .attr('letter-spacing', '0.05em')
+    .attr('letter-spacing', '0.18em')
     .text((d) => d.text);
 
   // 8. Cells. Initial state: dim but visible (opacity 0.35). The
@@ -661,15 +667,26 @@ export function renderCalendarStrip(container, daily, window, stats) {
   //     (0%), max at the top (100%), avg somewhere in the middle.
   //     The labels (min / avg / max) are tucked to the right of
   //     the bar so the chart's vertical scale is implied, not
-  //     spelled out. Min/avg/max are all pre-computed by the
+  //     spelled out. Min/med/max are all pre-computed by the
   //     aggregation notebook (daily-stats.json) — the page does
   //     no analytics of its own.
+  //
+  //     "med" is the dataset's median, not the mean. Metro
+  //     ridership is right-skewed (weekend dips + occasional
+  //     spike days), so the mean gets pulled up by the tails
+  //     and reads as "above the average day". The median is
+  //     the 50th-percentile day — it anchors the chart at
+  //     "what a typical day looks like", and the bar's fill
+  //     vs the reference line then reads as "normal day" vs
+  //     "spike day" instead of "below average" vs "above
+  //     average". This is the rare chart where the *spread*
+  //     is the story; the median tells the more useful story.
   const refMin = dataMin;
   const refMax = dataMax;
-  const refAvg = stats.mean;
+  const refMed = stats.median;
   const refs = [
     { key: 'min', value: refMin, label: 'min' },
-    { key: 'avg', value: refAvg, label: 'avg' },
+    { key: 'med', value: refMed, label: 'med' },
     { key: 'max', value: refMax, label: 'max' },
   ];
   for (const r of refs) {
