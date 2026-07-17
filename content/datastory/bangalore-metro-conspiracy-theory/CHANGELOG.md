@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.10 — Calendar tooltip: 5 bands, real Min/Max, visible 1px padding (2026-07-17)
+
+The Ch 1 calendar's tooltip chart and the legend strip below the calendar now use the same 5 bands across the dataset's absolute min–max range (4.0L → 9.1L), instead of the previous 7-zone scheme anchored to the 10th–90th percentile range. The bar's 1px padding is now actually visible — the bar is a "track" (full chart height, paper-coloured padding) with a variable-height fill child inside it.
+
+### What changed
+
+- **Bucketing: value-based across absolute min–max**, not percentile. Five equal-width bands: `[4.0L, 5.0L)`, `[5.0L, 6.1L)`, `[6.1L, 7.1L)`, `[7.1L, 8.1L)`, `[8.1L, 9.1L]`. The previous 7-zone scheme (white + 5 PURPLE_BUCKETS + deep purple) had no minimum or maximum that matched the legend's "Min / Max" labels — the legend said 6.4L / 8.8L (the 10th/90th percentiles) but the actual dataset range is 4.0L / 9.1L. The new bucketing shows the real extremes and keeps the 5-band count.
+- **Tooltip chart's banded background: 5 zones** (the 5 PURPLE_BUCKETS only). No white below and no extra deep purple above. The chart's vertical scale is now `0% = 4.0L`, `100% = 9.1L`, so a value at the dataset minimum sits at the bottom of the palest band, and a value at the maximum sits at the top of the deepest band. The bar's height maps linearly across this full range.
+- **Legend: single caption row, no tick marks.** Below the 5-stop strip: a single row with `Min 4.0L` anchored at the left, `Daily Ridership` centred, `Max 9.1L` anchored at the right. All three labels are on the same row, no tick marks at band boundaries, no intermediate boundary values. The strip itself is the entire scale.
+- **Bar: track + fill so the 1px padding shows.** The bar element is now a "track" that spans the full chart height, with a 0.5px black border and **1px paper-coloured padding**. The variable-height fill is a child element whose background is the bucket colour. The 1px paper padding is now visibly sandwiched between the bar's border and the fill, so the bar stands off the chart's banded background even when the fill matches the band the value lands in.
+- **Bar fill: bucket colour, same as before.** `bucketForValue(d.total)` maps to `PURPLE_BUCKETS[bucket]` — the bar's fill matches the highest band it reaches.
+
+### How to verify
+
+1. Open the page in a browser.
+2. Hover any reported calendar cell. The tooltip chart shows the bar in the band matching the value, with a 1px paper gap visible between the bar's black border and the fill.
+3. Look below the calendar: the strip has 5 bands, and the row below reads `Min 4.0L` ... `Daily Ridership` ... `Max 9.1L`.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `valueToPct` and `bucketForValue` rewritten for value-based bucketing across absolute min–max; tooltip chart's banded background is now 5 zones (was 7); bar restructured into track + fill; legend caption row replaces the old `__title` / `__values` / `__extremes` triple; `formatCompact` Lakh values always show one decimal so the legend reads `4.0L` not `4L`.
+- `packages/scrollytelling-core/styles/scrolly.css` — `.cal-tooltip__bar` is now the full-height track with paper background and `display: flex; justify-content: flex-end`; new `.cal-tooltip__bar-fill` for the variable inner element; `.cal-tooltip__bar-container` background is the 5-stop gradient (was 5-stop too, but the band boundaries are now 20% / 40% / 60% / 80% to match the new 5-zone scheme); `.cal-legend` simplified to a single `.cal-legend__caption` row.
+
 ## v0.8 — Bun workspace + @thecontrarian/scrollytelling-core (2026-07-17)
 
 The scrolly project is now a bun workspace member. The reusable parts — motion (image-reveal, scroll-trigger), the footnote popover, and the base styles (reset, typography, scrolly) — live in a sibling package at `packages/scrollytelling-core/` and are imported as `@thecontrarian/scrollytelling-core`. The scrolly directory now holds only the story-specific code: 9 chapter files, 11 viz modules, the data loader, and `main.js` wiring it together.

@@ -585,34 +585,55 @@ main {
   border-bottom: 1px solid var(--ink);
   padding-bottom: 1px;
   position: relative;  /* anchor for the ref lines + the floating "0" label */
-  /* Horizontal bands: 5 levels stacked vertically, white at the
-     bottom (low) to deep BMRCL purple at the top (high). Each band
-     is 20% of the height. The bar sits on top of these bands — the
-     band its top edge lands in tells you the day's level. The
-     PURPLE_BUCKETS palette is mirrored here as a 5-stop linear
-     gradient; the boundaries are slightly visible because the
-     band colours differ by ~20% luminance. */
+  /* 5-zone banded background, palest at the bottom to deepest at
+     the top. Each band is 20% of the chart height. The bar's fill
+     matches the band the value lands in, so the bar visually sits
+     inside its band — the 1px paper padding on the bar's "track"
+     (see .cal-tooltip__bar below) is what gives the bar a visible
+     outline against the band. The 5-stop gradient is also set
+     inline by the JS (calendar-strip.js sets it from the same
+     PURPLE_BUCKETS so the chart and the cells stay in lockstep). */
   background: linear-gradient(
     to top,
     #ead7f3 0%,
-    #caa6dd 25%,
-    #a06ec0 50%,
-    #7a3fa8 75%,
-    #5E2D8C 100%
+    #caa6dd 20%,
+    #a06ec0 40%,
+    #7a3fa8 60%,
+    #5E2D8C 80%
   );
 }
 
 .cal-tooltip__bar {
-  /* The bar's fill (background) and height are set inline by the JS
-     in calendar-strip.js — the fill is the same purple as the highest
-     band the bar reaches, giving a second visual encoding (which
-     bucket) on top of the bar's height (how far up). The 0.5px black
-     border is a hairline outline that reads against every band
-     without dominating the bar's fill. */
+  /* The "track" — a fixed-height frame that holds the variable
+     fill. The track spans the full chart height (set by the flex
+     parent), so the bar's 0.5px black border and 1px paper-
+     coloured padding are always visible from top to bottom. The
+     fill (see .cal-tooltip__bar-fill) is the variable inner
+     element whose height is the day's value mapped to the
+     dataset's min–max range, and whose background is the
+     matching bucket colour. The 1px paper padding between the
+     track's border and the fill is the key piece: it makes the
+     bar visibly stand off the chart's banded background even
+     when the fill matches the band the value lands in. */
   width: 44px;
+  height: 100%;
   border: 0.5px solid var(--ink);
+  padding: 1px;
+  background: var(--paper);   /* paper shows through the 1px padding */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;  /* fill sits at the bottom, grows up */
+  box-sizing: border-box;
+}
+
+.cal-tooltip__bar-fill {
+  /* The variable part of the bar. Height and background colour
+     are set inline on every hover (heightPct% from the day's
+     value mapped to the min–max range; PURPLE_BUCKETS[bucket] as
+     the fill). Transition is on the height so the bar grows
+     smoothly when the user sweeps between adjacent cells. */
+  width: 100%;
   transition: height 0.18s ease-out, background 0.18s ease-out;
-  min-height: 0;
 }
 
 /* Reference lines (min / avg / max) overlaid on the bar chart. Each
@@ -676,9 +697,17 @@ main {
 
 /* ======================================================
    CALENDAR GRADIENT LEGEND (Ch 1, below the calendar grid)
-   A 10-step gradient strip showing the colour scale from
-   white (lowest ridership) to deep BMRCL purple (highest).
-   Helps the reader decode the cell colours at a glance.
+   A 5-zone strip (5 PURPLE_BUCKETS, palest → deepest) that
+   matches the chart's banded background 1:1. The strip is
+   labelled below with a single row:
+     [Min 4.0L]   Daily Ridership   [Max 9.1L]
+   where the Min/Max values are the dataset's absolute
+   minimum and maximum (not percentiles), and the title sits
+   centred between them. No tick marks at band boundaries —
+   the strip itself is the entire scale.
+   Hovering any of the 5 stops filters the calendar to that
+   bucket; non-matching cells (and unreported / out-of-range
+   cells) vanish entirely until the mouse leaves the legend.
    ====================================================== */
 .cal-legend {
   margin-top: 0.85rem;
@@ -687,21 +716,36 @@ main {
 .cal-legend__bar {
   display: flex;
   width: 100%;
-  height: 10px;
+  height: 12px;
   border: 0.5px solid var(--ink);
 }
 .cal-legend__stop {
   flex: 1;
   height: 100%;
 }
-.cal-legend__labels {
+.cal-legend__caption {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
+  margin-top: 0.45em;
   font-size: 0.62rem;
-  color: var(--muted-2);
-  margin-top: 0.3em;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.cal-legend__caption-min,
+.cal-legend__caption-max {
+  flex: 0 0 auto;     /* don't grow — sit anchored at the edges */
+  color: var(--muted);
+}
+.cal-legend__caption-title {
+  flex: 1 1 auto;     /* take the middle, centre the title */
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.005em;
 }
 
 .viz__caption {

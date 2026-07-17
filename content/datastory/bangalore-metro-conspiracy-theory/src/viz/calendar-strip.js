@@ -29,19 +29,19 @@ const ROWS = 7;             // Mon, Tue, Wed, Thu, Fri, Sat, Sun
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 // Namma Metro purple scale — 5 distinct buckets from light lavender to
-// deep BMRCL purple. Using a quantile step scale (rather than a smooth
-// interpolator) so each bucket gets equal screen real estate: most
-// days land in the mid-to-upper range, and a smooth gradient would
-// visually collapse them all into the dark end. Five bands give the
-// eye a real landmark for "is this day low, mid-low, mid, mid-high,
-// or high?" without inventing artificial cutoffs.
+// deep BMRCL purple. The dataset is divided into 5 equal-width bands
+// across its absolute min–max range, each band mapped to one of these
+// 5 colours. This is the same palette that paints the calendar cells,
+// the tooltip chart's banded background, the tooltip bar's fill, and
+// the legend strip — so all four encodings stay in lockstep.
 const PURPLE_BUCKETS = [
-  '#ead7f3',  // 0 — palest lavender (very low ridership)
+  '#ead7f3',  // 0 — palest lavender (lowest ridership band)
   '#caa6dd',  // 1 — light wisteria
   '#a06ec0',  // 2 — mid violet
   '#7a3fa8',  // 3 — deep violet
-  '#5E2D8C',  // 4 — BMRCL purple (max)
+  '#5E2D8C',  // 4 — BMRCL purple (highest ridership band)
 ];
+const BUCKET_COUNT = PURPLE_BUCKETS.length;   // 5
 
 // Padding for the X mark inside missing cells. The mark is a corner-
 // to-corner cross in a thin accent red; no fill, no border on the
@@ -67,38 +67,49 @@ export function renderCalendarStrip(container, daily, window) {
   // 1. Index daily by ISO date for O(1) lookup
   const byDate = new Map(daily.map((d) => [d.date, d]));
 
-  // 1b. Percentile boundaries (declared up-front so the cell data
-  //     built in step 3 can pre-compute its bucket). The bucket is
-  //     -1 for below-p10, 0-7 for 10-90 (eight bands, mapped to
-  //     PURPLE_BUCKETS via index 0-4 with two-per-bucket pairing),
-  //     8 for above-p90.
+  // 1b. Value-based bucketing. Five equal-width bands across the
+  //     dataset's absolute min–max range. This replaces the earlier
+  //     percentile-based scheme so:
+  //       - the legend's Min/Max labels read the actual dataset
+  //         extremes (4.0L / 9.1L) instead of the 10th/90th
+  //         percentile (6.4L / 8.8L),
+  //       - the bar's value-to-height mapping is linear across the
+  //         full observed range, and
+  //       - the chart's banded background, the cell colours, the
+  //         tooltip bar fill, and the legend strip all use the same
+  //         five bands (no white-below-p10 or extra-deep-above-p90
+  //         zones that didn't have a matching legend stop).
   const reportedTotals = daily.map((d) => d.total);
-  const sortedTotals = [...reportedTotals].sort((a, b) => a - b);
-  const quantile = (p) => {
-    const idx = (sortedTotals.length - 1) * p;
-    const lo = Math.floor(idx);
-    const hi = Math.ceil(idx);
-    if (lo === hi) return sortedTotals[lo];
-    return sortedTotals[lo] + (sortedTotals[hi] - sortedTotals[lo]) * (idx - lo);
-  };
-  const p10 = quantile(0.10);
-  const p20 = quantile(0.20);
-  const p30 = quantile(0.30);
-  const p40 = quantile(0.40);
-  const p50 = quantile(0.50);
-  const p60 = quantile(0.60);
-  const p70 = quantile(0.70);
-  const p80 = quantile(0.80);
-  const p90 = quantile(0.90);
-  const chartRange = p90 - p10;
-  // valueToPct: 0% = bottom of chart (= 10th percentile line),
-  // 100% = top (= 90th percentile line). Values < p10 clamp to 0
-  // (white zone); values > p90 clamp to 100 (deep purple zone).
-  // (bucketForValue, color, and WHITE are declared alongside the
-  //  legend below — they need to be visible to the legend-stop
-  //  data-bucket assignment, which happens after the legend is
-  //  appended. cell rendering reads the same `color` closure later.)
-  const valueToPct = (v) => Math.max(0, Math.min(100, ((v - p10) / chartRange) * 100));
+  const dataMin = d3.min(reportedTotals);
+  const dataMax = d3.max(reportedTotals);
+  const dataRange = dataMax - dataMin;
+
+  // valueToPct: 0% sits at the dataset's absolute minimum, 100% at
+  // the absolute maximum. The bar's height maps linearly to this
+  // percentage; the reference lines (min/avg/max) use the same scale.
+  function valueToPct(v) {
+    if (v == null) return 0;
+    return Math.max(0, Math.min(100, ((v - dataMin) / dataRange) * 100));
+  }
+  // bucketForValue: returns 0..4. The five band boundaries are at
+  //   dataMin, dataMin + 0.2·dataRange, ..., dataMax
+  // Values are clamped to the nearest band (no -1 "below min" or
+  // 5 "above max" cases — every observed value falls in 0..4).
+  function bucketForValue(v) {
+    if (v == null) return -1;
+    if (v <= dataMin) return 0;
+    if (v >= dataMax) return BUCKET_COUNT - 1;
+    const idx = Math.floor(((v - dataMin) / dataRange) * BUCKET_COUNT);
+    return Math.min(Math.max(idx, 0), BUCKET_COUNT - 1);
+  }
+  // color: maps the bucket to its PURPLE_BUCKETS colour. -1 (no
+  // value) clamps to bucket 0 (palest lavender).
+  function color(v) {
+    const b = bucketForValue(v);
+    if (b < 0) return PURPLE_BUCKETS[0];
+    if (b >= BUCKET_COUNT) return PURPLE_BUCKETS[BUCKET_COUNT - 1];
+    return PURPLE_BUCKETS[b];
+  }
 
   // 2. Find the Monday on or before the start, and the Sunday on or
   //    after the end. The calendar grid spans this range so the
@@ -134,12 +145,7 @@ export function renderCalendarStrip(container, daily, window) {
     });
   }
 
-  // 4. Colour scale and the chart's max for the tooltip (max + 10%).
-  //    The cells are bucketed into 5 percentile ranges (10-20, 20-30,
-  //    ..., 80-90), each mapped to one of the PURPLE_BUCKETS. The
-  //    same bucketing is used by the chart's banded background, the
-  //    tooltip's bar fill, and the legend-hover "isolate" filter, so
-  //    all four visual encodings stay in lockstep.
+  // 4. (no separate scale step — bucketing lives in 1b)
 
   // 5. SVG dimensions
   const WIDTH = LABEL_WIDTH + numWeeks * (CELL + GAP);
@@ -160,85 +166,69 @@ export function renderCalendarStrip(container, daily, window) {
     .style('height', 'auto')
     .style('font-family', 'var(--font-mono)');
 
-  // 6b. Gradient legend — 10-step purple gradient strip below the
-  //     calendar showing the colour scale (white = 10th percentile,
-  //     deep BMRCL purple = 90th percentile). Helps the reader decode
-  //     the cell colours at a glance and is also the same scale used
-  //     in the tooltip chart's banded background.
-  //
-  //     The legend has 5 stops — one per PURPLE_BUCKETS entry — so
-  //     every stop corresponds to a real bucket, and the user's
-  //     mouse can hit a meaningful "is this day in the X bucket?"
-  //     filter. (Earlier 10-stop version had stops with no
-  //     corresponding cells in some datasets, especially 5-month
-  //     windows where only the densest bucket would fire.)
-  const LEGEND_STEPS = PURPLE_BUCKETS.length;   // 5
-  const legendInterp = d3.interpolateRgb('#ffffff', PURPLE_BUCKETS[4]);
+  // Helper: format a value as a compact "Lakh riders" string.
+  // 850000 → "8.5L", 10000 → "10K", 1234567 → "12.3L". Indian
+  // numbering convention: 1 Lakh = 100,000. Lakh values always
+  // show one decimal place so the legend reads consistently
+  // ("Min 4.0L" alongside "Max 9.1L") — the trailing .0 is the
+  // visual cue that this is a Lakh value, not an integer count.
+  function formatCompact(v) {
+    if (v >= 100000) {
+      const lakhs = v / 100000;
+      return (Math.round(lakhs * 10) / 10).toFixed(1) + 'L';
+    }
+    if (v >= 1000) {
+      return Math.round(v / 1000) + 'K';
+    }
+    return String(Math.round(v));
+  }
+
+  // 6b. Gradient legend — 5-zone strip below the calendar. The strip
+  //     is the 5 PURPLE_BUCKETS, one band per equal-width slice of
+  //     the dataset's min–max range. No white below and no extra
+  //     deep purple above: the value bucketing now covers the full
+  //     range, so the 5 bands are the whole story. Below the strip,
+  //     a single row of labels: "Min <value>" anchored at the left
+  //     edge, "Daily Ridership" centred, "Max <value>" anchored at
+  //     the right edge. No tick marks at band boundaries.
   const legend = d3.select(container)
     .append('div')
     .attr('class', 'cal-legend')
-    .attr('aria-hidden', 'true');  // decorative; the cells already have aria-labels
+    .attr('aria-hidden', 'true');  // decorative; cells already have aria-labels
   const legendBar = legend.append('div').attr('class', 'cal-legend__bar');
-
-  // The 5 buckets used for cells and the tooltip bar are evenly spaced
-  // across the 10-90th percentile range. Their boundaries are the
-  // 18, 34, 50, 66, 82 percentiles (so each bucket spans 16 percentile
-  // points). Using evenly-spaced boundaries (not d3.scaleQuantile)
-  // keeps the chart's banded background, the cell colours, and the
-  // tooltip bar all aligned to the SAME 5 buckets.
-  const BUCKET_PCTS = [0.10, 0.26, 0.42, 0.58, 0.74, 0.90];
-  const bucketBoundaries = BUCKET_PCTS.map(quantile);
-  function bucketForValue(v) {
-    if (v == null) return -1;
-    if (v < bucketBoundaries[0]) return -1;          // below p10
-    for (let b = 0; b < 5; b++) {
-      if (v < bucketBoundaries[b + 1]) return b;
-    }
-    return 5;                                          // above p90
-  }
-  // Color: bucket 0-4 maps to PURPLE_BUCKETS[0-4]. -1 (below p10)
-  // clamps to PURPLE_BUCKETS[0] (palest). 5 (above p90) clamps to
-  // PURPLE_BUCKETS[4] (deepest).
-  function color(v) {
-    const b = bucketForValue(v);
-    if (b < 0) return PURPLE_BUCKETS[0];
-    if (b >= PURPLE_BUCKETS.length) return PURPLE_BUCKETS[PURPLE_BUCKETS.length - 1];
-    return PURPLE_BUCKETS[b];
-  }
-  // White fill used when the tooltip bar's value is below p10.
-  const WHITE = '#ffffff';
-
-  for (let i = 0; i < LEGEND_STEPS; i++) {
-    // 5 evenly-spaced stops, one per PURPLE_BUCKETS entry. Each
-    // stop's data-bucket matches the cells it should highlight when
-    // hovered — stop i highlights cells with bucketForValue ===
-    // i. (There are no separate "below p10" / "above p90" stops;
-    // those are clamped into buckets 0 and 4 by `color`, so cells
-    // in those ranges still light up under stops 0 and 4.)
-    const t = LEGEND_STEPS === 1 ? 0.5 : i / (LEGEND_STEPS - 1);
+  for (let i = 0; i < BUCKET_COUNT; i++) {
     legendBar
       .append('div')
       .attr('class', 'cal-legend__stop')
       .attr('data-bucket', String(i))
       .style('background', PURPLE_BUCKETS[i]);
   }
-  const legendLabels = legend.append('div').attr('class', 'cal-legend__labels');
-  legendLabels.append('span').attr('class', 'cal-legend__label-min').text('low');
-  legendLabels.append('span').attr('class', 'cal-legend__label-max').text('high');
 
-  // 6d. Legend hover → filter calendar cells. When the user hovers
-  //     any of the 5 legend stops, cells whose bucket doesn't match
-  //     the hovered stop's bucket VANISH entirely (display: none).
-  //     This is clearer than dimming at 0.18 opacity, which was hard
-  //     to distinguish from low-percentile cells at full opacity.
-  //     Cells without a bucket (unreported / out-of-range) stay
-  //     visible — they aren't a data bucket, they're a separate
-  //     category, and dimming them would also make the X marks
-  //     disappear. Mouse-leave the legend restores all cells.
-  //     The `dimActive` flag (defined alongside update()) prevents
-  //     the scroll-reveal from clobbering the dim.
+  const legendCaption = legend.append('div').attr('class', 'cal-legend__caption');
+  legendCaption
+    .append('span')
+    .attr('class', 'cal-legend__caption-min')
+    .text(`Min ${formatCompact(dataMin)}`);
+  legendCaption
+    .append('span')
+    .attr('class', 'cal-legend__caption-title')
+    .text('Daily Ridership');
+  legendCaption
+    .append('span')
+    .attr('class', 'cal-legend__caption-max')
+    .text(`Max ${formatCompact(dataMax)}`);
+
+  // 6c. Legend hover → filter calendar cells. Hovering a stop shows
+  //     only cells whose bucket matches the hovered stop. Everything
+  //     else (non-matching reported cells, unreported / out-of-range
+  //     cells) vanishes. Mouse-leave the legend restores all cells.
+  //     The `dimActive` flag (declared alongside update()) prevents
+  //     the scroll-reveal from clobbering the filter.
+  let dimActive = false;
+  let dimTarget = null;
   legend.on('mouseleave', () => {
     dimActive = false;
+    dimTarget = null;
     groups.attr('opacity', null).style('display', null);
   });
   legendBar.selectAll('.cal-legend__stop')
@@ -247,29 +237,11 @@ export function renderCalendarStrip(container, daily, window) {
       dimActive = true;
       dimTarget = target;
       groups.style('display', (d) => {
-        // Reported cells with matching bucket: visible. Anything
-        // else (non-matching reported, or unreported / out-of-
-        // range): hidden — but only if the unreported cells
-        // haven't been explicitly asked to stay visible. The user
-        // wants strict "is this day in the X bucket" filtering,
-        // so unreported days also disappear on hover.
         if (!d.reported) return 'none';
         const db = String(bucketForValue(d.total));
         return db === target ? '' : 'none';
       });
     });
-
-  // 6c. Percentile boundaries for the tooltip chart's banded
-  //     background. We compute the 10th and 90th percentile of the
-  //     reported daily ridership so the chart's vertical scale
-  //     always shows the 10th–90th percentile range — the white
-  //     band sits at the 10th percentile, the deepest band at the
-  //     90th. This means the variance is visible regardless of
-  //     the dataset's actual range, and the bands correspond
-  //     1:1 with the legend below the chart.
-  // (percentile boundaries, bucketForValue, valueToPct, and color are
-  //  computed up-front in step 1b so cells can be tagged with their
-  //  bucket at construction time)
 
   // 7. Y-axis labels (Mon, Tue, ...). Always visible.
   svg
@@ -365,31 +337,20 @@ export function renderCalendarStrip(container, daily, window) {
   const tipDateRest = tipDate.append('div').attr('class', 'cal-tooltip__date-rest');
   const tipValue = tooltip.append('div').attr('class', 'cal-tooltip__value');
   const tipChart = tooltip.append('div').attr('class', 'cal-tooltip__chart');
-  // The bar container's background is a percentile scale, with bands
-  // mapped 1:1 to the 10-step legend below the calendar. Eleven zones
-  // stacked from bottom to top:
-  //   - white      (below 10th percentile)
-  //   - 9 bands    (10-20, 20-30, ..., 80-90th percentile, each
-  //                  1/9 of the chart height, matching legend stops
-  //                  1 through 9)
-  //   - deep purple (above 90th percentile)
-  // Values that fall outside the 10–90 range are immediately visible
-  // as either fully white or fully deep purple. The bar's height
-  // maps linearly to percentile position, so a value at p50 lands
-  // at the middle of the chart.
-  //
-  // 7 hard-stop colour zones, each 100/7 of the bar-container height.
-  // Zone 0 (white) is the bottom — values below p10. Zones 1-5 are
-  // the 5 PURPLE_BUCKETS (10-90 range, evenly spaced). Zone 6 (deep
-  // purple) is the top — values above p90.
-  const ZONE_COUNT = PURPLE_BUCKETS.length + 2;   // 7
-  const zoneColors = ['#ffffff', ...PURPLE_BUCKETS, PURPLE_BUCKETS[4]];
+
+  // 9a. Tooltip chart's banded background. 5 hard-stop colour
+  //     zones, each 20% of the bar-container height, mapped to the
+  //     5 PURPLE_BUCKETS (palest at the bottom, deepest at the
+  //     top). The bar's height maps linearly to the dataset's
+  //     min–max range, so a value at the dataset minimum sits at
+  //     the bottom of the palest band, and a value at the dataset
+  //     maximum sits at the top of the deepest band.
   const zoneStops = [];
-  for (let i = 0; i < ZONE_COUNT; i++) {
-    const startPct = (i / ZONE_COUNT) * 100;
-    const endPct = ((i + 1) / ZONE_COUNT) * 100;
-    zoneStops.push(`${zoneColors[i]} ${startPct.toFixed(2)}%`);
-    zoneStops.push(`${zoneColors[i]} ${endPct.toFixed(2)}%`);
+  for (let i = 0; i < BUCKET_COUNT; i++) {
+    const startPct = (i / BUCKET_COUNT) * 100;
+    const endPct = ((i + 1) / BUCKET_COUNT) * 100;
+    zoneStops.push(`${PURPLE_BUCKETS[i]} ${startPct.toFixed(2)}%`);
+    zoneStops.push(`${PURPLE_BUCKETS[i]} ${endPct.toFixed(2)}%`);
   }
   const bandGradient = `linear-gradient(to top, ${zoneStops.join(', ')})`;
 
@@ -397,19 +358,35 @@ export function renderCalendarStrip(container, daily, window) {
     .append('div')
     .attr('class', 'cal-tooltip__bar-container')
     .style('background', bandGradient);
+
+  // 9b. The bar is a two-element structure:
+  //     - .cal-tooltip__bar — the "track". Spans the full chart
+  //       height, has a 0.5px black border and 1px paper-coloured
+  //       padding. The padding is the key piece: it shows paper
+  //       between the bucket-coloured fill and the bar's border,
+  //       so the bar visibly stands off the chart's banded
+  //       background even when the fill matches the band it
+  //       lands in.
+  //     - .cal-tooltip__bar-fill — the variable-height inner
+  //       element, filled with the bucket colour. Its height
+  //       is set inline (heightPct%) on every hover; the bucket
+  //       colour is also set inline. The fill is anchored to the
+  //       bottom of the track via flex-end.
   const tipBar = tipBarContainer
     .append('div')
     .attr('class', 'cal-tooltip__bar');
+  const tipBarFill = tipBar
+    .append('div')
+    .attr('class', 'cal-tooltip__bar-fill');
 
-  // Reference lines (min / avg / max) drawn inside the bar container as
-  // absolutely-positioned horizontal divs. They sit *over* the bar, so
-  // the eye can compare the day's value against the dataset's spread at
-  // a glance. Drawn once at render time; positions are percentile-based
-  // (same scale as the bar and the chart's banded background), so a
-  // value below p10 lands at 0% (white zone) and a value above p90
-  // lands at 100% (deep purple zone).
-  const refMin = d3.min(reportedTotals);
-  const refMax = d3.max(reportedTotals);
+  // 9c. Reference lines (min / avg / max) — absolutely-positioned
+  //     thin rules overlaid on the chart. Min sits at the bottom
+  //     (0%), max at the top (100%), avg somewhere in the middle.
+  //     The labels (min / avg / max) are tucked to the right of
+  //     the bar so the chart's vertical scale is implied, not
+  //     spelled out.
+  const refMin = dataMin;
+  const refMax = dataMax;
   const refAvg = d3.mean(reportedTotals) ?? 0;
   const refs = [
     { key: 'min', value: refMin, label: 'min' },
@@ -428,10 +405,11 @@ export function renderCalendarStrip(container, daily, window) {
       .text(r.label);
   }
 
-  // The scale axis only shows `0` on the left now. The right-hand end
-  // was just echoing the dataset max (same number on every hover) —
-  // the dashed MAX reference line already tells the reader where the
-  // ceiling sits, and the cell's own value tells them where they are.
+  // 9d. The scale axis only shows `0` on the left now. The right-
+  //     hand end was just echoing the dataset max (same number on
+  //     every hover) — the dashed MAX reference line already tells
+  //     the reader where the ceiling sits, and the cell's own
+  //     value tells them where they are.
   const tipScale = tipChart.append('div').attr('class', 'cal-tooltip__scale');
   tipScale.append('span').attr('class', 'cal-tooltip__scale-min').text('0');
 
@@ -458,7 +436,7 @@ export function renderCalendarStrip(container, daily, window) {
     };
   }
 
-  // 9a. Hover handlers.
+  // 9e. Hover handlers.
   //    The tooltip is shown immediately on mouseenter / focus, but
   //    hidden with a longer delay (HIDE_DELAY_MS) on mouseleave / blur.
   //    The delay lets the user sweep the mouse across a row of cells
@@ -503,32 +481,22 @@ export function renderCalendarStrip(container, daily, window) {
 
       if (d.reported) {
         tipValue.text(formatRiders(d.total));
-        // Bar height is mapped to the 10th–90th percentile range so
-        // the variance is visible regardless of the dataset's actual
-        // range. The bar's top edge sits at the band's colour, which
-        // tells the reader the day's bucket. Values < p10 clamp to
-        // 0 (white zone visible), values > p90 clamp to 100% (deep
-        // purple zone visible).
-        const heightPct = Math.max(0, Math.min(100, valueToPct(d.total)));
-        // The bar's fill is the same purple as the *highest* band the
-        // bar reaches — this gives a second visual encoding (the
-        // band's colour zone) on top of the bar's height, so the
-        // reader can read both "how tall" and "which band" at a
-        // glance. For values below p10, the bar sits in the white
-        // zone and the fill is white.
+        // Bar height maps linearly to value position in the dataset's
+        // absolute min–max range. The fill is the same purple as the
+        // band the bar's value lands in — second visual encoding
+        // (which bucket) on top of the bar's height (how far up).
+        const heightPct = valueToPct(d.total);
         const bucket = bucketForValue(d.total);
-        const barFill = bucket < 0
-          ? WHITE
-          : (bucket >= PURPLE_BUCKETS.length
-              ? PURPLE_BUCKETS[PURPLE_BUCKETS.length - 1]
-              : PURPLE_BUCKETS[bucket]);
-        tipBar
+        const barFill = PURPLE_BUCKETS[
+          Math.max(0, Math.min(BUCKET_COUNT - 1, bucket))
+        ];
+        tipBarFill
           .style('height', heightPct + '%')
           .style('background', barFill)
           .style('opacity', 1);
       } else {
         tipValue.text('Not reported by BMRCL');
-        tipBar
+        tipBarFill
           .style('height', '4%')
           .style('background', X_STROKE)
           .style('opacity', 1);
@@ -556,8 +524,6 @@ export function renderCalendarStrip(container, daily, window) {
   // 10. Scroll-driven reveal: rows top to bottom. If the user has
   //     hovered a legend stop, the dim takes precedence and the
   //     reveal update is suppressed until they move off the legend.
-  let dimActive = false;
-  let dimTarget = null;
   function update(progress) {
     if (dimActive) return;  // legend hover is in control
     for (let row = 0; row < ROWS; row++) {
