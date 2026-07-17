@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.12 — Month-block columns + tooltip below + smoother transitions (2026-07-17)
+
+Three changes to the Ch 1 calendar's interaction and structure.
+
+### What changed
+
+- **Month-block columns.** The calendar's columns are now aligned to calendar months instead of to Mon–Sun weeks. Each month in the editorial window is a "block": the 1st of the month is the first day in its column, and subsequent columns are 7-day intervals within that month. The last column of a block may be a partial week (if the month doesn't end exactly 6 days after the start of its last full week). The Nov block starts on the editorial start (Mon Nov 11) since the 1st of Nov is before the window; subsequent blocks start on the 1st.
+- **No more MONTH_GUTTER.** The wider gap between months is gone. The block structure itself provides the visual separation — each month has its own set of columns with the 1st at the start. For the editorial window Nov 14 → Apr 16 there are 25 columns: 3 (Nov) + 5 (Dec) + 5 (Jan) + 4 (Feb) + 5 (Mar) + 3 (Apr).
+- **Tooltip always below.** The tooltip is now always positioned below the hovered cell (was: above by default, falling back to below for the top row). The position is `(cellBottom + 8px)` with `transform: translate(-50%, 0)` so the tooltip's top edge sits at that point.
+- **Smoother transitions.** The tooltip's `left` and `top` now have a `0.15s ease-out` transition — as the mouse sweeps from one cell to the next, the tooltip smoothly slides between positions instead of snapping. The bar's height transition is now `0.28s cubic-bezier(0.4, 0, 0.2, 1)` (was `0.18s ease-out`), so the bar grows with a more natural curve.
+- **Fade in/out.** The tooltip now has a `0.18s ease-out` opacity transition. It fades in on first show (with a forced reflow to ensure the transition fires) and fades out on hide (with a `transitionend` handler that sets `display: none` only after the fade completes). When the mouse sweeps between cells, the visibility class is not toggled — only the content and position update, so the tooltip stays at full opacity throughout.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — replaced the Mon–Sun week structure with month-block columns; removed `MONTH_GUTTER`, `monthBreaks`, `numMonthBreaks`, `colGutterOffset`; new `monthBlocks` and `columns` arrays; cell list built from the column list; `WIDTH` no longer has the gutter term; cell transform no longer has `colGutterOffset[d.col]`; tooltip always positioned below with smooth `left`/`top` transitions; `transitionend` listener fades out and sets `display: none`; month labels anchored to the first column of each block.
+- `packages/scrollytelling-core/styles/scrolly.css` — `.cal-tooltip` is now `transform: translate(-50%, 0)` (always below) with `opacity: 0` and a `transition: opacity 0.18s ease-out, left 0.15s ease-out, top 0.15s ease-out`; new `.cal-tooltip--visible` class sets `opacity: 1`; removed the `.cal-tooltip--below` rule. `.cal-tooltip__bar-fill` transition is now `height 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.28s ease-out`.
+
 ## v0.11 — Calendar month gutter + month labels (2026-07-17)
 
 The Ch 1 calendar's week columns now have a wider horizontal gap (10px vs the regular 3px) when the month changes, and a short month label ("Nov", "Dec", "Jan", …) sits above the first column of each month-block. The user can read the monthly structure at a glance.

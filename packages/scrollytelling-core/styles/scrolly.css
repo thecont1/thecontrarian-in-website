@@ -529,12 +529,26 @@ main {
   /* Fixed width so the popup doesn't resize between cells (which would
      cause the right-side ref labels to jump). */
   width: 200px;
-  transform: translate(-50%, calc(-100% - 8px));
+  /* The tooltip is always positioned BELOW the hovered cell. The
+     JS sets `top` to (cellBottom + 8px) and `left` to the cell's
+     horizontal center. The transform pins the tooltip's top-left
+     corner to that point, with a -50% horizontal shift so the
+     tooltip is centered on the cell. */
+  transform: translate(-50%, 0);
   line-height: 1.35;
+  /* Smooth transitions:
+     - opacity: fade in on first show, fade out on hide
+     - left/top: slide smoothly from one cell to the next as the
+       mouse moves across the calendar
+     The 0.15s on left/top is short enough to feel responsive
+     (the tooltip "follows" the cursor) but long enough that
+     neighbouring cells don't snap. */
+  opacity: 0;
+  transition: opacity 0.18s ease-out, left 0.15s ease-out, top 0.15s ease-out;
 }
 
-.cal-tooltip--below {
-  transform: translate(-50%, 30px);  /* CELL (22) + 8 gap */
+.cal-tooltip--visible {
+  opacity: 1;
 }
 
 .cal-tooltip__date {
@@ -630,10 +644,11 @@ main {
   /* The variable part of the bar. Height and background colour
      are set inline on every hover (heightPct% from the day's
      value mapped to the min–max range; PURPLE_BUCKETS[bucket] as
-     the fill). Transition is on the height so the bar grows
-     smoothly when the user sweeps between adjacent cells. */
+     the fill). The transition uses a longer cubic-bezier curve
+     so the bar grows smoothly when sweeping between cells,
+     without snapping. */
   width: 100%;
-  transition: height 0.18s ease-out, background 0.18s ease-out;
+  transition: height 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.28s ease-out;
 }
 
 /* Reference lines (min / avg / max) overlaid on the bar chart. Each

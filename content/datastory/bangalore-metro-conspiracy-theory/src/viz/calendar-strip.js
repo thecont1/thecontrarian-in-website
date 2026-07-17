@@ -33,13 +33,13 @@ const LABEL_WIDTH = 36;     // px reserved on the left for day-of-week labels
 const ROWS = 7;             // Mon, Tue, Wed, Thu, Fri, Sat, Sun
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-// Month gutter + label row. A wider gap (MONTH_GUTTER) is inserted
-// between week columns when the month changes, so the user can see
-// the monthly blocks at a glance. A short month label (e.g. "Nov",
-// "Dec") sits in the row above the cells, anchored to the first
-// column of each block. LABEL_ROW_HEIGHT reserves vertical space
-// for that label row.
-const MONTH_GUTTER = 10;
+// Month-block structure + label row. Each month in the editorial
+// window is a "block" with its own columns; the 1st of each new
+// month is the first day in its column. A short month label
+// (e.g. "Nov", "Dec") sits in the row above the cells, anchored to
+// the first column of each block. LABEL_ROW_HEIGHT reserves
+// vertical space for that label row. No MONTH_GUTTER — the
+// block structure provides the visual separation by itself.
 const LABEL_ROW_HEIGHT = 16;
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -71,7 +71,6 @@ const COLORS = {
 };
 
 const TIP_GAP = 8;        // px gap between cell and tooltip
-const TIP_CELL_OFFSET = CELL + TIP_GAP;  // 30px — used when tooltip sits below
 
 /**
  * Build the calendar grid. Returns the SVG and an `update` function.
@@ -147,85 +146,110 @@ export function renderCalendarStrip(container, daily, window, stats) {
     return PURPLE_BUCKETS[b];
   }
 
-  // 2. Find the Monday on or before the start, and the Sunday on or
-  //    after the end. The calendar grid spans this range so the
-  //    visualisation always starts on a Monday and ends on a Sunday.
+  // 2. Find the month-blocks in the editorial window. Each month
+  //    in the window is a "block" with its own columns. The 1st
+  //    of each new month is the first day in its column. The
+  //    first month-block (the one containing the editorial start)
+  //    starts on the editorial start if the 1st of that month is
+  //    before the window — so we don't render a bunch of empty
+  //    cells at the start. Subsequent blocks always start on the
+  //    1st. The last column of a block may be shorter than 7 days
+  //    (if the last day of the month doesn't fall exactly 6 days
+  //    after the start of the last full week).
   const start = new Date(startDate);
   const end = new Date(endDate);
-  const startDow = start.getDay();
-  const endDow = end.getDay();
-  const daysSinceMonday = (startDow + 6) % 7;
-  const daysUntilSunday = (7 - endDow) % 7;
-  const firstMonday = new Date(start.getTime() - daysSinceMonday * 86400000);
-  const lastSunday = new Date(end.getTime() + daysUntilSunday * 86400000);
+  const monthBlocks = [];
+  {
+    let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+    const lastMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+    while (cur <= lastMonth) {
+      const firstOfMonth = new Date(cur);
+      const lastOfMonth = new Date(
+        cur.getFullYear(),
+        cur.getMonth() + 1,
+        0
+      );
+      // First column of the block: the 1st of the month if it's
+      // in the editorial window, else the editorial start.
+      const firstColStart = firstOfMonth < start ? start : firstOfMonth;
+      // Last column of the block: the last day of the month if
+      // it's in the editorial window, else the editorial end.
+      const lastColEnd = lastOfMonth > end ? end : lastOfMonth;
+      monthBlocks.push({
+        firstColStart,
+        lastColEnd,
+        firstOfMonth,
+        lastOfMonth,
+        month: cur.getMonth(),
+        year: cur.getFullYear(),
+      });
+      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+    }
+  }
 
-  // 3. Build the cell list.
-  const totalDays = Math.round((lastSunday - firstMonday) / 86400000) + 1;
-  const numWeeks = totalDays / 7;
+  // 3. Build the column list. Each month-block contributes
+  //    columns that are 7-day intervals starting from
+  //    firstColStart. The last column of a block is clipped to
+  //    lastColEnd (so it may be a partial week).
+  const columns = [];
+  let absoluteCol = 0;
+  for (const block of monthBlocks) {
+    let colStart = new Date(block.firstColStart);
+    while (colStart.getTime() <= block.lastColEnd.getTime()) {
+      const colEndTime = Math.min(
+        colStart.getTime() + 6 * 86400000,
+        block.lastColEnd.getTime()
+      );
+      const colEnd = new Date(colEndTime);
+      columns.push({
+        absoluteCol,
+        startDate: new Date(colStart),
+        startRow: (colStart.getDay() + 6) % 7,  // Mon=0, Sun=6
+        endDate: new Date(colEnd),
+        block,
+      });
+      colStart = new Date(colStart.getTime() + 7 * 86400000);
+      absoluteCol++;
+    }
+  }
+  const numCols = columns.length;
+
+  // 4. Build the cell list. For each column, iterate over 7 rows
+  //    (Mon-Sun). For each row, compute the date: colStart + ((row
+  //    - colStartRow + 7) % 7) days. If the date is > colEnd, the
+  //    cell is "out of month" (in the next month-block) and is
+  //    not added to the list. Same for the 1st block's cells
+  //    before the editorial start: out of range, rendered as
+  //    empty.
   const cells = [];
-  for (let i = 0; i < totalDays; i++) {
-    const d = new Date(firstMonday.getTime() + i * 86400000);
-    const col = Math.floor(i / 7);
-    const row = i % 7;
-    const iso = d.toISOString().slice(0, 10);
-    const inRange = d >= start && d <= end;
-    const reported = inRange && byDate.has(iso);
-    cells.push({
-      date: d,
-      iso,
-      col,
-      row,
-      inRange,
-      reported,
-      total: byDate.get(iso)?.total ?? null,
-    });
-  }
-
-  // 3b. Month gutter. A "break" is a column where the Monday is
-  //     in a different calendar month than the previous column's
-  //     Monday. We insert a wider horizontal gap (MONTH_GUTTER,
-  //     10px) between such columns so the user can spot monthly
-  //     blocks of weeks at a glance. The first column is never a
-  //     break. For the editorial window Nov 16 2024 → Apr 14
-  //     2025 the breaks are at the first Monday of each new
-  //     month: Dec 2, Dec 30, Feb 3, Mar 3, Mar 31 — five breaks.
-  //     A short month label ("Nov", "Dec", "Jan", …) sits above
-  //     each block, anchored to its first column.
-  const monthBreaks = new Set();
-  {
-    let prevMonth = cells[0].date.getMonth();
-    for (let i = 7; i < cells.length; i += 7) {
-      const curMonth = cells[i].date.getMonth();
-      if (curMonth !== prevMonth) {
-        monthBreaks.add(cells[i].col);
-        prevMonth = curMonth;
-      }
-    }
-  }
-  const numMonthBreaks = monthBreaks.size;
-
-  // Cumulative gutter offset per column. Column c's offset is the
-  // sum of MONTH_GUTTERs for all month breaks at columns ≤ c. So
-  // the first Monday of each month sits an extra MONTH_GUTTER to
-  // the right of where a uniform grid would put it; the gutter
-  // sits in the space immediately to its left.
-  const colGutterOffset = new Array(numWeeks);
-  {
-    let offset = 0;
-    for (let c = 0; c < numWeeks; c++) {
-      if (monthBreaks.has(c)) offset += MONTH_GUTTER;
-      colGutterOffset[c] = offset;
+  for (const col of columns) {
+    for (let row = 0; row < 7; row++) {
+      const dayOffset = (row - col.startRow + 7) % 7;
+      const date = new Date(
+        col.startDate.getTime() + dayOffset * 86400000
+      );
+      if (date.getTime() > col.endDate.getTime()) continue;
+      const iso = date.toISOString().slice(0, 10);
+      const inRange =
+        date.getTime() >= start.getTime() &&
+        date.getTime() <= end.getTime();
+      const reported = inRange && byDate.has(iso);
+      cells.push({
+        date,
+        iso,
+        col: col.absoluteCol,
+        row,
+        inRange,
+        reported,
+        total: byDate.get(iso)?.total ?? null,
+      });
     }
   }
 
-  // 4. (no separate scale step — bucketing lives in 1b)
-
-  // 5. SVG dimensions — account for the month gutters
-  const WIDTH = LABEL_WIDTH + numWeeks * (CELL + GAP) + numMonthBreaks * MONTH_GUTTER;
-  // LABEL_ROW_HEIGHT reserves vertical space at the top for the
-  // month labels (Nov, Dec, Jan, …). The cells and Y-axis day
-  // labels are pushed down by that amount (see cell transform and
-  // Y-axis label code below).
+  // 5. SVG dimensions — no MONTH_GUTTER; columns are uniformly
+  //    spaced. LABEL_ROW_HEIGHT reserves vertical space at the
+  //    top for the month labels (Nov, Dec, Jan, …).
+  const WIDTH = LABEL_WIDTH + numCols * (CELL + GAP);
   const HEIGHT = LABEL_ROW_HEIGHT + ROWS * (CELL + GAP);
 
   // 6. Build the SVG
@@ -342,20 +366,14 @@ export function renderCalendarStrip(container, daily, window, stats) {
 
   // 6c. Month labels. For each month-block, a short label ("Nov",
   //     "Dec", "Jan", …) sits in the row above the cells, anchored
-  //     to the first column of that block. The first column (col 0)
-  //     is always the start of a block; subsequent blocks start at
-  //     each month-break column.
-  const monthLabels = [];
-  for (let c = 0; c < numWeeks; c++) {
-    if (c === 0 || monthBreaks.has(c)) {
-      const monday = cells[c * 7];
-      monthLabels.push({
-        col: c,
-        x: LABEL_WIDTH + c * (CELL + GAP) + colGutterOffset[c],
-        text: MONTH_NAMES[monday.date.getMonth()],
-      });
-    }
-  }
+  //     to the first column of that block.
+  const monthLabels = monthBlocks.map((block) => {
+    const firstCol = columns.find((c) => c.block === block);
+    return {
+      x: LABEL_WIDTH + firstCol.absoluteCol * (CELL + GAP),
+      text: MONTH_NAMES[block.month],
+    };
+  });
   svg
     .selectAll('text.month-label')
     .data(monthLabels)
@@ -376,7 +394,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .data(cells)
     .join('g')
     .attr('class', 'cell')
-    .attr('transform', (d) => `translate(${LABEL_WIDTH + d.col * (CELL + GAP) + colGutterOffset[d.col]}, ${LABEL_ROW_HEIGHT + d.row * (CELL + GAP)})`)
+    .attr('transform', (d) => `translate(${LABEL_WIDTH + d.col * (CELL + GAP)}, ${LABEL_ROW_HEIGHT + d.row * (CELL + GAP)})`)
     .attr('tabindex', (d) => (d.inRange ? 0 : -1))    // focusable for keyboard nav
     .attr('data-bucket', (d) => d.reported ? bucketForValue(d.total) : 'unreported')
     .attr('opacity', 0);
@@ -582,10 +600,22 @@ export function renderCalendarStrip(container, daily, window, stats) {
   function scheduleHide() {
     cancelHide();
     hideTimeout = setTimeout(() => {
-      tooltip.style('display', 'none');
+      // Fade out by removing the visible class. The CSS opacity
+      // transition runs (0.18s); the display is set to none on
+      // the transitionend event so we don't snap-hide while the
+      // fade is in flight.
+      tooltip.classed('cal-tooltip--visible', false);
       hideTimeout = null;
     }, HIDE_DELAY_MS);
   }
+  // After the fade-out finishes, set display: none. Listens on
+  // the tooltip itself for the opacity transition end.
+  tooltip
+    .on('transitionend.calTooltip', (event) => {
+      if (event.propertyName === 'opacity' && !tooltip.classed('cal-tooltip--visible')) {
+        tooltip.style('display', 'none');
+      }
+    });
 
   // While the mouse is anywhere in the chart container (cell OR gap),
   // keep the tooltip alive. This means moving from one cell to a
@@ -626,22 +656,36 @@ export function renderCalendarStrip(container, daily, window, stats) {
           .style('opacity', 1);
       }
 
-      // Position above the cell, falling back to below for top rows
+      // Position below the cell. The tooltip's transform is
+      // translate(-50%, 0) so its top edge sits at the 'top'
+      // value (cellBottomY + TIP_GAP). The CSS transition on
+      // 'left' and 'top' (in scrolly.css) makes the tooltip
+      // smoothly slide from one cell to the next as the mouse
+      // moves. The 'cal-tooltip--visible' class is added only
+      // on first show (when the tooltip is hidden) — once
+      // visible, subsequent cell changes just update the
+      // content and the position, and the CSS transition
+      // handles the smooth slide.
       const cellRect = this.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
       const cellCenterX = cellRect.left - containerRect.left + cellRect.width / 2;
-      const cellTop = cellRect.top - containerRect.top;
+      const cellBottomY = cellRect.bottom - containerRect.top;
 
+      const wasHidden = tooltip.style('display') === 'none' || !tooltip.classed('cal-tooltip--visible');
       tooltip
         .style('left', cellCenterX + 'px')
-        .style('top', cellTop + 'px')
+        .style('top', cellBottomY + TIP_GAP + 'px')
         .style('display', 'block');
 
-      // After display, measure the tooltip and decide above/below
-      const tipRect = tooltip.node().getBoundingClientRect();
-      const tipHeight = tipRect.height;
-      const needBelow = cellTop < tipHeight + TIP_CELL_OFFSET;
-      tooltip.classed('cal-tooltip--below', needBelow);
+      if (wasHidden) {
+        // First show: force a reflow before adding the visible
+        // class so the opacity transition fires from 0 → 1.
+        void tooltip.node().offsetWidth;
+        tooltip.classed('cal-tooltip--visible', true);
+      }
+      // If the tooltip is already visible, just update content
+      // and position — the CSS transition on left/top slides
+      // the tooltip smoothly to the new cell.
     })
     .on('mouseleave blur', scheduleHide);
 
@@ -665,6 +709,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
       clearTimeout(hideTimeout);
       hideTimeout = null;
     }
+    tooltip.on('transitionend.calTooltip', null);
     svg.remove();
     tooltip.remove();
   }
