@@ -7,7 +7,7 @@ repoName: flatwrite
 repoEmail: ms@thecontrarian.in
 author: Mahesh Shantaram
 createdDate: 2026-06-25
-lastUpdated: 2026-06-27
+lastUpdated: 2026-07-02
 repoUrl: "https://github.com/thecont1/flatwrite"
 readmeUrl: "https://raw.githubusercontent.com/thecont1/flatwrite/main/README.md"
 branch: main
@@ -20,5 +20,5 @@ tags:
   - "spectre-css"
   - "text-editor"
   - "ui-components"
-license: ""
+license: NOASSERTION
 ---
