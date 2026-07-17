@@ -46,6 +46,12 @@ export async function mountCh1OneDay(chapterEl) {
   //    the window becomes a "chip" in the right-side selector
   //    (square + day-of-week + month-date); the first day in
   //    the window is the default selection.
+  //
+  //    Wrapped in try/catch so a future error inside the treemap
+  //    (e.g. a forward-reference TDZ) doesn't take down the
+  //    calendar's ScrollTrigger along with it. Each viz is
+  //    independent: if one fails, the other should still render
+  //    and the user sees what they came for.
   const SELECTOR_DATES = [
     '2024-12-08', '2024-12-09', '2024-12-10', '2024-12-11',
     '2024-12-12', '2024-12-13', '2024-12-14',
@@ -54,7 +60,13 @@ export async function mountCh1OneDay(chapterEl) {
   const selectorDays = SELECTOR_DATES
     .map((iso) => daysByDate.get(iso))
     .filter(Boolean);
-  const barViz = renderTreemap(barSlot, selectorDays, stats);
+  let barViz = null;
+  try {
+    barViz = renderTreemap(barSlot, selectorDays, stats);
+  } catch (e) {
+    console.error('ch1-one-day: treemap failed to render — calendar stays up', e);
+    barSlot.innerHTML = '<p style="font-family: var(--font-mono); color: var(--muted); font-size: 11px;">Treemap failed to load — check console for details.</p>';
+  }
 
   // 5. ScrollTrigger: each viz animates independently as it scrolls into view.
   // The calendar reveal starts when the chart's top enters the bottom
@@ -74,13 +86,18 @@ export async function mountCh1OneDay(chapterEl) {
     scrub: 0.5,
     onUpdate: (self) => calViz.update(self.progress),
   });
-  const barTrigger = ScrollTrigger.create({
-    trigger: barSlot,
-    start: 'top 90%',
-    end: 'top 50%',
-    scrub: 0.5,
-    onUpdate: (self) => barViz.update(self.progress),
-  });
+  // Bar trigger only exists if the treemap mounted. If it
+  // threw during render (see try/catch above), barViz stays
+  // null and we skip creating a trigger for it.
+  const barTrigger = barViz
+    ? ScrollTrigger.create({
+        trigger: barSlot,
+        start: 'top 90%',
+        end: 'top 50%',
+        scrub: 0.5,
+        onUpdate: (self) => barViz.update(self.progress),
+      })
+    : null;
 
   // 6. Footnotes: the citation data for this chapter lives in
   //    `<script id="article-footnotes">` in index.html, alongside the
@@ -90,8 +107,8 @@ export async function mountCh1OneDay(chapterEl) {
   // 7. Cleanup if the chapter is removed (e.g. SPA navigation)
   return () => {
     calTrigger.kill();
-    barTrigger.kill();
+    if (barTrigger) barTrigger.kill();
     calViz.destroy();
-    barViz.destroy();
+    if (barViz) barViz.destroy();
   };
 }

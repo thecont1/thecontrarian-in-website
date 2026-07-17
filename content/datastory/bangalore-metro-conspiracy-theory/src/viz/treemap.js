@@ -158,8 +158,17 @@ export function renderTreemap(container, days, stats) {
     return BAND_COLORS[b];
   }
 
-  // (selectedDay is declared below, after SELECTOR_DATES is
-  //  filtered from days. Don't re-declare it here.)
+  // Set up the DOM and the reactive state up front, before any
+  // d3 selection tries to read `wrapper` / `selectedDay` /
+  // `selectorDays`. Without this order, those references are
+  // in the temporal dead zone (TDZ) and the function throws
+  // before anything renders — leaving the viz slot empty.
+  const selectorDays = days;
+  let selectedDay = selectorDays[0];
+  const wrapper = d3
+    .select(container)
+    .append('div')
+    .attr('class', 'treemap-wrap');
 
   const svg = wrapper
     .append('svg')
@@ -287,13 +296,10 @@ export function renderTreemap(container, days, stats) {
   // "Month DD") below. The active row gets a 0.5px black
   // border wrapping both the square and the date label, so
   // the selection reads as a single bounded unit.
-  const selectorDays = days;
-  // Default selection: the first day in the window.
-  let selectedDay = selectorDays[0];
-
-  const wrapper = d3.select(container)
-    .append('div')
-    .attr('class', 'treemap-wrap');
+  //
+  // (selectorDays / selectedDay / wrapper are declared near
+  // the top of the function so any d3 selection can read
+  // them without hitting a TDZ ReferenceError.)
 
   let hoverKey = null;
   let lastProgress = 0;

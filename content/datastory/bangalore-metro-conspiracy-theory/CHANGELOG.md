@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.15 — Treemap render fixed (TDZ) + calendar baseline visibility (2026-07-18)
+
+Two regressions from the v0.14 treemap commit, both with the same root cause and the same fix path.
+
+### What changed
+
+- **Treemap: forward-reference TDZ fixed.** The v0.14 `treemap.js` declared `wrapper`, `selectorDays`, and `selectedDay` *after* the d3 selections that referenced them. Because `let`/`const` declarations are not hoisted in the same way as `var`, those references hit the temporal dead zone and `renderTreemap` threw a `ReferenceError` on its first d3 call. The throw happened before the SVG was appended, before the day-selector rows were built, before anything rendered — so the `[data-viz="treemap"]` slot stayed empty. The same throw also aborted `mountCh1OneDay` mid-flow, so the calendar's `ScrollTrigger` was never created either. Net result: the user saw a blank calendar *and* a vanished treemap from a single root cause.
+  - **Fix**: the three declarations now sit at the top of `renderTreemap`, right after the colour/bucket constants, before any d3 code runs. The duplicate late declarations are removed.
+  - **Defensive**: `mountCh1OneDay` now wraps the `renderTreemap` call in a `try/catch` and creates the bar `ScrollTrigger` only if the treemap actually mounted. If the treemap ever throws again, the calendar still gets its scroll-reveal and the user still sees the calendar. The failed slot shows a one-line "Treemap failed to load" message instead of going silently blank.
+- **Calendar: baseline visibility (no more blank before scroll).** The calendar's cells were initialised at `opacity: 0` and only brightened to `1.0` as the user scrolled through the `ScrollTrigger` range (`start: 'top bottom'` → `end: 'top center'`). For any scroll position where the chart's top was below the viewport's bottom (i.e. the user hadn't scrolled to the trigger's start yet), the cells sat at `opacity: 0` and the chart was *literally blank* — every cell invisible, no fill, no border, no label. Combined with the treemap throw killing the chapter mount, the calendar never had a chance to reveal at all.
+  - **Fix**: cells now initialise at `opacity: 0.35` instead of `0`. The scroll-reveal's `update()` maps the per-row progress through `0.35 + rowProgress * (1 - 0.35)`, so a row at progress 0 sits at 35% opacity and a row at progress 1 sits at 100%. The chart is now structurally visible the moment it enters the viewport — you can see the grid, the colours, the palette — and the scroll just brightens it. The reveal still has a real arc (a row transitions from 35% → 100% as it scrolls in), it just doesn't start from invisible.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/treemap.js` — moved `wrapper` / `selectorDays` / `selectedDay` declarations to the top of `renderTreemap`; removed the duplicate late declarations.
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — initial `attr('opacity', 0.35)` instead of `0`; `BASE_OPACITY = 0.35` constant in `update()`; per-row opacity now `BASE_OPACITY + rowProgress * (1 - BASE_OPACITY)`.
+- `content/datastory/bangalore-metro-conspiracy-theory/src/chapters/ch1-one-day.js` — `renderTreemap` wrapped in try/catch; `barTrigger` only created if `barViz` is non-null; cleanup function checks for null `barViz` / `barTrigger` before calling their methods.
+
 ## v0.13 — Dynamic bands from the notebook + 1st-below-right + legend filter fix (2026-07-18)
 
 The Ch 1 calendar's bucketing, chart, and legend are now fully data-driven by `daily-stats.json`. The notebook decides the number of bands and the percentile boundaries; the scrolly just maps each day into the pre-computed bands. Two regressions from the v0.12 rewrite are also fixed: the 1st of each new month now lands one cell below and one cell right of the previous month's last day, and the legend hover filter actually isolates the matching cells.

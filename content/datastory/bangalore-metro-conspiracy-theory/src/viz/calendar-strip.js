@@ -521,8 +521,17 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .attr('letter-spacing', '0.05em')
     .text((d) => d.text);
 
-  // 8. Cells. Initial state: invisible. The update() below reveals them
-  //    row by row, top to bottom.
+  // 8. Cells. Initial state: dim but visible (opacity 0.35). The
+  //    update() below brightens them row-by-row, top to bottom,
+  //    ramping from 0.35 → 1.0 as the user scrolls. Without the
+  //    baseline, the chart is *literally blank* before the scroll
+  //    trigger fires (the trigger is 'top bottom' → 'top center',
+  //    so progress = 0 while the chart is in the lower half of
+  //    the viewport). A blank calendar reads as "this viz is
+  //    broken" — exactly the wrong signal. A dim calendar reads
+  //    as "the data is here, scroll and it brightens up". The
+  //    reveal still has a real arc: a row at progress 0 is 35%
+  //    visible, a row at progress 1 is 100%.
   const groups = svg
     .selectAll('g.cell')
     .data(cells)
@@ -531,7 +540,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .attr('transform', (d) => `translate(${LABEL_WIDTH + d.col * (CELL + GAP)}, ${LABEL_ROW_HEIGHT + d.row * (CELL + GAP)})`)
     .attr('tabindex', (d) => (d.inRange ? 0 : -1))    // focusable for keyboard nav
     .attr('data-bucket', (d) => d.reported ? bucketForValue(d.total) : 'unreported')
-    .attr('opacity', 0);
+    .attr('opacity', 0.35);
 
   // 8a. The cell rectangle.
   //     - Reported: filled with the ridership colour, subtle border
@@ -841,13 +850,18 @@ export function renderCalendarStrip(container, daily, window, stats) {
     // When the legend filter is not active, make sure no leftover
     // inline opacity styles override the scroll-reveal attribute.
     groups.style('opacity', null);
+    // Baseline visibility: even before the scroll-reveal starts,
+    // cells sit at 35% opacity so the chart is structurally
+    // visible (not blank) while the user is reading the prose
+    // above it. The scroll-reveal ramps 35% → 100% row by row.
+    const BASE_OPACITY = 0.35;
     for (let row = 0; row < ROWS; row++) {
       const rowStart = row / ROWS;
       const rowEnd = (row + 1) / ROWS;
       const rowProgress = Math.max(0, Math.min(1, (progress - rowStart) / (rowEnd - rowStart)));
       groups
         .filter((d) => d.row === row)
-        .attr('opacity', rowProgress);
+        .attr('opacity', BASE_OPACITY + rowProgress * (1 - BASE_OPACITY));
     }
   }
 
