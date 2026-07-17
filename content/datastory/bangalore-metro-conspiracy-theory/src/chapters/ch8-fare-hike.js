@@ -8,7 +8,6 @@ import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderRidershipLine } from '../viz/ridership-line.js';
 import { renderStackedArea } from '../viz/stacked-area.js';
 import { renderCIBar } from '../viz/ci-bar.js';
-import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh8FareHike(chapterEl) {
   const [daily, fareHikeWindow] = await Promise.all([
@@ -77,45 +76,6 @@ export async function mountCh8FareHike(chapterEl) {
     scrub: 0.5,
     onUpdate: (self) => ciViz.update(self.progress),
   }));
-
-  wireFootnotes({
-    'the-hindu-fare-hike': {
-      title: 'The Hindu — Bengalu reans will now have to shell out more for Namma Metro',
-      url: 'https://www.thehindu.com/news/cities/bangalore/after-bus-fare-hike-bengalureans-will-now-have-to-shell-out-more-for-namma-metro-rides-from-feb-9/article69196596.ece',
-      og: {
-        title: 'After bus fare hike, Bengalureans will now have to shell out more for Namma Metro rides from Feb 9',
-        description: 'BMRCL hikes Namma Metro fares for the first time since 2017. New fares take effect February 9, 2025.',
-        siteName: 'The Hindu',
-      },
-    },
-    'indian-express-4pct': {
-      title: 'Indian Express — 4% drop in Bengaluru Metro ridership',
-      url: 'https://indianexpress.com/article/cities/bangalore/metro-ridership-drop-bmrcl-plug-fare-hike-public-backlash-9830375/',
-      og: {
-        title: 'Bengaluru Metro ridership drops 4% after fare hike, BMRCL plugs public backlash',
-        description: 'Bengaluru Metro ridership saw a 4% drop in the week following the February 9 fare hike, as daily commuters and casual riders both pulled back.',
-        siteName: 'The Indian Express',
-      },
-    },
-    'times-now-ncmc': {
-      title: 'Times Now — Bengaluru\u2019s Namma Metro Halted NCMC Cards Services',
-      url: 'https://www.timesnownews.com/bengaluru/why-has-bengalurus-namma-metro-halted-ncmc-cards-services-article-151381010',
-      og: {
-        title: 'Why has Bengaluru\u2019s Namma Metro Halted NCMC Cards Services?',
-        description: 'Namma Metro halted NCMC card services in March 2025, citing a technical issue. The disruption affected commuters who relied on the National Common Mobility Card.',
-        siteName: 'Times Now',
-      },
-    },
-    'bangalore-mirror-glitch': {
-      title: 'Bangalore Mirror — Glitch in the metro matrix',
-      url: 'https://bangaloremirror.indiatimes.com/bangalore/others/glitch-in-the-metro-matrix/articleshow/124312799.cms',
-      og: {
-        title: 'Glitch in the metro matrix',
-        description: 'A payment-glitch at Namma Metro turnstiles left Smart Card users frustrated, even as the post-fare-hike 5-10% discount was meant to incentivise the closed-loop channel.',
-        siteName: 'Bangalore Mirror',
-      },
-    },
-  });
 
   return () => {
     lineViz.destroy();

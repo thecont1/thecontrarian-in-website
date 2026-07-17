@@ -7,7 +7,6 @@ import { loadDailyByMode } from '../data/loaders.js';
 import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderBoxplot } from '../viz/boxplot.js';
 import { renderStackedArea } from '../viz/stacked-area.js';
-import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh5OneMonth(chapterEl) {
   const daily = await loadDailyByMode();
@@ -36,8 +35,6 @@ export async function mountCh5OneMonth(chapterEl) {
     scrub: 0.5,
     onUpdate: (self) => waveViz.update(self.progress),
   }) : null;
-
-  wireFootnotes({});
 
   return () => {
     boxViz.destroy();

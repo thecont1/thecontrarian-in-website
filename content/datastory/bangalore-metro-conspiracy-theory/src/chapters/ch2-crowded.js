@@ -6,7 +6,6 @@
 import { loadDailyByMode } from '../data/loaders.js';
 import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderHorizontalBar } from '../viz/horizontal-bar.js';
-import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh2Crowded(chapterEl) {
   const daily = await loadDailyByMode();
@@ -39,18 +38,6 @@ export async function mountCh2Crowded(chapterEl) {
     end: 'center center',
     scrub: 0.5,
     onUpdate: (self) => quietViz.update(self.progress),
-  });
-
-  wireFootnotes({
-    'namma-metro-record': {
-      title: 'NammaMetro crossed 700,000 in October 2023',
-      url: 'https://en.wikipedia.org/wiki/Namma_Metro',
-      og: {
-        title: 'Namma Metro — Wikipedia',
-        description: 'Namma Metro (Kannada: ನಮ್ಮ ಮೆಟ್ರೊ, lit. "Our Metro"), also known as Bangalore Metro, is a rapid transit system serving the city of Bengaluru, India.',
-        siteName: 'Wikipedia',
-      },
-    },
   });
 
   return () => {

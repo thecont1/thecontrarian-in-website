@@ -1,22 +1,38 @@
 // components/footnote.js — in-line footnote popover for the scrolly.
 //
 // Usage:
-//   <sup class="fn-slot" data-fn-id="bmrcl-data"></sup>
-//   wireFootnotes({ bmrcl-data: { title, url, quote?, og? } })
+//   1. In the article HTML, mark each footnote site:
+//        <!-- Linked citation: URL inside; build-time fetches OG info -->
+//        <sup class="fn-footnote">https://english.bmrc.co.in/ridership/</sup>
 //
-// The footnote trigger is a small button. Click opens a popover above the
-// trigger with the citation. Click outside or Escape closes it. Keyboard
-// accessible: button gets focus, Enter/Space toggles, Escape closes.
+//        <!-- Pure footnote: text inside; popover shows the text -->
+//        <sup class="fn-footnote">NammaMetro is a public transit system</sup>
 //
-// Numbering is **continuous across chapters**: a module-level counter
-// keeps ticking as each chapter's `wireFootnotes` is called, so the
-// first footnote in the document is "1", the second is "2", and so on.
-// Chapters are mounted lazily top-to-bottom via IntersectionObserver, so
-// in practice the counter increments in DOM order. If a user scrolls
-// fast enough to mount a later chapter before an earlier one, the
-// counter still ends up correct (each fn-slot in the DOM is processed
-// exactly once, in document order, against the footnotes dict of the
-// chapter currently being mounted).
+//   2. In the same document, list citation metadata once (for URL
+//      footnotes that need OG info):
+//        <script type="application/json" id="article-citations">
+//          { "https://english.bmrc.co.in/ridership/": { "og": {...} } }
+//        </script>
+//
+//   3. Call setupFootnotes() once after the DOM is ready.
+//
+// The footnote trigger is a small button. Click opens a popover above
+// the trigger — citation-style for URL footnotes (title, description,
+// thumbnail, "View source" link), or simple text-style for plain
+// footnotes (the text you wrote). Click outside or Escape closes.
+// Keyboard accessible: button gets focus, Enter/Space toggles.
+//
+// Numbering is **continuous**: a module-level counter increments as
+// each slot in document order is promoted. The first footnote in the
+// document is "1", the second is "2", and so on — citations and
+// pure notes are interleaved by their position in the article.
+//
+// Pure-text footnotes need no JSON entry — the text inside the <sup>
+// is the entire data. URL footnotes need an entry in
+// #article-citations (keyed by the URL itself) for the OG info; if
+// the entry is missing, the popover still works but shows a minimal
+// "View source →" link only. To re-fetch, delete the entry and the
+// build-time script will repopulate it.
 
 const activePopover = { current: null };
 let footnoteCounter = 0;
@@ -42,8 +58,8 @@ function openPopover(trigger, footnote) {
   activePopover.current = pop;
 }
 
-// Inline SVG used as the default thumbnail when a footnote has no
-// og.image. A simple document-with-lines icon. Drawn in the brand
+// Inline SVG used as the default thumbnail when a citation has no
+// og.image. A simple document-with-lines icon, drawn in the brand
 // purple so it reads as part of the scrolly's visual system.
 const DEFAULT_THUMB_SVG = `
 <svg class="fn-popover__thumb-svg" viewBox="0 0 48 48" width="48" height="48" aria-hidden="true">
@@ -56,10 +72,32 @@ const DEFAULT_THUMB_SVG = `
 </svg>
 `;
 
+/**
+ * A footnote is one of two kinds:
+ *
+ *   { kind: 'cite', url, og? }   — a URL citation. Popover shows the
+ *      cited page's OG title/desc/site and a "View source" link. The
+ *      `og` object is optional; if absent, the popover shows a minimal
+ *      view (just the URL, or the `title` field if provided).
+ *
+ *   { kind: 'note', text }       — a pure text footnote. Popover shows
+ *      the text as a paragraph, no link, no thumbnail.
+ */
 function renderFootnote(footnote) {
+  if (footnote.kind === 'note') {
+    return `
+      <div class="fn-popover__head">
+        <h4 class="fn-popover__title">Footnote</h4>
+      </div>
+      <div class="fn-popover__body fn-popover__body--note">
+        <p class="fn-popover__desc fn-popover__desc--note">${escapeHtml(footnote.text)}</p>
+      </div>
+    `;
+  }
+
+  // citation kind
   const og = footnote.og || {};
-  // Prefer og.title if present and different from the headline.
-  const headline = escapeHtml(og.title || footnote.title);
+  const headline = escapeHtml(og.title || footnote.title || footnote.url);
   const desc = og.description
     ? `<p class="fn-popover__desc">${escapeHtml(og.description)}</p>`
     : (footnote.quote
@@ -68,8 +106,6 @@ function renderFootnote(footnote) {
   const site = og.siteName
     ? `<span class="fn-popover__site">${escapeHtml(og.siteName)}</span>`
     : '';
-  // Thumbnail: real OG image if supplied, otherwise the inline SVG
-  // document icon (drawn in NammaMetro purple via currentColor).
   const thumb = og.image
     ? `<img class="fn-popover__thumb" src="${escapeAttr(og.image)}" alt="" loading="lazy" />`
     : `<div class="fn-popover__thumb fn-popover__thumb--default" role="img" aria-label="Citation thumbnail">${DEFAULT_THUMB_SVG}</div>`;
@@ -100,20 +136,83 @@ function escapeAttr(s) {
 }
 
 /**
- * Wire up all <sup class="fn-slot" data-fn-id="X"> elements in the document
- * to the corresponding footnote in `footnotes`.
+ * Read the citation registry from the inline `<script
+ * type="application/json" id="article-citations">` block in the
+ * article HTML. Keys are the citation URLs themselves; values are
+ * the OG metadata fetched at build time (plus optional `title` and
+ * `quote` overrides). URLs not in the registry still produce a
+ * working popover — just with no OG data.
  *
- * @param {Record<string, { title: string, url: string, quote?: string, og?: { title?: string, description?: string, image?: string, siteName?: string } }>} footnotes
+ * @returns {Record<string, { og?: { title?: string, description?: string, image?: string, siteName?: string }, title?: string, quote?: string }>}
  */
-export function wireFootnotes(footnotes) {
-  // Walk all fn-slots in document order, in case the DOM order doesn't
-  // match the call order (lazy-mounted chapters).
-  const allSlots = Array.from(document.querySelectorAll('.fn-slot'));
+function readCitationRegistry() {
+  const el = document.getElementById('article-citations');
+  if (!el) return {};
+  try {
+    const parsed = JSON.parse(el.textContent || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (e) {
+    console.error('setupFootnotes: invalid JSON in #article-citations', e);
+    return {};
+  }
+}
+
+/**
+ * Heuristic URL detection. Recognises http://, https://, and protocol-
+ * relative //host URLs. Anything else is treated as plain-text
+ * footnote content.
+ */
+function isUrl(s) {
+  return /^(https?:\/\/|\/\/)/i.test(s.trim());
+}
+
+/**
+ * Promote a <sup class="fn-footnote">text</sup> into a footnote
+ * record, merging in any citation registry entry if the text is a URL.
+ */
+function resolveFootnote(slot, citationRegistry) {
+  const raw = (slot.textContent || '').trim();
+  if (isUrl(raw)) {
+    const url = raw;
+    const reg = citationRegistry[url] || {};
+    return {
+      kind: 'cite',
+      url,
+      title: reg.title,
+      quote: reg.quote,
+      og: reg.og,
+    };
+  }
+  return { kind: 'note', text: raw };
+}
+
+/**
+ * Wire up all <sup class="fn-footnote"> elements in the document.
+ * Call once after the DOM is ready.
+ *
+ * Each <sup> is replaced by a focusable <button> showing its
+ * number. The number is computed in document order, so the first
+ * footnote in the document is "1", the second is "2", and so on —
+ * citations and pure-text notes are interleaved by their position
+ * in the article. Already-promoted slots (e.g. from a previous
+ * `setupFootnotes` call) are skipped, so calling this function more
+ * than once is safe.
+ */
+export function setupFootnotes() {
+  const citationRegistry = readCitationRegistry();
+
+  // Walk all fn-footnotes in document order. The `.fn-footnote`
+  // selector matches the original <sup> tags only — once a slot is
+  // promoted to a <button class="fn-trigger">, it's gone from this
+  // list.
+  const allSlots = Array.from(document.querySelectorAll('.fn-footnote'));
 
   for (const slot of allSlots) {
-    const id = slot.getAttribute('data-fn-id');
-    const footnote = footnotes[id];
-    if (!footnote) continue;
+    const footnote = resolveFootnote(slot, citationRegistry);
+    const isCite = footnote.kind === 'cite';
+    const ariaLabel = isCite
+      ? `Footnote ${footnoteCounter + 1}: ${footnote.og?.title || footnote.title || footnote.url}`
+      : `Footnote ${footnoteCounter + 1}: ${footnote.text}`;
 
     footnoteCounter++;
     const number = footnoteCounter;
@@ -122,10 +221,11 @@ export function wireFootnotes(footnotes) {
     const trigger = document.createElement('button');
     trigger.className = 'fn-trigger';
     trigger.setAttribute('type', 'button');
-    trigger.setAttribute('aria-label', `Footnote ${number}: ${footnote.title}`);
+    trigger.setAttribute('aria-label', ariaLabel);
     trigger.setAttribute('aria-expanded', 'false');
     trigger.textContent = String(number);
-    trigger.setAttribute('data-fn-id', id);
+    if (isCite) trigger.setAttribute('data-fn-url', footnote.url);
+    else trigger.setAttribute('data-fn-text', footnote.text);
     slot.replaceWith(trigger);
 
     trigger.addEventListener('click', (e) => {
@@ -141,8 +241,8 @@ export function wireFootnotes(footnotes) {
   }
 
   // Click anywhere else closes the popover (only attach once).
-  if (!wireFootnotes._globalHandlersAttached) {
-    wireFootnotes._globalHandlersAttached = true;
+  if (!setupFootnotes._globalHandlersAttached) {
+    setupFootnotes._globalHandlersAttached = true;
     document.addEventListener('click', (e) => {
       if (activePopover.current && !activePopover.current.contains(e.target)) {
         closeActive();

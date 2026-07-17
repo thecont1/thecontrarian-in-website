@@ -12,7 +12,6 @@ import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderMultiRidershipLine } from '../viz/multi-ridership-line.js';
 import { renderBeforeAfter } from '../viz/before-after.js';
 import { renderCIBar } from '../viz/ci-bar.js';
-import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh9Conspiracy(chapterEl) {
   const [daily, hypWindow] = await Promise.all([
@@ -74,8 +73,6 @@ export async function mountCh9Conspiracy(chapterEl) {
     scrub: 0.5,
     onUpdate: (self) => ciViz.update(self.progress),
   }));
-
-  wireFootnotes({});
 
   return () => {
     caseViz.destroy();

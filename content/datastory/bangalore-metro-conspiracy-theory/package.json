@@ -6,6 +6,7 @@
   "description": "A scrollytelling version of the NammaMetro data story. Story-specific code only — motion, footnotes, and base styles live in @thecontrarian/scrollytelling-core (a sibling workspace package).",
   "scripts": {
     "data": "node scripts/fetch-data.mjs",
+    "citations": "node scripts/fetch_citations.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 4173"

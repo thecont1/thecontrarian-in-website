@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>NammaMetro: The Conspiracy Theory — A scrollytelling investigation</title>
-    <meta name="description" content="A data-driven investigation into Bangalore Metro ridership patterns, payment methods, and the conspiracy theory behind the February 2025 fare hike. Scrollytelling version." />
+    <title>NammaMetro: The Conspiracy Theory</title>
+    <meta name="description" content="A data-driven investigation into Bangalore Metro ridership patterns, payment methods, and the conspiracy theory behind the February 2025 fare hike." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700;800;900&family=DM+Sans:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" />
@@ -42,10 +42,10 @@
         <h1 class="title">NammaMetro: The Conspiracy Theory 😈</h1>
         <p class="subtitle">
           Did BMRCL stage a payments disruption to nudge users toward smart cards?
-          A 191-day investigation into Bangalore Metro's payment systems, anchored on
-          a two-day anomaly in January 2025 that the data, as it stands, does not refute.
+          An investigation into Bangalore Metro's payment systems, anchored on
+          a two-day anomaly in January 2025 that the data does not refute.
         </p>
-        <p class="byline"><span class="by">By</span> <span class="author">Mahesh Shantaram</span></p>
+        <p class="byline"><span class="by">By</span><span class="author">Mahesh Shantaram</span></p>
         <p class="date"><time datetime="2025-02-08">February 8, 2025</time></p>
         <figure class="hero">
           <img
@@ -62,17 +62,32 @@
       <article class="chapter" data-chapter="1-one-day">
         <h2 class="chapter__title">1. One Day on NammaMetro</h2>
         <p class="chapter__lead">Let's take a look at the source of data that informs the analysis to follow.</p>
-        <p>BMRCL publishes a daily breakdown of ridership by payment methods used by passengers entering the system.<sup class="fn-slot" data-fn-id="bmrcl-data"></sup></p>
+
         <figure class="datastory-photo datastory-photo--orange">
-          <img src="/images/nammametro_datapage.png" alt="BMRCL Daily Ridership data page" loading="lazy" />
+          <img src="/images/photo_DSF1740.jpg" alt="View from Sri Balagangadharanatha Swamiji Station, Hosahalli" loading="lazy" />
           <figcaption>View from Sri Balagangadharanatha Swamiji Station, Hosahalli <code>Ⓜ️ Hosahalli</code> 🟣 Purple Line<br /><small><i>© 2023 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
         </figure>
-        <p>Looks like a mouth with a few broken teeth! Every now and then, NammaMetro fails to report ridership numbers — usually when the individual tasked with manually updating the data page goes on leave.</p>
-        <p class="callout callout--key">This dataset forms the foundation for every analysis that follows.</p>
-        <h3>120 days at a glance</h3>
-        <p>Each cell below is a day in the editorial window (Nov 16 2024 → Apr 14 2025). Rows are days of the week — Monday at the top, Sunday at the bottom. Darker purple = more riders; light cells = days BMRCL didn't publish.</p>
+
+        <p>I've been studying ridership trends based on the data that BMRCL puts out daily. While the data tells many stories, it leaves us with some mysteries that only BMRCL can/should solve. I'm putting it out here for public scrutiny.</p>
+
+        <p>Take a look at the BMRCL ridership stats page<sup class="fn-footnote">https://english.bmrc.co.in/ridership/</sup>. You get one day's data, (almost) every day, split by payment methods used by passengers entering the system.</p>
+
+        <figure class="datastory-photo datastory-photo--orange">
+          <img src="/images/nammametro_datapage.png" alt="BMRCL Daily Ridership data page" loading="lazy" />
+          <figcaption>The BMRCL daily ridership data page — Our daily data feed.</figcaption>
+        </figure>
+
+        <h3>The dataset at a glance</h3>
+
+        <p>A single day's data is of very little use by itself. So I've been collecting this over time and have made it public<sup class="fn-footnote">https://english.bmrc.co.in/ridership/</sup>. It's open data for one and all.</p>
+
+        <p>Let's take a subset of the dataset ranging from November 16, 2024 to April 14, 2025 for the purpose of our discussion. Each cell below is a day in this editorial window . Rows are days of the week — Monday at the top to Sunday at the bottom. Darker purple = more riders; crossed cells = days when BMRCL didn't publish.</p>
+
         <div class="viz" data-viz="calendar-strip"></div>
         <p class="viz__caption">120 days, laid out as a Mon-to-Sun calendar. Color = total ridership on a Namma Metro purple scale.</p>
+
+        <p>If it looks like a mouth with a few broken teeth, it's because every now and then, NammaMetro fails to report ridership numbers. This usually happens when the individual tasked with manually updating the data page goes on leave.</p>
+
         <h3>A single day, broken down</h3>
         <p>Below: a representative weekday, with the 7 payment modes stacked by share of the day's total. Smart Cards (the closed-loop channel) still account for the majority of rides — but the QR and NCMC channels are the ones to watch.</p>
         <div class="viz" data-viz="stacked-bar"></div>
@@ -84,7 +99,7 @@
            ============================================================ -->
       <article class="chapter" data-chapter="2-crowded">
         <h2 class="chapter__title">2. "The Metro is Getting Crowded!"</h2>
-        <p class="chapter__lead">In December 2024, NammaMetro's single-day ridership crossed 900,000 for the first time. The ridership hit a record of 700,000 passengers in October 2023. It took just a little over a year to add 200,000 riders/day to the system.<sup class="fn-slot" data-fn-id="namma-metro-record"></sup></p>
+        <p class="chapter__lead">In December 2024, NammaMetro's single-day ridership crossed 900,000 for the first time. The ridership hit a record of 700,000 passengers in October 2023. It took just a little over a year to add 200,000 riders/day to the system.<sup class="fn-footnote">https://en.wikipedia.org/wiki/Namma_Metro</sup></p>
         <p>Sundays, holidays, and major festivals are when people take a break from the metro.</p>
         <div class="viz" data-viz="top-10-busy"></div>
         <p class="viz__caption">The 10 busiest weekdays (Mon–Thu) in the editorial window.</p>
@@ -189,8 +204,8 @@
            ============================================================ -->
       <article class="chapter" data-chapter="8-fare-hike">
         <h2 class="chapter__title">8. Fare Hike of February 2025 — Impact Analysis</h2>
-        <p class="chapter__lead">Following recommendations of a fare fixation committee, BMRCL revised its fares for the first time since 2017. The new fares took effect on <strong>February 9, 2025</strong>.<sup class="fn-slot" data-fn-id="the-hindu-fare-hike"></sup></p>
-        <p>The decision proved to be hugely unpopular with regular metro users, rudely surprising many commuters at the turnstiles on Monday morning, as well as public transportation activists.<sup class="fn-slot" data-fn-id="indian-express-4pct"></sup></p>
+        <p class="chapter__lead">Following recommendations of a fare fixation committee, BMRCL revised its fares for the first time since 2017. The new fares took effect on <strong>February 9, 2025</strong>.<sup class="fn-footnote">https://www.thehindu.com/news/cities/bangalore/after-bus-fare-hike-bengalureans-will-now-have-to-shell-out-more-for-namma-metro-rides-from-feb-9/article69196596.ece</sup></p>
+        <p>The decision proved to be hugely unpopular with regular metro users, rudely surprising many commuters at the turnstiles on Monday morning, as well as public transportation activists.<sup class="fn-footnote">https://indianexpress.com/article/cities/bangalore/metro-ridership-drop-bmrcl-plug-fare-hike-public-backlash-9830375/</sup></p>
         <figure class="datastory-photo datastory-photo--amber">
           <img src="/images/photo_MS202303-DerSpiegel0259.jpg" alt="The public gather to catch a glimpse of the Prime Minister" loading="lazy" />
           <figcaption>The public gather to catch a glimpse of the Prime Minister who was in the city to inaugurate the under-construction Whitefield segment of the Purple Line and the National Common Mobility Card (NCMC). <code>Ⓜ️ Whitefield (Kadugodi) Metro Terminus</code> 🟣 Purple Line<br /><small><i>© 2023 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
@@ -205,14 +220,14 @@
 
         <h3>Who did it hurt?</h3>
         <p>The drop in weekday ridership was primarily driven by <strong>daily commuters</strong> who reduced their Metro usage more significantly than casual riders. Casual ridership showed some resilience, likely due to weekend trips and one-off events. Smart Card users remain the majority, but the decline in token-based payments suggests infrequent riders reduced trips.</p>
-        <p>A drop in QR and NCMC-based transactions indicates a potential pullback from occasional users. (The NCMC disruption in March 2025 is a separate incident, documented in news reports.<sup class="fn-slot" data-fn-id="times-now-ncmc"></sup>)</p>
+        <p>A drop in QR and NCMC-based transactions indicates a potential pullback from occasional users. (The NCMC disruption in March 2025 is a separate incident, documented in news reports.<sup class="fn-footnote">https://www.timesnownews.com/bengaluru/why-has-bengalurus-namma-metro-halted-ncmc-cards-services-article-151381010</sup>)</p>
         <div class="viz" data-viz="payment-mix-shift"></div>
 
         <h3>How badly did it hurt?</h3>
         <p>To quantify the impact, we conducted statistical hypothesis testing at a 99% confidence level for weekdays and a 95% confidence level for weekends.</p>
         <div class="viz" data-viz="ci-bars"></div>
         <p class="callout callout--key">
-          <strong>🛜 NCMC Growth Amid Decline</strong> — NCMC usage surged +39.4% (CI: +33.0% to +45.7%) across both Weekday and Weekend Lite bands while all other payment methods declined. <strong>🚇 Smart Card Decline Severe</strong> — Despite the 5-10% discount benefit, Smart Card use dropped by 9.4% (CI: -12.2% to -6.6%).<sup class="fn-slot" data-fn-id="bangalore-mirror-glitch"></sup>
+          <strong>🛜 NCMC Growth Amid Decline</strong> — NCMC usage surged +39.4% (CI: +33.0% to +45.7%) across both Weekday and Weekend Lite bands while all other payment methods declined. <strong>🚇 Smart Card Decline Severe</strong> — Despite the 5-10% discount benefit, Smart Card use dropped by 9.4% (CI: -12.2% to -6.6%).<sup class="fn-footnote">https://bangaloremirror.indiatimes.com/bangalore/others/glitch-in-the-metro-matrix/articleshow/124312799.cms</sup>
         </p>
 
         <figure class="datastory-photo datastory-photo--orange">
@@ -297,6 +312,65 @@
         <p>© <span id="copyright-year"></span> Mahesh Shantaram. All rights reserved.</p>
       </div>
     </footer>
+
+    <!--
+      Citation registry. Keyed by URL — the URL inside each
+      <sup class="fn-footnote"> in the article body is the lookup key.
+      Each entry holds the OG metadata that the citation popover
+      displays. The build script `scripts/fetch_citations.mjs`
+      populates this block — run automatically as part of
+      `build_scrolly.mjs`. Delete an entry to re-fetch on the next
+      build (e.g. if a page's OG title/description changed).
+    -->
+    <script type="application/json" id="article-citations">
+{
+  "https://english.bmrc.co.in/ridership/": {
+    "og": {
+      "title": "Daily Ridership — Bangalore Metro Rail Corporation Limited",
+      "description": "Official daily ridership data published by BMRCL, updated every 24 hours. The Bangalore Metro Rail Corporation Limited (BMRCL) operates NammaMetro, the rapid transit system serving Bengaluru.",
+      "siteName": "BMRCL"
+    }
+  },
+  "https://en.wikipedia.org/wiki/Namma_Metro": {
+    "og": {
+      "title": "Namma Metro - Wikipedia",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Phase_2A_with_WFD_line.png/1280px-Phase_2A_with_WFD_line.png"
+    }
+  },
+  "https://www.thehindu.com/news/cities/bangalore/after-bus-fare-hike-bengalureans-will-now-have-to-shell-out-more-for-namma-metro-rides-from-feb-9/article69196596.ece": {
+    "og": {
+      "title": "After bus fare hike, Bengalureans will now have to shell out more for Namma Metro rides from Feb. 9",
+      "description": "In another blow to users of public transport, Bangalore Metro Rail Corporation Limited (BMRCL) has announced a hike in Namma Metro fares. The revised fare structure will come into effect on Sunday.",
+      "image": "https://th-i.thgim.com/public/incoming/5xlm0l/article69196990.ece/alternates/LANDSCAPE_1200/mETRO.jpg",
+      "siteName": "The Hindu"
+    }
+  },
+  "https://indianexpress.com/article/cities/bangalore/metro-ridership-drop-bmrcl-plug-fare-hike-public-backlash-9830375/": {
+    "og": {
+      "title": "With 4% drop in Bengaluru Metro ridership, BMRCL to plug fare hike anomalies after public backlash",
+      "description": "BMRCL managing director Maheshwara Rao said the corporation was bound by the recommendations of the Fare Fixation Committee; BJP MP PC Mohan asked BMRCL to increase non-fare box revenues.",
+      "image": "https://images.indianexpress.com/2025/01/bengaluru-metro.avif",
+      "siteName": "The Indian Express"
+    }
+  },
+  "https://www.timesnownews.com/bengaluru/why-has-bengalurus-namma-metro-halted-ncmc-cards-services-article-151381010": {
+    "og": {
+      "title": "Why Has Bengaluru’s Namma Metro Halted NCMC Cards Services?",
+      "description": "Bengaluru’s Namma Metro has paused NCMC card services due to backend glitches after a vendor change. Affected commuters receive free replacement cards, with services expected to resume by April 15., Bengaluru News, Times Now",
+      "image": "https://images.timesnownews.com/thumb/msid-151381007,thumbsize-53072,width-1280,height-720,resizemode-75/151381007.jpg",
+      "siteName": "TimesNow"
+    }
+  },
+  "https://bangaloremirror.indiatimes.com/bangalore/others/glitch-in-the-metro-matrix/articleshow/124312799.cms": {
+    "og": {
+      "title": "Glitch in the metro matrix",
+      "description": "A college student also shared a similar experience. &ldquo;At first, I thought it was just me. But later I found that my friends too have faced the same issue. Refunds are promised but never come through. I&rsquo;ve been shortchanged thrice already,&rdquo; the student said.",
+      "image": "https://static.toiimg.com/photo/imgsize-205560,msid-124312797/124312797.jpg",
+      "siteName": "Bangalore Mirror"
+    }
+  }
+}
+    </script>
 
     <script type="module" src="/src/main.js"></script>
   </body>

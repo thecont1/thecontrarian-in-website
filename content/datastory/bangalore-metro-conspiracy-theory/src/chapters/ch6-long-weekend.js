@@ -7,7 +7,6 @@
 import { loadDailyByMode } from '../data/loaders.js';
 import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderMultiRidershipLine } from '../viz/multi-ridership-line.js';
-import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 export async function mountCh6LongWeekend(chapterEl) {
   const daily = await loadDailyByMode();
@@ -31,8 +30,6 @@ export async function mountCh6LongWeekend(chapterEl) {
     scrub: 0.5,
     onUpdate: (self) => viz.update(self.progress),
   });
-
-  wireFootnotes({});
 
   return () => {
     viz.destroy();

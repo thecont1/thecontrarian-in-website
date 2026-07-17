@@ -19,7 +19,7 @@ import { mountCh6LongWeekend } from './chapters/ch6-long-weekend.js';
 import { mountCh7VisitorEconomy } from './chapters/ch7-visitor-economy.js';
 import { mountCh8FareHike } from './chapters/ch8-fare-hike.js';
 import { mountCh9Conspiracy } from './chapters/ch9-conspiracy.js';
-import { setupImageReveals } from '@thecontrarian/scrollytelling-core';
+import { setupImageReveals, setupFootnotes } from '@thecontrarian/scrollytelling-core';
 
 // Footer copyright year
 const yearEl = document.getElementById('copyright-year');
@@ -82,8 +82,10 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     lazyMountChapters();
     setupImageReveals();
+    setupFootnotes();
   });
 } else {
   lazyMountChapters();
   setupImageReveals();
+  setupFootnotes();
 }

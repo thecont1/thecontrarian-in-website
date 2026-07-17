@@ -18,7 +18,6 @@ import {
   extractWindow,
 } from '../viz/calendar-strip.js';
 import { renderStackedBar } from '../viz/stacked-bar.js';
-import { wireFootnotes } from '@thecontrarian/scrollytelling-core';
 
 // Pick a representative weekday for the stacked-bar viz. Prefers a
 // recent Wednesday (mid-week, full data), then falls back to any
@@ -57,11 +56,20 @@ export async function mountCh1OneDay(chapterEl) {
   const barViz = renderStackedBar(barSlot, repDay);
 
   // 5. ScrollTrigger: each viz animates independently as it scrolls into view.
-  // Animation completes when the viz reaches the center of the viewport.
+  // The calendar reveal starts when the chart's top enters the bottom
+  // of the viewport and completes when the chart is roughly centred
+  // in the viewport. The user is *reading* the chart at that scroll
+  // position — its top is at viewport mid-height, the data fills the
+  // lower half of the screen. Earlier configs (e.g. 'top 25%') made
+  // the reveal finish too high; the user had to scroll the chart past
+  // the top of the viewport to actually see it. The original 'center
+  // center' was close but the chart was still drawing while the user
+  // was reading the body text above it. 'top center' lands the sweet
+  // spot: fully drawn + centred + visible.
   const calTrigger = ScrollTrigger.create({
     trigger: calendarSlot,
-    start: 'top 90%',
-    end: 'center center',
+    start: 'top bottom',
+    end: 'top center',
     scrub: 0.5,
     onUpdate: (self) => calViz.update(self.progress),
   });
@@ -73,19 +81,10 @@ export async function mountCh1OneDay(chapterEl) {
     onUpdate: (self) => barViz.update(self.progress),
   });
 
-  // 6. Footnotes for this chapter
-  wireFootnotes({
-    'bmrcl-data': {
-      title: 'BMRCL Daily Ridership page',
-      url: 'https://english.bmrc.co.in/ridership/',
-      quote: 'Official daily ridership data, updated every 24 hours.',
-      og: {
-        title: 'Daily Ridership — Bangalore Metro Rail Corporation Limited',
-        description: 'Official daily ridership data published by BMRCL, updated every 24 hours. The Bangalore Metro Rail Corporation Limited (BMRCL) operates NammaMetro, the rapid transit system serving Bengaluru.',
-        siteName: 'BMRCL',
-      },
-    },
-  });
+  // 6. Footnotes: the citation data for this chapter lives in
+  //    `<script id="article-footnotes">` in index.html, alongside the
+  //    article body. setupFootnotes() (called once from main.js) wires
+  //    up all <sup class="fn-slot"> elements in the document.
 
   // 7. Cleanup if the chapter is removed (e.g. SPA navigation)
   return () => {
