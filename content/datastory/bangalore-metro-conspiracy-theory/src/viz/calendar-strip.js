@@ -56,7 +56,6 @@ const PURPLE_BUCKETS = [
   '#7a3fa8',  // 3 — deep violet
   '#5E2D8C',  // 4 — BMRCL purple (highest ridership band)
 ];
-const BUCKET_COUNT = PURPLE_BUCKETS.length;   // 5
 
 // Padding for the X mark inside missing cells. The mark is a corner-
 // to-corner cross in a thin accent red; no fill, no border on the
@@ -90,32 +89,46 @@ export function renderCalendarStrip(container, daily, window, stats) {
   // 1. Index daily by ISO date for O(1) lookup
   const byDate = new Map(daily.map((d) => [d.date, d]));
 
-  // 1b. Percentile (quintile) bucketing. Five equal-count bands
-  //     across the dataset's reported totals: each band holds
-  //     ~20% of the days. The boundaries (p20, p40, p60, p80) and
-  //     the dataset min/max come pre-computed from the aggregation
+  // 1b. Percentile bucketing. The number of bands and the
+  //     boundaries come pre-computed by the aggregation
   //     notebook — see daily-stats.json. The bucketing is read
-  //     here, not derived: the HTML/JS does no analytics of its
-  //     own, just maps values into the 5 pre-computed bands.
+  //     here, not derived: the HTML/JS does no analytics of
+  //     its own, just maps values into the pre-computed bands.
+  //     The notebook picks the boundaries (e.g. p2, p5, p10,
+  //     p25, p50, p75, p90, p95, p98) and how many (9 boundaries
+  //     → 10 bands in the current JSON). Change the JSON, the
+  //     chart adapts: more or fewer boundaries, more or fewer
+  //     legend stops, more or fewer chart zones, more or fewer
+  //     colour buckets.
   //
   //     The bar's value-to-height mapping is still linear across
-  //     the absolute min–max range (so the bar visually spans the
-  //     full chart height), but the *colour* of the bar is the
-  //     band the value lands in. With the dataset right-skewed
-  //     toward higher values, a value-based bucketing bunches days
-  //     into the dark bands; the quintile scheme keeps the
-  //     distribution even.
+  //     the absolute min–max range (so the bar visually spans
+  //     the full chart height), but the *colour* of the bar is
+  //     the band the value lands in.
   const dataMin = stats.min;
   const dataMax = stats.max;
   const dataRange = dataMax - dataMin;
-  // Bucket boundaries, sorted ascending. Quintile scheme: 4
-  // boundaries dividing the data into 5 equal-count bands.
-  const boundaries = [
-    stats.buckets.p20,
-    stats.buckets.p40,
-    stats.buckets.p60,
-    stats.buckets.p80,
-  ];
+  // Bucket boundaries, sorted ascending. Read from the JSON
+  // (sorted by the key suffix: p2, p5, p10, p25, p50, p75, p90,
+  // p95, p98). The number of bands = boundaries.length + 1.
+  const boundaries = Object.keys(stats.buckets)
+    .sort((a, b) => parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10))
+    .map((k) => stats.buckets[k]);
+  const BUCKET_COUNT = boundaries.length + 1;
+
+  // Bucket colours: sample the PURPLE_BUCKETS gradient at
+  // BUCKET_COUNT evenly-spaced points. This way the same 5
+  // anchor colours produce a smooth 10-stop legend when the
+  // JSON has 9 boundaries, or a 4-stop legend if the notebook
+  // ever ships 3 boundaries. d3.interpolateRgbBasis with 5
+  // anchor colours and 10 sample points gives 10 stops
+  // that progress smoothly from palest to deepest.
+  function computeBandColors(n) {
+    if (n === PURPLE_BUCKETS.length) return PURPLE_BUCKETS;
+    const interp = d3.interpolateRgbBasis(PURPLE_BUCKETS);
+    return d3.range(n).map((i) => interp(i / (n - 1)));
+  }
+  const BAND_COLORS = computeBandColors(BUCKET_COUNT);
 
   // valueToPct: 0% sits at the dataset's absolute minimum, 100%
   // at the absolute maximum. Linear scale, used by the bar's
@@ -124,26 +137,26 @@ export function renderCalendarStrip(container, daily, window, stats) {
     if (v == null) return 0;
     return Math.max(0, Math.min(100, ((v - dataMin) / dataRange) * 100));
   }
-  // bucketForValue: returns 0..4. The four boundaries are the
-  // 20th, 40th, 60th, 80th percentiles of the dataset's daily
-  // totals. v < p20 → bucket 0, p20 ≤ v < p40 → bucket 1, etc.
-  // v ≥ p80 → bucket 4 (top). null → -1 (unreported).
+  // bucketForValue: returns 0..BUCKET_COUNT-1. Walks the
+  // boundaries list — value below the first boundary is
+  // bucket 0, between first and second is bucket 1, etc.
+  // Value at or above the last boundary is the top bucket
+  // (BUCKET_COUNT-1). null → -1 (unreported).
   function bucketForValue(v) {
     if (v == null) return -1;
-    if (v < boundaries[0]) return 0;
-    if (v < boundaries[1]) return 1;
-    if (v < boundaries[2]) return 2;
-    if (v < boundaries[3]) return 3;
-    return 4;
+    for (let i = 0; i < boundaries.length; i++) {
+      if (v < boundaries[i]) return i;
+    }
+    return boundaries.length;
   }
-  // color: maps the bucket to its PURPLE_BUCKETS colour. -1 (no
+  // color: maps the bucket to its BAND_COLORS colour. -1 (no
   // value) clamps to bucket 0 (palest lavender) — unreported days
   // pick up the palest colour, matching the bottom of the scale.
   function color(v) {
     const b = bucketForValue(v);
-    if (b < 0) return PURPLE_BUCKETS[0];
-    if (b >= BUCKET_COUNT) return PURPLE_BUCKETS[BUCKET_COUNT - 1];
-    return PURPLE_BUCKETS[b];
+    if (b < 0) return BAND_COLORS[0];
+    if (b >= BUCKET_COUNT) return BAND_COLORS[BUCKET_COUNT - 1];
+    return BAND_COLORS[b];
   }
 
   // 2. Find the month-blocks in the editorial window. Each month
@@ -189,8 +202,19 @@ export function renderCalendarStrip(container, daily, window, stats) {
 
   // 3. Build the column list. Each month-block contributes
   //    columns that are 7-day intervals starting from
-  //    firstColStart. The last column of a block is clipped to
-  //    lastColEnd (so it may be a partial week).
+  //    firstColStart (no alignment to Monday for any block).
+  //    The first column of the first block starts on the
+  //    editorial start (Thu Nov 14); the first column of
+  //    subsequent blocks starts on the 1st of the month. The
+  //    last column of a block is clipped to lastColEnd. The
+  //    1st of each new month-block appears in the next column
+  //    to the right, on the row of its day-of-week — so the
+  //    1st is always visually one cell down (when the last day
+  //    of the previous month is on the row above the 1st's
+  //    day-of-week) and one cell to the right. For Nov → Dec:
+  //    Nov 30 (Sat) sits at row 5 of the last Nov column;
+  //    Dec 1 (Sun) sits at row 6 of the next column — one row
+  //    down, one column right.
   const columns = [];
   let absoluteCol = 0;
   for (const block of monthBlocks) {
@@ -308,7 +332,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
       .append('div')
       .attr('class', 'cal-legend__stop')
       .attr('data-bucket', String(i))
-      .style('background', PURPLE_BUCKETS[i]);
+      .style('background', BAND_COLORS[i]);
   }
 
   const legendCaption = legend.append('div').attr('class', 'cal-legend__caption');
@@ -325,29 +349,53 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .attr('class', 'cal-legend__caption-max')
     .text(`Max ${formatCompact(dataMax)}`);
 
-  // 6c. Legend hover → filter calendar cells. Hovering a stop shows
-  //     only cells whose bucket matches the hovered stop. Everything
-  //     else (non-matching reported cells, unreported / out-of-range
-  //     cells) vanishes. Mouse-leave the legend restores all cells.
-  //     The `dimActive` flag (declared alongside update()) prevents
-  //     the scroll-reveal from clobbering the filter.
+  // 6c. Legend hover → filter calendar cells. Hovering a stop
+  //     shows only cells whose bucket matches the hovered stop.
+  //     Everything else (non-matching reported cells, unreported
+  //     / out-of-range cells) vanishes. Mouse-leave the legend
+  //     restores all cells. The `dimActive` flag (declared
+  //     alongside update()) prevents the scroll-reveal from
+  //     clobbering the filter.
+  //
+  //     Important: when the legend filter is active, we set
+  //     `display` (matches visible, otherwise none) AND
+  //     `opacity` to 1 on matching cells. The scroll-reveal
+  //     sets opacity 0-1 as the user scrolls; without resetting
+  //     it, a matching cell could still be invisible because
+  //     its row hasn't been scrolled into view yet. So we
+  //     force opacity=1 on whatever's visible.
   let dimActive = false;
   let dimTarget = null;
+  function applyFilter(target) {
+    groups
+      .style('display', (d) => {
+        if (!d.reported) return 'none';
+        const db = String(bucketForValue(d.total));
+        return db === target ? '' : 'none';
+      })
+      .style('opacity', (d) => {
+        if (!d.reported) return 0;
+        const db = String(bucketForValue(d.total));
+        return db === target ? 1 : 0;
+      });
+  }
+  function clearFilter() {
+    groups.attr('opacity', null).style('display', null);
+    // Re-apply the last progress so cells re-appear at the
+    // right opacity for the current scroll position.
+    update(lastProgress);
+  }
   legend.on('mouseleave', () => {
     dimActive = false;
     dimTarget = null;
-    groups.attr('opacity', null).style('display', null);
+    clearFilter();
   });
   legendBar.selectAll('.cal-legend__stop')
     .on('mouseenter', function () {
       const target = this.getAttribute('data-bucket');
       dimActive = true;
       dimTarget = target;
-      groups.style('display', (d) => {
-        if (!d.reported) return 'none';
-        const db = String(bucketForValue(d.total));
-        return db === target ? '' : 'none';
-      });
+      applyFilter(target);
     });
 
   // 7. Y-axis labels (Mon, Tue, ...). Always visible.
@@ -468,29 +516,22 @@ export function renderCalendarStrip(container, daily, window, stats) {
   const tipValue = tooltip.append('div').attr('class', 'cal-tooltip__value');
   const tipChart = tooltip.append('div').attr('class', 'cal-tooltip__chart');
 
-  // 9a. Tooltip chart's banded background. 5 hard-stop colour
-  //     zones mapped to the 5 quintile bands. Each zone's height
-  //     is NOT equal — the zones are positioned at the value-
-  //     positions of the 4 bucket boundaries (p20, p40, p60, p80)
-  //     inside the absolute min–max range. The dataset is right-
-  //     skewed (most days are 7-9L), so the bottom band spans a
-  //     large value range and the top bands are compressed. The
-  //     bar's height still maps linearly to the absolute range,
-  //     so the bar visually tells you "where in the value range
-  //     am I?" while its fill tells you "which quintile band
-  //     am I in?". Each band holds ~20% of the days.
-  const positions = [
-    0,
-    valueToPct(boundaries[0]),
-    valueToPct(boundaries[1]),
-    valueToPct(boundaries[2]),
-    valueToPct(boundaries[3]),
-    100,
-  ];
+  // 9a. Tooltip chart's banded background. BUCKET_COUNT hard-
+  //     stop colour zones mapped to the bands. Each zone's
+  //     height is NOT equal — the zones are positioned at the
+  //     value-positions of the bucket boundaries (from the
+  //     notebook) inside the absolute min–max range. The
+  //     dataset is right-skewed (most days are 7-9L), so the
+  //     bottom band spans a large value range and the top bands
+  //     are compressed. The bar's height still maps linearly to
+  //     the absolute range, so the bar visually tells you
+  //     "where in the value range am I?" while its fill tells
+  //     you "which band am I in?".
+  const positions = [0, ...boundaries.map(valueToPct), 100];
   const zoneStops = [];
   for (let i = 0; i < BUCKET_COUNT; i++) {
-    zoneStops.push(`${PURPLE_BUCKETS[i]} ${positions[i].toFixed(2)}%`);
-    zoneStops.push(`${PURPLE_BUCKETS[i]} ${positions[i + 1].toFixed(2)}%`);
+    zoneStops.push(`${BAND_COLORS[i]} ${positions[i].toFixed(2)}%`);
+    zoneStops.push(`${BAND_COLORS[i]} ${positions[i + 1].toFixed(2)}%`);
   }
   const bandGradient = `linear-gradient(to top, ${zoneStops.join(', ')})`;
 
@@ -641,7 +682,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
         // (which bucket) on top of the bar's height (how far up).
         const heightPct = valueToPct(d.total);
         const bucket = bucketForValue(d.total);
-        const barFill = PURPLE_BUCKETS[
+        const barFill = BAND_COLORS[
           Math.max(0, Math.min(BUCKET_COUNT - 1, bucket))
         ];
         tipBarFill
@@ -692,8 +733,24 @@ export function renderCalendarStrip(container, daily, window, stats) {
   // 10. Scroll-driven reveal: rows top to bottom. If the user has
   //     hovered a legend stop, the dim takes precedence and the
   //     reveal update is suppressed until they move off the legend.
+  // Track the last progress so we can re-apply the reveal when
+  // the user moves off the legend (after a hover), restoring
+  // the cells to their scroll-driven opacity.
+  let lastProgress = 0;
   function update(progress) {
-    if (dimActive) return;  // legend hover is in control
+    lastProgress = progress;
+    if (dimActive) {
+      // Legend hover is in control. Force the matching cells
+      // to full opacity so they're visible even if their row
+      // hasn't been scrolled into view. Non-matching cells stay
+      // hidden (display: none from applyFilter).
+      groups
+        .filter((d) => d.reported)
+        .style('opacity', (d) =>
+          String(bucketForValue(d.total)) === dimTarget ? 1 : 0
+        );
+      return;
+    }
     for (let row = 0; row < ROWS; row++) {
       const rowStart = row / ROWS;
       const rowEnd = (row + 1) / ROWS;

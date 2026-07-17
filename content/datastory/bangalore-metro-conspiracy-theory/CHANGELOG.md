@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.13 — Dynamic bands from the notebook + 1st-below-right + legend filter fix (2026-07-18)
+
+The Ch 1 calendar's bucketing, chart, and legend are now fully data-driven by `daily-stats.json`. The notebook decides the number of bands and the percentile boundaries; the scrolly just maps each day into the pre-computed bands. Two regressions from the v0.12 rewrite are also fixed: the 1st of each new month now lands one cell below and one cell right of the previous month's last day, and the legend hover filter actually isolates the matching cells.
+
+### What changed
+
+- **Dynamic band count from the JSON.** The notebook's `daily-stats.json` now ships 9 percentile boundaries (p2, p5, p10, p25, p50, p75, p90, p95, p98), giving 10 bands. The chart reads them dynamically — sorted by the `p<N>` key, with `BUCKET_COUNT = boundaries.length + 1`. The legend shows 10 stops, the chart's banded background has 10 zones, and the bar fill uses one of 10 colours. The 5 `PURPLE_BUCKETS` anchor colours are interpolated with `d3.interpolateRgbBasis` to produce 10 smooth stops. If the notebook ships 3 boundaries next time, the chart shows 4 bands. If it ships 19, the chart shows 20.
+- **1st below and right.** The 1st of each new month sits one cell below and one cell right of the previous month's last day. For Nov → Dec: Nov 30 (Sat) is at row 5 of the last Nov column, Dec 1 (Sun) is at row 6 of the next column. For Dec → Jan: Dec 31 (Tue) is at row 1 of the last Dec column, Jan 1 (Wed) is at row 2 of the next column. The block boundary moves with the month boundary.
+- **Legend hover works again.** The legend hover filter was setting `display: none` on non-matching cells, but the scroll-reveal's `opacity: 0` was keeping the matching cells invisible too. The fix: when a legend stop is hovered, `applyFilter` sets BOTH `display: ''` (visible) AND `opacity: 1` (full opacity) on matching cells, regardless of their row's scroll progress. The `update()` function now also forces matching cells to full opacity while `dimActive` is true. When the user moves off the legend, `clearFilter` re-applies the last scroll progress so cells re-appear at the right opacity for the current scroll position.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `boundaries` now read from `Object.keys(stats.buckets).sort()`; `BUCKET_COUNT = boundaries.length + 1`; `BAND_COLORS` interpolated from `PURPLE_BUCKETS` via `d3.interpolateRgbBasis`; `bucketForValue` walks the boundaries list (not hardcoded for 4); `color` uses `BAND_COLORS`; legend uses `BAND_COLORS`; tooltip chart gradient uses `BAND_COLORS` and dynamic boundary positions; bar fill uses `BAND_COLORS`; column logic reverted to "no Monday alignment" so the 1st of each new month lands at the right row; `applyFilter`/`clearFilter` for the legend hover (sets `opacity: 1` on matching cells); `lastProgress` tracked so the reveal is restored on filter clear.
+- `packages/scrollytelling-core/styles/scrolly.css` — unchanged.
+
 ## v0.12 — Month-block columns + tooltip below + smoother transitions (2026-07-17)
 
 Three changes to the Ch 1 calendar's interaction and structure.
