@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.17 — Treemap: live day preview, calendar tooltip, locked order (2026-07-18)
+
+Three small interaction / visual changes to the Ch 1 treemap.
+
+### What changed
+
+- **Hover a date to preview that day.** Hovering a day in the right-side selector now shows the calendar's big tooltip (date / value / bar with min-med-max reference lines) AND morphs the treemap to that day's payment-mode mix in real time. The chart no longer only updates on click — mouse users get instant feedback as they sweep across the 7 days. Click is preserved as a no-op fallback (the active-row border still appears, marking the day as "locked in" for keyboard / touch users). On mouseleave, the tooltip fades but the chart stays on the last-hovered day — no flicker-back to the previous selection, so the user can keep reading the chart as they move toward the legend or the article body.
+- **Calendar tooltip on the day rows.** The day-row hover used to show a tiny two-line dark tooltip ("Sun, Dec 08 / 7.2L riders"). It now shows the same big white card as the calendar's cell hover: full date ("Sunday" / "December 08, 2024"), value, and the bar with the banded percentile background and the min / med / max reference lines. Both popups read as one design language, so the reader recognises the date visualisation immediately regardless of which chart they're hovering. The tooltip hangs to the LEFT of the cursor (anchored via a new `.cal-tooltip--left` CSS modifier that overrides the calendar's `transform: translate(-50%, 0)` to `translate(calc(-100% - 12px), -50%)`) — reads as "label for what I'm pointing at" rather than "popup that pushes the chart aside". Vertical position is clamped to the container's bounds so the tooltip never overflows the top or bottom edge of the treemap's frame.
+- **Locked legend + treemap order.** The legend used to sort by descending share of the selected day, and the treemap rectangles followed the same dynamic order. The reader had to re-find each mode in the legend after every hover because the rows reshuffled. The order is now fixed: **Smart Card, Tokens, Whatsapp, Metro QR, Paytm, NCMC, Group Ticket** (top-to-bottom in the legend; same order in the treemap rectangles). `CHANNELS` itself is the canonical sequence; the legend reads it verbatim and the treemap's `.sort((a, b) => a.data.order - b.data.order)` keeps rectangles in the same sequence across days. The reader can scan the legend top-to-bottom and follow the same sequence in the treemap without re-finding each mode.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/treemap.js` — `CHANNELS` array re-ordered to the editorial sequence; new `valueToPct` helper; `renderDay` now sorts by `data.order` instead of value-descending; `updateLegend` reads `CHANNELS` directly (no descending sort); new `formatDatePartsLong` for the long-form tooltip date; new big tooltip DOM (`.cal-tooltip.cal-tooltip--left` with date / value / chart / bar / ref lines / scale) built once and updated on hover; new `showDayTip` / `hideDayTip` / `positionTip` functions with bounds-clamping; day-row handlers reworked — hover drives `renderDay(d)` + `showDayTip`, click drives `selectedDay = d` + `updateSelector` + `renderDay(d)`, mouseleave calls `hideDayTip` only (chart stays on last-hovered day).
+- `packages/scrollytelling-core/styles/scrolly.css` — new `.cal-tooltip--left` modifier class with `transform: translate(calc(-100% - 12px), -50%)`; removed the now-unused `.treemap-day-tip` and `.treemap-day-tip--visible` rules (the small dark tooltip is gone).
+
 ## v0.16 — Calendar polish: month labels match DOW, tooltip +50%, mean → median (2026-07-18)
 
 Three small visual changes to the Ch 1 calendar, all in service of "the data is the protagonist":
