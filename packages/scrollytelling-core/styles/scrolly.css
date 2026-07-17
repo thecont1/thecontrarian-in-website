@@ -390,12 +390,14 @@ main {
   max-width: 75%;
 }
 
-/* Image reveal: 50 blocks fading randomly.
+/* Image reveal: 300 blocks fading randomly.
    The .img-reveal container wraps the <img>, the .img-reveal__base
    keeps the original image (opacity 0, accessible to screen readers,
-   provides the aspect ratio), and .img-reveal__blocks is a 5×10 grid
-   that draws the image in 50 pieces. Each block is the full image as
-   background, scaled and positioned to show its 1/10 × 1/5 portion.
+   provides the aspect ratio), and .img-reveal__blocks is a 20×15
+   grid that draws the image in 300 pieces. Each block is the full
+   image as background, scaled and positioned to show its 1/20 ×
+   1/15 portion. The 20:15 ratio matches the 4:3 aspect ratio of the
+   chapter photos, so blocks are roughly square.
    JS sets --img and --x/--y per block, and animates each block's
    opacity as the user scrolls. */
 .img-reveal {
@@ -425,14 +427,14 @@ main {
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  grid-template-rows: repeat(5, 1fr);
+  grid-template-columns: repeat(20, 1fr);
+  grid-template-rows: repeat(15, 1fr);
 }
 
 .img-reveal__block {
   background-color: var(--surface);
   background-image: var(--img);
-  background-size: 1000% 500%;
+  background-size: 2000% 1500%;
   background-position: var(--x) var(--y);
   background-repeat: no-repeat;
   opacity: 0;
@@ -524,7 +526,9 @@ main {
   z-index: 100;
   pointer-events: none;
   color: var(--ink);
-  min-width: 160px;
+  /* Fixed width so the popup doesn't resize between cells (which would
+     cause the right-side ref labels to jump). */
+  width: 200px;
   transform: translate(-50%, calc(-100% - 8px));
   line-height: 1.35;
 }
@@ -534,11 +538,25 @@ main {
 }
 
 .cal-tooltip__date {
-  font-weight: 700;
-  font-size: 0.82rem;
   text-align: center;
   letter-spacing: -0.005em;
   margin-bottom: 0.1em;
+  line-height: 1.15;
+}
+.cal-tooltip__date-dow {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;   /* larger, bolder — primary identifier */
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.cal-tooltip__date-rest {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: var(--muted-2);
+  margin-top: 0.1em;
+  letter-spacing: 0.02em;
 }
 
 .cal-tooltip__value {
@@ -550,12 +568,13 @@ main {
 }
 
 .cal-tooltip__chart {
-  width: 110px;
-  height: 100px;
+  width: 168px;
+  height: 130px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  position: relative;
 }
 
 .cal-tooltip__bar-container {
@@ -565,23 +584,124 @@ main {
   justify-content: center;
   border-bottom: 1px solid var(--ink);
   padding-bottom: 1px;
+  position: relative;  /* anchor for the ref lines + the floating "0" label */
+  /* Horizontal bands: 5 levels stacked vertically, white at the
+     bottom (low) to deep BMRCL purple at the top (high). Each band
+     is 20% of the height. The bar sits on top of these bands — the
+     band its top edge lands in tells you the day's level. The
+     PURPLE_BUCKETS palette is mirrored here as a 5-stop linear
+     gradient; the boundaries are slightly visible because the
+     band colours differ by ~20% luminance. */
+  background: linear-gradient(
+    to top,
+    #ead7f3 0%,
+    #caa6dd 25%,
+    #a06ec0 50%,
+    #7a3fa8 75%,
+    #5E2D8C 100%
+  );
 }
 
 .cal-tooltip__bar {
-  width: 36px;
-  background: var(--ink);
+  /* The bar's fill (background) and height are set inline by the JS
+     in calendar-strip.js — the fill is the same purple as the highest
+     band the bar reaches, giving a second visual encoding (which
+     bucket) on top of the bar's height (how far up). The 0.5px black
+     border is a hairline outline that reads against every band
+     without dominating the bar's fill. */
+  width: 44px;
+  border: 0.5px solid var(--ink);
   transition: height 0.18s ease-out, background 0.18s ease-out;
   min-height: 0;
 }
 
-.cal-tooltip__scale {
+/* Reference lines (min / avg / max) overlaid on the bar chart. Each
+   line is a thin dashed rule with a tiny label sitting just to the
+   right of the bar. The label has a paper-coloured background so it
+   reads cleanly even where it crosses the bar. */
+.cal-tooltip__ref {
+  position: absolute;
+  left: 0;
+  right: 0;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  /* The parent is 0 height by design — the rule and label stack on
+     top of each other along the X axis, both vertically centred on
+     the bar's bottom-anchored %. The line itself is 1px tall (via
+     border-top on a 1px rule element). */
+  height: 1px;
+  margin-top: -0.5px;  /* half-pixel lift so the line is on-pixel */
+}
+.cal-tooltip__ref--min { z-index: 2; }
+.cal-tooltip__ref--avg { z-index: 2; }
+.cal-tooltip__ref--max { z-index: 2; }
+.cal-tooltip__ref-rule {
+  flex: 1;
+  height: 0;
+  border-top: 1px dashed var(--muted-2);
+}
+.cal-tooltip__ref--min .cal-tooltip__ref-rule { border-top-style: dotted; }
+.cal-tooltip__ref--max .cal-tooltip__ref-rule { border-top-style: dotted; }
+.cal-tooltip__ref-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--muted-2);
+  background: var(--paper);
+  padding: 0 0 0 4px;
+  margin-left: -1px;  /* tuck under the dashed rule so it reads continuous */
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  /* Nudge the label up so it visually sits on the line rather than
+     below it (flex align-items: center is unreliable at 1px height). */
+  transform: translateY(-0.45em);
+}
+
+/* The "0" scale label sits absolutely at the bottom-left of the bar
+   container, just above the X-axis line (border-bottom). It floats
+   there so the chart itself has more vertical space and the axis
+   label reads as "where 0 lives" rather than as a row below the
+   chart. */
+.cal-tooltip__scale {
+  position: absolute;
+  bottom: 4px;   /* 1px bar-container padding-bottom + 3px above the line */
+  left: 0;
   font-family: var(--font-mono);
   font-size: 0.62rem;
   color: var(--muted-2);
-  margin-top: 0.3em;
   letter-spacing: 0.02em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ======================================================
+   CALENDAR GRADIENT LEGEND (Ch 1, below the calendar grid)
+   A 10-step gradient strip showing the colour scale from
+   white (lowest ridership) to deep BMRCL purple (highest).
+   Helps the reader decode the cell colours at a glance.
+   ====================================================== */
+.cal-legend {
+  margin-top: 0.85rem;
+  font-family: var(--font-mono);
+}
+.cal-legend__bar {
+  display: flex;
+  width: 100%;
+  height: 10px;
+  border: 0.5px solid var(--ink);
+}
+.cal-legend__stop {
+  flex: 1;
+  height: 100%;
+}
+.cal-legend__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  color: var(--muted-2);
+  margin-top: 0.3em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .viz__caption {

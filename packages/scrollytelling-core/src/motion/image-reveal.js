@@ -1,11 +1,14 @@
 // motion/image-reveal.js — scroll-driven block-based image reveal.
 //
 // Each static image in the content is wrapped in a `.img-reveal`
-// container that holds a 5×10 (50-block) grid. Every block is the
-// same image as background, scaled to 1000% × 500% and positioned
-// to show its 1/10 × 1/5 portion. As the user scrolls, each block's
+// container that holds a 20×15 (300-block) grid. Every block is the
+// same image as background, scaled to 2000% × 1500% and positioned
+// to show its 1/20 × 1/15 portion. As the user scrolls, each block's
 // opacity animates from 0 to 1 in a **random order** — the visual
-// effect is the image "assembling itself" out of 50 pieces.
+// effect is the image "assembling itself" out of 300 pieces.
+//
+// The 20:15 aspect ratio matches the 4:3 ratio of the scrolly's
+// chapter photos, so each block is roughly square.
 //
 // The original <img> stays in the DOM (opacity:0) for screen readers
 // and to provide the container's aspect ratio. The visible image is
@@ -13,7 +16,7 @@
 //
 // The reveal range is tight: image top at 90% of viewport → image
 // top at 50%. By the time the top edge of the image reaches 50% of
-// the viewport height, the reveal is complete. The 50 blocks are
+// the viewport height, the reveal is complete. The 300 blocks are
 // spread evenly across that scroll range so each block gets an
 // equal slice of the animation.
 //
@@ -24,9 +27,9 @@
 
 import { ScrollTrigger } from './scroll-trigger.js';
 
-const ROWS = 5;
-const COLS = 10;
-const TOTAL = ROWS * COLS;       // 50
+const ROWS = 15;
+const COLS = 20;
+const TOTAL = ROWS * COLS;       // 300
 const REVEAL_START = 'top 90%';
 const REVEAL_END = 'top 50%';
 
