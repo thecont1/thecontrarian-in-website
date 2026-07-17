@@ -2,20 +2,23 @@
 //
 // Layout: a 7-row × N-week calendar grid.
 //   - Rows = days of the week. Mon at the top, Sun at the bottom.
-//   - Columns = weeks. The first column starts on the Monday on or
-//     before the editorial window's start date; the last column ends
-//     on the Sunday on or after the end date.
-//   - When the month changes between adjacent columns, a wider
-//     horizontal gutter is inserted between them (MONTH_GUTTER,
-//     10px vs the regular 3px between cells). A short month label
-//     (e.g. "Nov", "Dec") sits in that gutter space so the user
-//     can read the month-block boundaries at a glance.
+//   - Each month in the editorial window is its own Monday-to-Sunday
+//     mini-calendar, so the 1st of each new month always starts in a
+//     fresh column on its correct day-of-week row (one cell below and
+//     one cell to the right of the previous month's last day). The
+//     first block clamps to the editorial start; the last block clamps
+//     to the editorial end.
+//   - Within a month-block, the first column starts on the Monday on or
+//     before the block's first date and the last column ends on the
+//     Sunday on or after the block's last date. Leading/trailing days
+//     outside the block are rendered as empty blanks.
+//   - A short month label (e.g. "Nov", "Dec") sits above the first
+//     column of each month-block.
 //   - Each cell = a single day. Cells outside the editorial window
 //     are rendered empty (no fill, no border, no X). Cells inside
 //     the window that BMRCL didn't publish are rendered with a
-//     faint placeholder background and a visible X. Reported cells
-//     are coloured by total ridership on a sequential Namma Metro
-//     purple scale.
+//     transparent fill and a visible X. Reported cells are coloured
+//     by total ridership on a sequential Namma Metro purple scale.
 //
 // Hover: a confident popover appears above (or below, for top rows)
 // the cell, showing the human-readable date, the day's value, and
@@ -33,13 +36,8 @@ const LABEL_WIDTH = 36;     // px reserved on the left for day-of-week labels
 const ROWS = 7;             // Mon, Tue, Wed, Thu, Fri, Sat, Sun
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-// Month-block structure + label row. Each month in the editorial
-// window is a "block" with its own columns; the 1st of each new
-// month is the first day in its column. A short month label
-// (e.g. "Nov", "Dec") sits in the row above the cells, anchored to
-// the first column of each block. LABEL_ROW_HEIGHT reserves
-// vertical space for that label row. No MONTH_GUTTER — the
-// block structure provides the visual separation by itself.
+// Month-block label row. A short month label (e.g. "Nov", "Dec")
+// sits above the first column of each month-block.
 const LABEL_ROW_HEIGHT = 16;
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -111,10 +109,30 @@ export function renderCalendarStrip(container, daily, window, stats) {
   // Bucket boundaries, sorted ascending. Read from the JSON
   // (sorted by the key suffix: p2, p5, p10, p25, p50, p75, p90,
   // p95, p98). The number of bands = boundaries.length + 1.
-  const boundaries = Object.keys(stats.buckets)
-    .sort((a, b) => parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10))
-    .map((k) => stats.buckets[k]);
+  const boundaryKeys = Object.keys(stats.buckets)
+    .sort((a, b) => parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10));
+  const boundaries = boundaryKeys.map((k) => stats.buckets[k]);
   const BUCKET_COUNT = boundaries.length + 1;
+
+  // Percentile labels for each bucket, e.g. "< 2nd percentile",
+  // "2nd–5th percentile", ..., "> 98th percentile". Used by the
+  // tiny tooltip that appears when hovering a legend stop.
+  function ordinal(n) {
+    if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
+    if (n % 10 === 1) return `${n}st`;
+    if (n % 10 === 2) return `${n}nd`;
+    if (n % 10 === 3) return `${n}rd`;
+    return `${n}th`;
+  }
+  const bucketPct = boundaryKeys.map((k) => parseInt(k.slice(1), 10));
+  const bucketRangeLabels = [];
+  bucketRangeLabels.push(`< ${ordinal(bucketPct[0])} percentile`);
+  for (let i = 1; i < bucketPct.length; i++) {
+    bucketRangeLabels.push(
+      `${ordinal(bucketPct[i - 1])}–${ordinal(bucketPct[i])} percentile`
+    );
+  }
+  bucketRangeLabels.push(`> ${ordinal(bucketPct[bucketPct.length - 1])} percentile`);
 
   // Bucket colours: sample the PURPLE_BUCKETS gradient at
   // BUCKET_COUNT evenly-spaced points. This way the same 5
@@ -159,111 +177,100 @@ export function renderCalendarStrip(container, daily, window, stats) {
     return BAND_COLORS[b];
   }
 
-  // 2. Find the month-blocks in the editorial window. Each month
-  //    in the window is a "block" with its own columns. The 1st
-  //    of each new month is the first day in its column. The
-  //    first month-block (the one containing the editorial start)
-  //    starts on the editorial start if the 1st of that month is
-  //    before the window — so we don't render a bunch of empty
-  //    cells at the start. Subsequent blocks always start on the
-  //    1st. The last column of a block may be shorter than 7 days
-  //    (if the last day of the month doesn't fall exactly 6 days
-  //    after the start of the last full week).
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  // 2. Build the month-blocks in the editorial window. Each month
+  //    is its own Monday-to-Sunday mini-calendar, so the 1st of a
+  //    new month always starts in a fresh column on its correct
+  //    day-of-week row (one cell below and one cell to the right of
+  //    the previous month's last day). The first block clamps to the
+  //    editorial start; the last block clamps to the editorial end.
+  const start = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()));
+  const end = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate()));
+
+  function getMonday(d) {
+    const day = d.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const offset = (day + 6) % 7; // Mon=0, ..., Sun=6
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - offset));
+  }
+  function getSunday(d) {
+    const day = d.getUTCDay();
+    const offset = (day + 6) % 7;
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + (6 - offset)));
+  }
+  function getLastOfMonth(year, month) {
+    return new Date(Date.UTC(year, month + 1, 0));
+  }
+
   const monthBlocks = [];
   {
-    let cur = new Date(start.getFullYear(), start.getMonth(), 1);
-    const lastMonth = new Date(end.getFullYear(), end.getMonth(), 1);
-    while (cur <= lastMonth) {
-      const firstOfMonth = new Date(cur);
-      const lastOfMonth = new Date(
-        cur.getFullYear(),
-        cur.getMonth() + 1,
-        0
-      );
-      // First column of the block: the 1st of the month if it's
-      // in the editorial window, else the editorial start.
-      const firstColStart = firstOfMonth < start ? start : firstOfMonth;
-      // Last column of the block: the last day of the month if
-      // it's in the editorial window, else the editorial end.
-      const lastColEnd = lastOfMonth > end ? end : lastOfMonth;
+    let cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+    const lastMonth = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
+    while (cur.getTime() <= lastMonth.getTime()) {
+      const year = cur.getUTCFullYear();
+      const month = cur.getUTCMonth();
+      const firstOfMonth = new Date(Date.UTC(year, month, 1));
+      const lastOfMonth = getLastOfMonth(year, month);
+      const firstDate = firstOfMonth < start ? start : firstOfMonth;
+      const lastDate = lastOfMonth > end ? end : lastOfMonth;
       monthBlocks.push({
-        firstColStart,
-        lastColEnd,
+        firstDate,
+        lastDate,
         firstOfMonth,
         lastOfMonth,
-        month: cur.getMonth(),
-        year: cur.getFullYear(),
+        month,
+        year,
       });
-      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+      cur = new Date(Date.UTC(year, month + 1, 1));
     }
   }
 
-  // 3. Build the column list. Each month-block contributes
-  //    columns that are 7-day intervals starting from
-  //    firstColStart (no alignment to Monday for any block).
-  //    The first column of the first block starts on the
-  //    editorial start (Thu Nov 14); the first column of
-  //    subsequent blocks starts on the 1st of the month. The
-  //    last column of a block is clipped to lastColEnd. The
-  //    1st of each new month-block appears in the next column
-  //    to the right, on the row of its day-of-week — so the
-  //    1st is always visually one cell down (when the last day
-  //    of the previous month is on the row above the 1st's
-  //    day-of-week) and one cell to the right. For Nov → Dec:
-  //    Nov 30 (Sat) sits at row 5 of the last Nov column;
-  //    Dec 1 (Sun) sits at row 6 of the next column — one row
-  //    down, one column right.
+  // 3. Build the column list. Each month-block contributes weekly
+  //    Monday-to-Sunday columns. The first column of a block starts
+  //    on the Monday on or before the block's first date; the last
+  //    column ends on the Sunday on or after the block's last date.
+  //    Days that belong to the surrounding month but sit inside the
+  //    padded week are rendered as blanks.
   const columns = [];
   let absoluteCol = 0;
   for (const block of monthBlocks) {
-    let colStart = new Date(block.firstColStart);
-    while (colStart.getTime() <= block.lastColEnd.getTime()) {
-      const colEndTime = Math.min(
-        colStart.getTime() + 6 * 86400000,
-        block.lastColEnd.getTime()
-      );
-      const colEnd = new Date(colEndTime);
+    const calStart = getMonday(block.firstDate);
+    const calEnd = getSunday(block.lastDate);
+    for (let colStart = new Date(calStart); colStart.getTime() <= calEnd.getTime(); colStart.setUTCDate(colStart.getUTCDate() + 7)) {
+      const colEnd = new Date(Date.UTC(colStart.getUTCFullYear(), colStart.getUTCMonth(), colStart.getUTCDate() + 6));
       columns.push({
         absoluteCol,
         startDate: new Date(colStart),
-        startRow: (colStart.getDay() + 6) % 7,  // Mon=0, Sun=6
+        startRow: 0, // Monday
         endDate: new Date(colEnd),
         block,
       });
-      colStart = new Date(colStart.getTime() + 7 * 86400000);
       absoluteCol++;
     }
   }
   const numCols = columns.length;
 
-  // 4. Build the cell list. For each column, iterate over 7 rows
-  //    (Mon-Sun). For each row, compute the date: colStart + ((row
-  //    - colStartRow + 7) % 7) days. If the date is > colEnd, the
-  //    cell is "out of month" (in the next month-block) and is
-  //    not added to the list. Same for the 1st block's cells
-  //    before the editorial start: out of range, rendered as
-  //    empty.
+  // 4. Build the cell list. Each column is a full Monday-to-Sunday
+  //    week; days outside the current month-block (but inside the
+  //    padded week) keep their place in the grid but are rendered as
+  //    empty placeholders.
   const cells = [];
   for (const col of columns) {
     for (let row = 0; row < 7; row++) {
-      const dayOffset = (row - col.startRow + 7) % 7;
-      const date = new Date(
-        col.startDate.getTime() + dayOffset * 86400000
-      );
-      if (date.getTime() > col.endDate.getTime()) continue;
+      const date = new Date(Date.UTC(col.startDate.getUTCFullYear(), col.startDate.getUTCMonth(), col.startDate.getUTCDate() + row));
       const iso = date.toISOString().slice(0, 10);
+      const inBlock =
+        date.getTime() >= col.block.firstDate.getTime() &&
+        date.getTime() <= col.block.lastDate.getTime();
       const inRange =
         date.getTime() >= start.getTime() &&
         date.getTime() <= end.getTime();
-      const reported = inRange && byDate.has(iso);
+      const rendered = inRange && inBlock;
+      const reported = rendered && byDate.has(iso);
       cells.push({
         date,
         iso,
         col: col.absoluteCol,
         row,
-        inRange,
+        inRange: rendered,
         reported,
         total: byDate.get(iso)?.total ?? null,
       });
@@ -327,11 +334,17 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .attr('class', 'cal-legend')
     .attr('aria-hidden', 'true');  // decorative; cells already have aria-labels
   const legendBar = legend.append('div').attr('class', 'cal-legend__bar');
+
+  // Tiny tooltip that follows the cursor band in the legend,
+  // showing the percentile range each colour represents.
+  const legendTip = legend.append('div').attr('class', 'cal-legend__tip');
+
   for (let i = 0; i < BUCKET_COUNT; i++) {
     legendBar
       .append('div')
       .attr('class', 'cal-legend__stop')
       .attr('data-bucket', String(i))
+      .attr('data-label', bucketRangeLabels[i])
       .style('background', BAND_COLORS[i]);
   }
 
@@ -351,11 +364,13 @@ export function renderCalendarStrip(container, daily, window, stats) {
 
   // 6c. Legend hover → filter calendar cells. Hovering a stop
   //     shows only cells whose bucket matches the hovered stop.
-  //     Everything else (non-matching reported cells, unreported
-  //     / out-of-range cells) vanishes. Mouse-leave the legend
-  //     restores all cells. The `dimActive` flag (declared
-  //     alongside update()) prevents the scroll-reveal from
-  //     clobbering the filter.
+  //     Moving from the legend into the chart keeps the filter
+  //     active so the user can inspect matching squares. Moving
+  //     out of the chart restores the full view. Moving out of
+  //     the legend (without entering the chart) keeps the filter
+  //     active for 1 second as a grace period. The `dimActive`
+  //     flag (declared alongside update()) prevents the scroll-
+  //     reveal from clobbering the filter.
   //
   //     Important: when the legend filter is active, we set
   //     `display` (matches visible, otherwise none) AND
@@ -366,6 +381,11 @@ export function renderCalendarStrip(container, daily, window, stats) {
   //     force opacity=1 on whatever's visible.
   let dimActive = false;
   let dimTarget = null;
+  let overLegend = false;
+  let overChart = false;
+  let filterLeaveTimer = null;  // 1s grace after leaving legend
+  let chartLeaveTimer = null;   // short grace for chart→legend transitions
+
   function applyFilter(target) {
     groups
       .style('display', (d) => {
@@ -380,22 +400,88 @@ export function renderCalendarStrip(container, daily, window, stats) {
       });
   }
   function clearFilter() {
-    groups.attr('opacity', null).style('display', null);
+    groups
+      .style('display', null)
+      .style('opacity', null);
     // Re-apply the last progress so cells re-appear at the
     // right opacity for the current scroll position.
     update(lastProgress);
   }
-  legend.on('mouseleave', () => {
+  function clearFilterNow() {
     dimActive = false;
     dimTarget = null;
+    if (filterLeaveTimer) {
+      clearTimeout(filterLeaveTimer);
+      filterLeaveTimer = null;
+    }
+    if (chartLeaveTimer) {
+      clearTimeout(chartLeaveTimer);
+      chartLeaveTimer = null;
+    }
     clearFilter();
+  }
+  function scheduleClearFilter(delayMs) {
+    if (filterLeaveTimer) return; // already scheduled
+    filterLeaveTimer = setTimeout(() => {
+      dimActive = false;
+      dimTarget = null;
+      clearFilter();
+      filterLeaveTimer = null;
+    }, delayMs);
+  }
+  function cancelFilterTimers() {
+    if (filterLeaveTimer) {
+      clearTimeout(filterLeaveTimer);
+      filterLeaveTimer = null;
+    }
+    if (chartLeaveTimer) {
+      clearTimeout(chartLeaveTimer);
+      chartLeaveTimer = null;
+    }
+  }
+
+  legend.on('mouseenter', () => {
+    overLegend = true;
+    cancelFilterTimers();
   });
+  legend.on('mouseleave', () => {
+    overLegend = false;
+    if (!overChart) scheduleClearFilter(1000);
+  });
+
+  svg.on('mouseenter', () => {
+    overChart = true;
+    cancelFilterTimers();
+  });
+  svg.on('mouseleave', () => {
+    overChart = false;
+    // Short grace window so a chart→legend transition does not
+    // clear the filter before the legend mouseenter fires.
+    chartLeaveTimer = setTimeout(() => {
+      chartLeaveTimer = null;
+      if (!overLegend && !overChart) clearFilterNow();
+    }, 50);
+  });
+
   legendBar.selectAll('.cal-legend__stop')
     .on('mouseenter', function () {
       const target = this.getAttribute('data-bucket');
       dimActive = true;
       dimTarget = target;
       applyFilter(target);
+
+      // Show the percentile-range tooltip centered above the band.
+      const label = this.getAttribute('data-label');
+      const rect = this.getBoundingClientRect();
+      const legendRect = legend.node().getBoundingClientRect();
+      const center = rect.left - legendRect.left + rect.width / 2;
+      legendTip
+        .text(label)
+        .style('left', `${center}px`)
+        .classed('cal-legend__tip--visible', true);
+    })
+    .on('mouseleave', function () {
+      legendTip.classed('cal-legend__tip--visible', false);
     });
 
   // 7. Y-axis labels (Mon, Tue, ...). Always visible.
@@ -467,6 +553,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .attr('stroke', (d) => (d.reported ? COLORS.reportedStroke : 'none'))
     .attr('stroke-width', (d) => (d.reported ? 0.5 : 0))
     .attr('rx', 1)
+    .attr('ry', 1)
     .attr('pointer-events', (d) => (d.inRange ? 'all' : 'none'));
 
   // 8b. The X mark on missing cells.
@@ -751,6 +838,9 @@ export function renderCalendarStrip(container, daily, window, stats) {
         );
       return;
     }
+    // When the legend filter is not active, make sure no leftover
+    // inline opacity styles override the scroll-reveal attribute.
+    groups.style('opacity', null);
     for (let row = 0; row < ROWS; row++) {
       const rowStart = row / ROWS;
       const rowEnd = (row + 1) / ROWS;

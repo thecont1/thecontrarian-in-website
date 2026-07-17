@@ -712,21 +712,17 @@ main {
 
 /* ======================================================
    CALENDAR GRADIENT LEGEND (Ch 1, below the calendar grid)
-   A 5-zone strip (5 PURPLE_BUCKETS, palest → deepest) that
-   matches the chart's banded background 1:1. The strip is
-   labelled below with a single row:
-     [Min 4.0L]   Daily Ridership   [Max 9.1L]
-   where the Min/Max values are the dataset's absolute
-   minimum and maximum (not percentiles), and the title sits
-   centred between them. No tick marks at band boundaries —
-   the strip itself is the entire scale.
-   Hovering any of the 5 stops filters the calendar to that
-   bucket; non-matching cells (and unreported / out-of-range
-   cells) vanish entirely until the mouse leaves the legend.
+   A colour strip with one stop per bucket (currently 10,
+   driven by daily-stats.json boundaries) that matches the
+   chart's banded background. The strip is labelled below with
+   a single row: [Min 4.0L]   Daily Ridership   [Max 9.1L].
+   Hovering a stop filters the calendar to that bucket and
+   shows a tiny percentile-range tooltip above the band.
    ====================================================== */
 .cal-legend {
   margin-top: 0.85rem;
   font-family: var(--font-mono);
+  position: relative;
 }
 .cal-legend__bar {
   display: flex;
@@ -761,6 +757,32 @@ main {
   font-weight: 600;
   color: var(--ink);
   letter-spacing: -0.005em;
+}
+
+/* Tiny percentile tooltip for the legend stops. Positioned above
+   the hovered band by JS (left = band centre, bottom = 100%). */
+.cal-legend__tip {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  transform: translateX(-50%) translateY(-4px);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 0.2em 0.45em;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+  z-index: 10;
+}
+
+.cal-legend__tip--visible {
+  opacity: 1;
 }
 
 .viz__caption {
