@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.19 — Calendar reveal: restore fade-in-from-zero (2026-07-18)
+
+Reverts the v0.15 baseline-opacity change on the calendar cells. The cells now start at `opacity: 0` and the scroll-reveal ramps each row from 0 → 1.0 (the v0.14 behavior). The v0.15 baseline of 0.35 was a guardrail against a different bug — the treemap TDZ, which was killing the chapter mount and leaving the calendar's ScrollTrigger uncreated. That bug is fixed in v0.15 (chapter mount is now try/catch around the treemap, so the calendar always gets a working trigger). With the TDZ fixed, the calendar's reveal works reliably, and the baseline 0.35 is no longer needed — and was getting in the way of the editorial intent: the calendar is the chapter's central visualisation, and a true fade-in-from-zero reveal is what makes the 191 days feel like a sequence the reader is being walked through, not a wall of cells to parse at once.
+
+### What changed
+
+- **Cells initial opacity 0.35 → 0.** The chart is genuinely invisible before the scroll-reveal starts; the reveal is a real fade-in, not a dim-to-bright transition. The TDZ fix from v0.15 is preserved: the chapter mount's `try/catch` around `renderTreemap` ensures the calendar's `ScrollTrigger` always gets created, so the reveal fires reliably.
+- **Per-row opacity ramp 0.35 → 1.0 → 0 → 1.0.** The scroll-reveal's per-row opacity is now `rowProgress` (the v0.14 behavior), not `0.35 + rowProgress * 0.65` (the v0.15 behavior). A row that hasn't been scrolled into view is at opacity 0; a row that has been fully scrolled past is at opacity 1.0; rows in between are at intermediate values.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `groups.attr('opacity', 0.35)` → `0`; `BASE_OPACITY` constant and the per-row `0.35 + rowProgress * 0.65` formula reverted to plain `rowProgress`; the `BASE_OPACITY` constant removed.
+
 ## v0.18 — Treemap: tinted rectangles, no hover tooltip (2026-07-18)
 
 Two small visual changes to the Ch 1 treemap, both in service of "the rectangles are the message".

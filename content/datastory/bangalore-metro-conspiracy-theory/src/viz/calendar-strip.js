@@ -535,17 +535,23 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .attr('letter-spacing', '0.22em')
     .text((d) => d.text);
 
-  // 8. Cells. Initial state: dim but visible (opacity 0.35). The
-  //    update() below brightens them row-by-row, top to bottom,
-  //    ramping from 0.35 → 1.0 as the user scrolls. Without the
-  //    baseline, the chart is *literally blank* before the scroll
-  //    trigger fires (the trigger is 'top bottom' → 'top center',
-  //    so progress = 0 while the chart is in the lower half of
-  //    the viewport). A blank calendar reads as "this viz is
-  //    broken" — exactly the wrong signal. A dim calendar reads
-  //    as "the data is here, scroll and it brightens up". The
-  //    reveal still has a real arc: a row at progress 0 is 35%
-  //    visible, a row at progress 1 is 100%.
+  // 8. Cells. Initial state: invisible (opacity 0). The
+  //    update() below reveals them row-by-row, top to bottom,
+  //    fading each row from 0 → 1.0 as the user scrolls
+  //    through the chapter. The "fade in from zero" reveal
+  //    is the data-story intent: the calendar isn't a static
+  //    data table to glance at, it's the chapter's central
+  //    visualisation, and the scroll-reveal is what makes
+  //    the 191 days feel like a sequence the reader is being
+  //    walked through, not a wall of cells to parse at once.
+  //    (An earlier v0.15 baseline of 0.35 made the cells
+  //    visible at all scroll positions, but the user
+  //    explicitly wanted the rows to fade in from 0 — a true
+  //    reveal, not a dim baseline that brightens. The TDZ
+  //    fix from v0.15 is kept: the chapter mount's
+  //    try/catch around renderTreemap ensures the calendar
+  //    always gets a working ScrollTrigger, so the reveal
+  //    fires reliably.)
   const groups = svg
     .selectAll('g.cell')
     .data(cells)
@@ -554,7 +560,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .attr('transform', (d) => `translate(${LABEL_WIDTH + d.col * (CELL + GAP)}, ${LABEL_ROW_HEIGHT + d.row * (CELL + GAP)})`)
     .attr('tabindex', (d) => (d.inRange ? 0 : -1))    // focusable for keyboard nav
     .attr('data-bucket', (d) => d.reported ? bucketForValue(d.total) : 'unreported')
-    .attr('opacity', 0.35);
+    .attr('opacity', 0);
 
   // 8a. The cell rectangle.
   //     - Reported: filled with the ridership colour, subtle border
@@ -875,18 +881,20 @@ export function renderCalendarStrip(container, daily, window, stats) {
     // When the legend filter is not active, make sure no leftover
     // inline opacity styles override the scroll-reveal attribute.
     groups.style('opacity', null);
-    // Baseline visibility: even before the scroll-reveal starts,
-    // cells sit at 35% opacity so the chart is structurally
-    // visible (not blank) while the user is reading the prose
-    // above it. The scroll-reveal ramps 35% → 100% row by row.
-    const BASE_OPACITY = 0.35;
+    // The reveal ramps each row from 0 → 1 as the user scrolls
+    // through the trigger. Row 0 (Mon) starts revealing at
+    // progress 0; row 6 (Sun) finishes at progress 1. A row
+    // that hasn't been scrolled into view yet is at opacity 0
+    // (invisible); a row that has been fully scrolled past is
+    // at opacity 1.0 (fully visible). No baseline opacity —
+    // the reveal is a true fade-in from 0.
     for (let row = 0; row < ROWS; row++) {
       const rowStart = row / ROWS;
       const rowEnd = (row + 1) / ROWS;
       const rowProgress = Math.max(0, Math.min(1, (progress - rowStart) / (rowEnd - rowStart)));
       groups
         .filter((d) => d.row === row)
-        .attr('opacity', BASE_OPACITY + rowProgress * (1 - BASE_OPACITY));
+        .attr('opacity', rowProgress);
     }
   }
 
