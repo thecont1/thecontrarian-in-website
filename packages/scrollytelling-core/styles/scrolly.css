@@ -501,6 +501,22 @@ main {
   display: block;
 }
 
+/* Stacked bar: keep the chart within 90% of the viewport height.
+   The SVG's width/height are left to CSS so it can scale down when
+   the viewport is short, while staying centered in its container. */
+.viz[data-viz="stacked-bar"] {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: auto;
+}
+.viz[data-viz="stacked-bar"] svg {
+  width: auto;
+  max-width: 100%;
+  max-height: 90vh;
+  max-height: 90dvh;
+}
+
 /* Calendar cells: focusable for keyboard nav. The native focus ring
    is suppressed and a custom one drawn instead, matching the chart. */
 .viz .calendar-svg g.cell:focus {

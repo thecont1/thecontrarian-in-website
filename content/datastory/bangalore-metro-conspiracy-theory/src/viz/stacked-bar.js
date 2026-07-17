@@ -38,8 +38,6 @@ export function renderStackedBar(container, day) {
     .attr('viewBox', `0 0 ${WIDTH} ${HEIGHT}`)
     .attr('role', 'img')
     .attr('aria-label', `Stacked bar of payment-mode shares for ${day.date}. Total ${day.total.toLocaleString('en-IN')} riders.`)
-    .style('width', '100%')
-    .style('height', 'auto')
     .style('font-family', 'var(--font-mono)')
     .style('font-size', '11px');
 
