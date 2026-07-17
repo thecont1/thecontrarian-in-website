@@ -196,7 +196,8 @@ function run(cmd, cwd) {
   execSync(cmd, { cwd, stdio: "inherit", env: process.env });
 }
 
-async function buildOne({ slug, source, sourceAbs, baseUrl, frontmatter }) {
+async function buildOne({ slug, source, sourceAbs, baseUrl, frontmatter }, opts = {}) {
+  const { skipData = false, skipCitations = false, skipVite = false, patchOnly = false } = opts;
   log(`${slug}`);
   log(`  source:  ${source}`);
   log(`  baseUrl: ${baseUrl}`);
@@ -219,16 +220,50 @@ async function buildOne({ slug, source, sourceAbs, baseUrl, frontmatter }) {
     log(`  node_modules exists, skipping install`);
   }
 
-  // 2. Fetch data (the scrolly project's own `data` script pulls JSONs)
-  log(`  fetching data...`);
-  run(`${runScript} data`, sourceAbs);
+  // 2. Fetch data (the scrolly project's own `data` script pulls
+  //    JSONs from GitHub). Skipped when --skip-data or --patch-only
+  //    is set, or when the local data files are already fresh
+  //    (newer than the source's package.json or any source file).
+  const dataDir = join(sourceAbs, "public", "data");
+  const dataFiles = ["daily-by-mode.json", "mode-shares.json", "significant-events.json",
+    "anomalies.json", "stations.geojson", "hypothesis-window.json", "fare-hike-window.json"];
+  const dataIsFresh = await isDataFresh(sourceAbs, dataDir, dataFiles);
+  if (skipData || patchOnly) {
+    log(`  data: skipped (flag)`);
+  } else if (dataIsFresh) {
+    log(`  data: skipped (local JSONs are fresh; delete one to refetch)`);
+  } else {
+    log(`  fetching data...`);
+    run(`${runScript} data`, sourceAbs);
+  }
 
-  // 3. Build with --base override. Vite writes to <sourceAbs>/dist/ by default.
-  log(`  building (vite --base=${baseUrl})...`);
-  run(`${binCmd} vite build --base=${baseUrl}`, sourceAbs);
+  // 2b. Fetch citation OG metadata. The fetch itself is idempotent
+  //     (URLs already in #article-citations are not re-fetched), so
+  //     even on a full run this is cheap. Skipped with
+  //     --skip-citations or --patch-only.
+  if (skipCitations || patchOnly) {
+    log(`  citations: skipped (flag)`);
+  } else {
+    log(`  fetching citations...`);
+    run(`${runScript} citations`, sourceAbs);
+  }
+
+  // 3. Build with --base override. Vite writes to <sourceAbs>/dist/
+  //    by default. Skipped when --skip-vite or --patch-only is set
+  //    (i.e. only the .md frontmatter changed, so we just need to
+  //    re-patch the existing dist/).
+  const distDir = join(sourceAbs, "dist");
+  if (skipVite || patchOnly) {
+    log(`  vite: skipped (flag)`);
+    if (!existsSync(distDir)) {
+      throw new Error(`--skip-vite set but no dist/ exists; run a full build first`);
+    }
+  } else {
+    log(`  building (vite --base=${baseUrl})...`);
+    run(`${binCmd} vite build --base=${baseUrl}`, sourceAbs);
+  }
 
   // Verify dist/ exists and is a directory.
-  const distDir = join(sourceAbs, "dist");
   if (!existsSync(distDir)) {
     throw new Error(`dist/ not found after build: ${distDir}`);
   }
@@ -263,11 +298,75 @@ async function buildOne({ slug, source, sourceAbs, baseUrl, frontmatter }) {
   }
 }
 
+/**
+ * isDataFresh: returns true if all the expected data JSONs exist in
+ * public/data/ AND are at least as new as the most recently changed
+ * source file. This lets us skip the GitHub fetch on rebuilds where
+ * the user only edited source files.
+ */
+async function isDataFresh(sourceAbs, dataDir, dataFiles) {
+  if (!existsSync(dataDir)) return false;
+  let oldestMtime = Infinity;
+  for (const f of dataFiles) {
+    const p = join(dataDir, f);
+    if (!existsSync(p)) return false;
+    const s = await stat(p);
+    if (s.mtimeMs < oldestMtime) oldestMtime = s.mtimeMs;
+  }
+  // Compare against the most recently changed source file. We check
+  // package.json + every src/** file. If any of them is newer than
+  // the oldest data file, treat the data as stale.
+  const pkg = join(sourceAbs, "package.json");
+  if (existsSync(pkg)) {
+    const s = await stat(pkg);
+    if (s.mtimeMs > oldestMtime) return false;
+  }
+  const srcDir = join(sourceAbs, "src");
+  if (existsSync(srcDir)) {
+    const newest = await newestMtime(srcDir);
+    if (newest > oldestMtime) return false;
+  }
+  return true;
+}
+
+async function newestMtime(dir) {
+  const { readdir, stat } = await import("node:fs/promises");
+  let newest = 0;
+  const stack = [dir];
+  while (stack.length) {
+    const cur = stack.pop();
+    let entries;
+    try { entries = await readdir(cur, { withFileTypes: true }); }
+    catch { continue; }
+    for (const e of entries) {
+      if (e.name === "node_modules" || e.name === "dist" || e.name.startsWith(".")) continue;
+      const p = join(cur, e.name);
+      if (e.isDirectory()) stack.push(p);
+      else {
+        const s = await stat(p);
+        if (s.mtimeMs > newest) newest = s.mtimeMs;
+      }
+    }
+  }
+  return newest;
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
 async function main() {
+  // CLI flags for granular skipping. The chokidar watcher fires
+  // rebuilds on every save; full data + citation + vite-build is
+  // wasteful when the user only edited a .md or a CSS file. The
+  // flags let scaffold-integration.ts (or the user) call us with
+  // exactly the work that needs doing.
+  const args = new Set(process.argv.slice(2));
+  const skipData = args.has("--skip-data");
+  const skipCitations = args.has("--skip-citations");
+  const skipVite = args.has("--skip-vite");
+  const patchOnly = args.has("--patch-only");  // implies all of the above
+
   log(`scanning ${relative(ROOT, CONTENT_DIR)}...`);
   const entries = await findScrollyEntries();
   if (entries.length === 0) {
@@ -278,9 +377,18 @@ async function main() {
   for (const e of entries) {
     log(`  - ${e.slug} → ${e.baseUrl}`);
   }
+  if (patchOnly) {
+    log(`flags: --patch-only (skip data, citations, vite build)`);
+  } else {
+    const flags = [];
+    if (skipData) flags.push("--skip-data");
+    if (skipCitations) flags.push("--skip-citations");
+    if (skipVite) flags.push("--skip-vite");
+    if (flags.length) log(`flags: ${flags.join(" ")}`);
+  }
 
   for (const entry of entries) {
-    await buildOne(entry);
+    await buildOne(entry, { skipData, skipCitations, skipVite, patchOnly });
   }
   log(`done`);
 }

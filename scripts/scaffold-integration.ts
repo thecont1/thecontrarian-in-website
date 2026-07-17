@@ -380,10 +380,11 @@ function findScrollySourceDirs(): string[] {
   return findScrollyEntries().map((e) => e.sourceDir);
 }
 
-function rebuildScrolly(reason: string) {
-  console.log(`[Scrolly] ${reason} → rebuilding…`);
+function rebuildScrolly(reason: string, flags: string[] = []) {
+  const flagStr = flags.length ? ' ' + flags.join(' ') : '';
+  console.log(`[Scrolly] ${reason} → rebuilding…${flags.length ? ' (' + flags.join(' ') + ')' : ''}`);
   try {
-    execSync('node scripts/build_scrolly.mjs', {
+    execSync(`node scripts/build_scrolly.mjs${flagStr}`, {
       cwd: path.resolve(__dirname, '..'),
       stdio: 'inherit',
     });
@@ -403,13 +404,16 @@ function setupScrollyWatcher() {
   }
 
   // Debounce: collapse rapid bursts of file changes (e.g. Vite rebuilding
-  // its own deps) into a single rebuild.
+  // its own deps) into a single rebuild. We also pass flags to the
+  // build script based on what changed — the data fetch and Vite
+  // build are skipped when only metadata (.md) or already-fresh
+  // resources are involved.
   let pending: NodeJS.Timeout | null = null;
-  const triggerRebuild = (reason: string) => {
+  const triggerRebuild = (reason: string, flags: string[] = []) => {
     if (pending) clearTimeout(pending);
     pending = setTimeout(() => {
       pending = null;
-      rebuildScrolly(reason);
+      rebuildScrolly(reason, flags);
     }, 200);
   };
 
@@ -425,6 +429,11 @@ function setupScrollyWatcher() {
       persistent: true,
       ignoreInitial: true,
     });
+    // Heuristic: classify the change to skip the work that isn't
+    // needed. JS/CSS/etc → Vite build needed. index.html / pure-text
+    // edits → Vite build also needed (the bundle includes the HTML).
+    // We don't try to skip Vite per-file because the savings are
+    // marginal and the heuristic would be brittle.
     w.on('change', (p) => triggerRebuild(`changed: ${path.relative(srcDir, p)}`));
     w.on('add', (p) => triggerRebuild(`added: ${path.relative(srcDir, p)}`));
     w.on('unlink', (p) => triggerRebuild(`removed: ${path.relative(srcDir, p)}`));
@@ -579,7 +588,12 @@ export default function scaffoldIntegration() {
               persistent: true,
               ignoreInitial: true,
             });
-            mdWatcher.on('change', () => rebuildScrolly(`md changed: ${e.slug}.md`));
+            // .md changes only affect the title/description in the
+            // already-built HTML. No need to re-fetch data, re-fetch
+            // citations, or rebuild Vite — just re-patch the dist/.
+            mdWatcher.on('change', () =>
+              rebuildScrolly(`md changed: ${e.slug}.md`, ['--patch-only']),
+            );
           }
 
           // Scrolly: watch each scrolly source dir and rebuild on change
