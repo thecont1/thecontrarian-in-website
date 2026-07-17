@@ -714,19 +714,6 @@ main {
   opacity: 1;
 }
 
-/* Left-anchored variant: the tooltip's RIGHT edge sits 12px
-   to the LEFT of the cursor, vertically centred. Used by
-   the treemap's day-row hover (the day selector sits on the
-   right side of the chart, so the tooltip hangs off the
-   left side of the cursor — reads as "label for what I'm
-   pointing at" rather than "popup that pushes the chart
-   aside"). The JS sets `left` and `top` to the cursor's
-   container-relative coordinates; the transform does the
-   rest. */
-.cal-tooltip--left {
-  transform: translate(calc(-100% - 12px), -50%);
-}
-
 .cal-tooltip__date {
   text-align: center;
   letter-spacing: -0.005em;

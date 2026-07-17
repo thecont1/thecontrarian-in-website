@@ -23,6 +23,23 @@ const PURPLE_BUCKETS = ['#ead7f3', '#d4b0e6', '#c08bd6', '#a96cc5', '#8e4bb0', '
 // reader can scan the legend top-to-bottom and follow the
 // same sequence in the treemap without having to re-find
 // each mode after every hover.
+//
+// Each channel has two colour fields:
+//   - color:  the icon's stroke / fill (the channel's
+//             "brand" colour). Used by the legend label
+//             and the icon pattern inside the rectangle.
+//   - bgColor: a light tint of `color` (mixed ~88% toward
+//             paper / white) used as the rectangle's base
+//             fill. Tinting the base with the channel's
+//             own colour — instead of using flat paper —
+//             lets the reader identify each rectangle at
+//             a glance even before reading the legend:
+//             the smartcard area reads as a pale violet
+//             block, the token area reads as a pale tan
+//             block, and so on. The icon pattern still
+//             renders on top in the channel's full
+//             saturation, so the rectangle's identity is
+//             double-coded (tinted base + saturated icons).
 const CHANNELS = [
   { key: 'smartcard',     label: 'Smart Card',   color: '#7e3eb5' },
   { key: 'token',          label: 'Tokens',       color: '#a8852b' },
@@ -32,6 +49,23 @@ const CHANNELS = [
   { key: 'ncmc',           label: 'NCMC',         color: '#a13a3a' },
   { key: 'groupTicket',    label: 'Group Ticket', color: '#c8a44d' },
 ];
+
+// Paper colour used as the light-tint target. The CHANNELS
+// base fill is `interpolateRgb(paper, channelColor)(0.12)` —
+// 12% channel, 88% paper. Strong enough to read as "this
+// rectangle is the smartcard area", subtle enough that the
+// icon pattern on top still dominates.
+const TREEMAP_PAPER = '#f7f3ee';
+const BG_TINT = 0.12;
+
+// Precompute bgColor on each channel. d3.interpolateRgb
+// mixes in linear-RGB space (closer to how the eye
+// perceives colour) so the tints don't look muddy. We do
+// this once at module init rather than inside the render
+// loop, since the channel colours are static.
+for (const c of CHANNELS) {
+  c.bgColor = d3.interpolateRgb(TREEMAP_PAPER, c.color)(BG_TINT);
+}
 
 // Tiny monochrome icons drawn into pattern tiles (viewBox 0 0 12 12).
 // Each icon is a simple glyph so dense tiling stays readable at small size.
@@ -145,24 +179,6 @@ function formatDateParts(dateStr) {
 // reads as "December 10, 2024" (not "Dec 08"). Matches the
 // calendar tooltip's format so both popups read as one
 // design language.
-function formatDatePartsLong(dateStr) {
-  const date = d3.timeParse('%Y-%m-%d')(dateStr);
-  if (!date) return { dow: dateStr, rest: '' };
-  const full = date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-  // "Monday, December 10, 2024" → split on first comma.
-  const commaIdx = full.indexOf(',');
-  if (commaIdx === -1) return { dow: full, rest: '' };
-  return {
-    dow: full.slice(0, commaIdx).trim(),
-    rest: full.slice(commaIdx + 1).trim(),
-  };
-}
-
 export function renderTreemap(container, days, stats) {
   const dataMin = stats.min;
   const dataMax = stats.max;
@@ -193,15 +209,6 @@ export function renderTreemap(container, days, stats) {
     if (b < 0) return BAND_COLORS[0];
     if (b >= BUCKET_COUNT) return BAND_COLORS[BUCKET_COUNT - 1];
     return BAND_COLORS[b];
-  }
-
-  // valueToPct: linear mapping from the dataset's absolute
-  // min–max range to a 0–100 height percentage. Used by the
-  // day-row tooltip's bar (and the tooltip's banded
-  // background) to position elements in value space.
-  function valueToPct(v) {
-    if (v == null) return 0;
-    return Math.max(0, Math.min(100, ((v - dataMin) / dataRange) * 100));
   }
 
   // Set up the DOM and the reactive state up front, before any
@@ -239,14 +246,19 @@ export function renderTreemap(container, days, stats) {
     .append('div')
     .attr('class', 'treemap-legend');
 
-  // Day rows: hover drives the chart and shows the calendar
-  // tooltip; click does the same (so keyboard / touch users
-  // get the same interaction). The active-row border on
-  // click is a small "locked in" indicator — the chart
-  // already follows the cursor on hover, so click doesn't
-  // change the visual chart state, it just adds the border.
-  // On mouseleave, the tooltip fades; the chart stays on
-  // the last-hovered day (no flicker, no restore).
+  // Day rows: hover drives the chart; click does the same
+  // (so keyboard / touch users get the same interaction).
+  // The active-row border on click is a small "locked in"
+  // indicator — the chart already follows the cursor on
+  // hover, so click doesn't change the visual chart state,
+  // it just adds the border. No tooltip on hover — the
+  // day-row labels already read as "Mon / Dec 08" and the
+  // rectangles' tinted backgrounds read as "this is the
+  // Smart Card area", so a popup would only duplicate
+  // what's already visible. (The tooltip was tried in
+  // v0.17 but its only good place to hang was inside the
+  // chart, where it covered the rectangles — gone in
+  // v0.18.)
   const dayRows = selector
     .selectAll('div.treemap-day-row')
     .data(selectorDays)
@@ -255,24 +267,19 @@ export function renderTreemap(container, days, stats) {
     .attr('role', 'button')
     .attr('tabindex', 0)
     .attr('aria-label', (d) => `${formatDateLabel(d.date)}, ${formatRiders(d.total)}`)
-    .on('mouseenter', function (event, d) {
+    .on('mouseenter', function (_event, d) {
       // Live-preview: the chart morphs to this day's mix on
       // hover. The active-row border (set by click) does NOT
       // change on hover — the border is the "locked in"
       // marker, separate from "what the chart is currently
       // showing".
       renderDay(d);
-      showDayTip(event, d);
-    })
-    .on('mousemove', function (event) {
-      positionTip(event);
     })
     .on('mouseleave', function () {
-      // Fade out the tooltip but keep the chart on the
-      // last-hovered day — no flicker-back to the previous
-      // selection. The user can keep reading the chart as
-      // they move toward the legend or the article body.
-      hideDayTip();
+      // No tooltip to fade; the chart stays on the
+      // last-hovered day. The user can keep reading the
+      // chart as they move toward the legend or the
+      // article body.
     })
     .on('click', function (_event, d) {
       selectedDay = d;
@@ -337,157 +344,6 @@ export function renderTreemap(container, days, stats) {
 
   const treemapGroup = svg.append('g')
     .attr('class', 'treemap-chart');
-
-  // Big day-row tooltip. Same DOM structure and CSS as the
-  // calendar's `.cal-tooltip` (date / value / bar with
-  // min-med-max reference lines over a banded percentile
-  // background) so both charts share one tooltip language.
-  // The position is overridden to the LEFT of the cursor
-  // (via the `.cal-tooltip--left` modifier class) because
-  // the day selector sits on the right side of the chart —
-  // the tooltip hanging off the left edge of the cursor
-  // reads as "label for what I'm pointing at" rather than
-  // "popup that pushes the chart aside".
-  const tip = d3
-    .select(container)
-    .append('div')
-    .attr('class', 'cal-tooltip cal-tooltip--left')
-    .style('display', 'none');
-
-  const tipDate = tip.append('div').attr('class', 'cal-tooltip__date');
-  const tipDateDow = tipDate.append('div').attr('class', 'cal-tooltip__date-dow');
-  const tipDateRest = tipDate.append('div').attr('class', 'cal-tooltip__date-rest');
-  const tipValue = tip.append('div').attr('class', 'cal-tooltip__value');
-  const tipChart = tip.append('div').attr('class', 'cal-tooltip__chart');
-
-  // Banded background uses the SAME percentile boundaries
-  // the calendar tooltip uses (stats.buckets, sorted by
-  // p<N>). 10 bands by default; the chart is fully data-
-  // driven by the notebook.
-  const positions = [0, ...boundaries.map(valueToPct), 100];
-  const zoneStops = [];
-  for (let i = 0; i < BUCKET_COUNT; i++) {
-    zoneStops.push(`${BAND_COLORS[i]} ${positions[i].toFixed(2)}%`);
-    zoneStops.push(`${BAND_COLORS[i]} ${positions[i + 1].toFixed(2)}%`);
-  }
-  const bandGradient = `linear-gradient(to top, ${zoneStops.join(', ')})`;
-
-  const tipBarContainer = tipChart
-    .append('div')
-    .attr('class', 'cal-tooltip__bar-container')
-    .style('background', bandGradient);
-
-  // Bar track + variable fill (same structure as the
-  // calendar tooltip).
-  const tipBar = tipBarContainer
-    .append('div')
-    .attr('class', 'cal-tooltip__bar');
-  const tipBarFill = tipBar
-    .append('div')
-    .attr('class', 'cal-tooltip__bar-fill');
-
-  // Reference lines for min / med / max. Same as the
-  // calendar tooltip — labels on the right of the bar, the
-  // chart's vertical scale is implied, not spelled out.
-  const refMin = dataMin;
-  const refMax = dataMax;
-  const refMed = stats.median;
-  const refs = [
-    { key: 'min', value: refMin, label: 'min' },
-    { key: 'med', value: refMed, label: 'med' },
-    { key: 'max', value: refMax, label: 'max' },
-  ];
-  for (const r of refs) {
-    const line = tipBarContainer
-      .append('div')
-      .attr('class', `cal-tooltip__ref cal-tooltip__ref--${r.key}`)
-      .style('bottom', `${valueToPct(r.value)}%`);
-    line.append('span').attr('class', 'cal-tooltip__ref-rule');
-    line
-      .append('span')
-      .attr('class', 'cal-tooltip__ref-label')
-      .text(r.label);
-  }
-
-  const tipScale = tipChart.append('div').attr('class', 'cal-tooltip__scale');
-  tipScale.append('span').attr('class', 'cal-tooltip__scale-min').text('0');
-
-  // Position the tooltip so its RIGHT edge sits 12px to the
-  // LEFT of the cursor. The `.cal-tooltip--left` class
-  // already sets `transform: translate(calc(-100% - 12px),
-  // -50%)` so the JS only needs to set the cursor's
-  // container-relative coordinates and the CSS does the
-  // rest. Vertically centred on the cursor (via the -50% in
-  // the transform) — but clamped to the container's bounds
-  // so the tooltip never overflows the top or bottom edge.
-  // The tooltip is ~340px tall, so a top-row hover would
-  // push the tooltip's top ~170px above the cursor; we
-  // clamp to `tipHeight/2` from the top instead.
-  function positionTip(event) {
-    const rect = container.getBoundingClientRect();
-    // Read the tooltip's rendered height. If the tooltip is
-    // currently `display: none` (not yet shown), fall back
-    // to the CSS's known chart height (chart 195px + padding
-    // + headers ≈ 340px). The first show re-reads the
-    // measurement on the next mousemove, so the fallback
-    // is only briefly in effect.
-    const tipH = tip.node().offsetHeight || 340;
-    const minY = tipH / 2;
-    const maxY = rect.height - tipH / 2;
-    const cursorY = event.clientY - rect.top;
-    const y = Math.max(minY, Math.min(maxY, cursorY));
-    tip
-      .style('left', `${event.clientX - rect.left}px`)
-      .style('top', `${y}px`);
-  }
-
-  // showDayTip: populate the tooltip with the hovered day's
-  // data and fade it in. Reuses the bar-height / band-colour
-  // mapping from the calendar tooltip so the two popups
-  // read as one design language. The date format is the
-  // calendar's long format ("Monday" / "December 10, 2024"),
-  // not the day-row chip's short format ("Mon" / "Dec 08")
-  // — the tooltip is a real card with room for the full
-  // names, and the reader is asking "what day is this?"
-  // not "what day-of-week is the 08th?".
-  function showDayTip(event, day) {
-    const parts = formatDatePartsLong(day.date);
-    tipDateDow.text(parts.dow);
-    tipDateRest.text(parts.rest);
-
-    tipValue.text(formatRiders(day.total));
-
-    const heightPct = valueToPct(day.total);
-    const bucket = bucketForValue(day.total);
-    const barFill = BAND_COLORS[
-      Math.max(0, Math.min(BUCKET_COUNT - 1, bucket))
-    ];
-    tipBarFill
-      .style('height', heightPct + '%')
-      .style('background', barFill)
-      .style('opacity', 1);
-
-    positionTip(event);
-    const wasHidden = tip.style('display') === 'none' || !tip.classed('cal-tooltip--visible');
-    tip.style('display', 'block');
-    if (wasHidden) {
-      void tip.node().offsetWidth;
-      tip.classed('cal-tooltip--visible', true);
-    }
-  }
-
-  function hideDayTip() {
-    tip.classed('cal-tooltip--visible', false);
-    // Match the calendar tooltip's pattern: wait for the
-    // opacity transition to finish before setting
-    // display:none, so the fade-out isn't snapped.
-    tip.on('transitionend.calTip', function (event) {
-      if (event.propertyName === 'opacity' && !tip.classed('cal-tooltip--visible')) {
-        tip.style('display', 'none');
-        tip.on('transitionend.calTip', null);
-      }
-    });
-  }
 
   // Day selector: a vertical strip on the right of the
   // treemap, one row per day in `days`. The caller picks the
@@ -574,7 +430,7 @@ export function renderTreemap(container, days, stats) {
             .attr('y', (d) => d.y0)
             .attr('width', (d) => Math.max(0, d.x1 - d.x0))
             .attr('height', (d) => Math.max(0, d.y1 - d.y0))
-            .attr('fill', 'var(--paper, #f7f3ee)')
+            .attr('fill', (d) => d.data.bgColor)
             .attr('stroke', 'none')
             .attr('rx', 2)
             .attr('ry', 2);
@@ -685,7 +541,6 @@ export function renderTreemap(container, days, stats) {
 
   function destroy() {
     wrapper.remove();
-    tip.remove();
   }
 
   return { update, destroy };

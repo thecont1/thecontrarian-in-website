@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.18 — Treemap: tinted rectangles, no hover tooltip (2026-07-18)
+
+Two small visual changes to the Ch 1 treemap, both in service of "the rectangles are the message".
+
+### What changed
+
+- **Rectangles get a tinted base.** Each treemap rectangle's `segment-base` fill is now a light tint of the channel's own colour (12% channel + 88% paper, mixed in linear-RGB space via `d3.interpolateRgb`). Smart Card is a pale violet, Tokens a pale tan, Whatsapp / Metro QR / Paytm a pale orange, NCMC a pale maroon, Group Ticket a pale gold. The icon pattern still renders on top in the channel's full saturation, so each rectangle is double-coded: tinted base + saturated icons. The reader can identify each mode at a glance from the colour alone, even before consulting the legend. The legend labels are unchanged (still rendered in the channel's full saturation, for visual weight in the legend column).
+- **No more hover tooltip on the day rows.** The v0.17 tooltip was a 340px-tall white card with date / value / bar / min-med-max reference lines, hanging off the LEFT of the cursor. It looked great on the calendar cells, but inside the treemap it covered the rectangles — its only "good" place to hang was inside the chart, where it sat on top of the data. Gone. The day-row hover now does ONE thing: morphs the treemap to the hovered day's mix. The day label (`Mon / Dec 08`) and the rectangle's tinted base already read as "what day / what mode"; a popup would only duplicate what's visible. The tooltip is deleted entirely — DOM construction, `showDayTip` / `hideDayTip` / `positionTip`, the `.cal-tooltip--left` CSS modifier, and the `formatDatePartsLong` / `valueToPct` helpers are all gone. The `tip.remove()` in `destroy()` is gone too.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/treemap.js` — `CHANNELS` now has a `bgColor` field precomputed at module init via `d3.interpolateRgb(paper, c.color)(0.12)`. `segment-base` fill: `var(--paper, #f7f3ee)` → `d.data.bgColor`. Removed: the entire tooltip DOM construction, `showDayTip` / `hideDayTip` / `positionTip`, `formatDatePartsLong`, `valueToPct`, the `tip.remove()` in `destroy()`, the `mousemove` handler on day rows. Day-row `mouseenter` now only calls `renderDay(d)`.
+- `packages/scrollytelling-core/styles/scrolly.css` — removed the `.cal-tooltip--left` CSS modifier (no longer used).
+
 ## v0.17 — Treemap: live day preview, calendar tooltip, locked order (2026-07-18)
 
 Three small interaction / visual changes to the Ch 1 treemap.
