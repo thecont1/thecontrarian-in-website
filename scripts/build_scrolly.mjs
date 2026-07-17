@@ -47,10 +47,16 @@ const CONTENT_DIR = join(ROOT, "content", "datastory");
 // Runtime detection: prefer bun (faster), fall back to node + npm/npx.
 // ---------------------------------------------------------------------------
 
-const isBun = typeof globalThis.Bun !== "undefined";
-const pkgCmd = isBun ? "bun" : "npm";
-const runScript = isBun ? "bun run" : "npm run";
-const binCmd = isBun ? "bunx" : "npx";
+let isBunAvailable = false;
+try {
+  execSync('bun --version', { stdio: 'ignore' });
+  isBunAvailable = true;
+} catch (_) {
+  // bun not available
+}
+const pkgCmd = isBunAvailable ? "bun" : "npm";
+const runScript = isBunAvailable ? "bun run" : "npm run";
+const binCmd = isBunAvailable ? "bunx" : "npx";
 
 // ---------------------------------------------------------------------------
 // Frontmatter parsing
@@ -207,7 +213,7 @@ async function buildOne({ slug, source, sourceAbs, baseUrl, frontmatter }) {
   const nodeModules = join(sourceAbs, "node_modules");
   if (!existsSync(nodeModules)) {
     log(`  installing dependencies (${pkgCmd})...`);
-    const installCmd = isBun ? `${pkgCmd} install --frozen-lockfile` : `${pkgCmd} install`;
+    const installCmd = isBunAvailable ? `${pkgCmd} install --frozen-lockfile` : `${pkgCmd} install`;
     run(installCmd, sourceAbs);
   } else {
     log(`  node_modules exists, skipping install`);
