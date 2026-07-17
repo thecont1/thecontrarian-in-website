@@ -37,8 +37,14 @@ const ROWS = 7;             // Mon, Tue, Wed, Thu, Fri, Sat, Sun
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 // Month-block label row. A short month label (e.g. "Nov", "Dec")
-// sits above the first column of each month-block.
-const LABEL_ROW_HEIGHT = 16;
+// sits above the first column of each month-block. Bumped from
+// 16 → 24 to give the month label more breathing room above
+// the first cell row — without the extra space, "Nov" sat
+// just 5px above the cells, which read as too tight (the
+// labels visually fused with the squares). 24px gives the
+// label ~14px of clearance from the cell top, which reads
+// as a proper section header above a data block.
+const LABEL_ROW_HEIGHT = 24;
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // Namma Metro purple scale — 5 distinct buckets from light lavender to
@@ -500,13 +506,15 @@ export function renderCalendarStrip(container, daily, window, stats) {
 
   // 6c. Month labels. For each month-block, a short label ("Nov",
   //     "Dec", "Jan", …) sits in the row above the cells, anchored
-  //     to the first column of that block. Same font and weight as
-  //     the day-of-week labels to the left of the cells (size 9,
-  //     weight 400) so the two read as a single labelling
-  //     language; the wider letter-spacing (0.18em vs 0.04em on
-  //     the DOW labels) gives the month label just enough
-  //     breathing room to read as a "section title" rather than
-  //     a row marker.
+  //     to the first column of that block. Same font, weight, AND
+  //     colour as the day-of-week labels to the left of the cells
+  //     (size 9, weight 400, fill var(--muted)) so the two read as
+  //     a single labelling language — the labels on the top and
+  //     the left of the grid are part of the same axis system.
+  //     The wider letter-spacing (0.22em vs 0.04em on the DOW
+  //     labels) gives the month label just enough breathing room
+  //     to read as a "section title" rather than a row marker,
+  //     without making it visually compete with the data.
   const monthLabels = monthBlocks.map((block) => {
     const firstCol = columns.find((c) => c.block === block);
     return {
@@ -520,11 +528,11 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .join('text')
     .attr('class', 'month-label')
     .attr('x', (d) => d.x)
-    .attr('y', LABEL_ROW_HEIGHT - 5)   // baseline ~5px above the top row
+    .attr('y', LABEL_ROW_HEIGHT - 8)   // baseline 8px above the top row, centred in the new 24px label row
     .attr('font-size', 9)
     .attr('font-weight', 400)
-    .attr('fill', 'var(--muted-2)')
-    .attr('letter-spacing', '0.18em')
+    .attr('fill', 'var(--muted)')
+    .attr('letter-spacing', '0.22em')
     .text((d) => d.text);
 
   // 8. Cells. Initial state: dim but visible (opacity 0.35). The
