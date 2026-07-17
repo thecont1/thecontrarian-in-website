@@ -24,17 +24,16 @@ const PURPLE_BUCKETS = ['#ead7f3', '#d4b0e6', '#c08bd6', '#a96cc5', '#8e4bb0', '
 // same sequence in the treemap without having to re-find
 // each mode after every hover.
 //
-// Each channel has two colour fields:
+// Each channel has one colour field:
 //   - color:  the icon's stroke / fill (the channel's
 //             "brand" colour). Used by the legend label
 //             and the icon pattern inside the rectangle.
-//   - bgColor: a light tint of `color` (mixed ~88% toward
-//             paper / white) used as the rectangle's base
-//             fill. Tinting the base with the channel's
-//             own colour — instead of using flat paper —
-//             lets the reader identify each rectangle at
-//             a glance even before reading the legend:
-//             the smartcard area reads as a pale violet
+//             The rectangle's base fill is paper (not a
+//             tinted version of the channel colour) — the
+//             icons alone carry the channel identity, and
+//             the white base keeps the chart reading as a
+//             single neutral surface rather than seven
+//             competing colour blocks.
 //             block, the token area reads as a pale tan
 //             block, and so on. The icon pattern still
 //             renders on top in the channel's full
@@ -53,20 +52,6 @@ const CHANNELS = [
 // Paper colour used as the light-tint target. The CHANNELS
 // base fill is `interpolateRgb(paper, channelColor)(0.12)` —
 // 12% channel, 88% paper. Strong enough to read as "this
-// rectangle is the smartcard area", subtle enough that the
-// icon pattern on top still dominates.
-const TREEMAP_PAPER = '#f7f3ee';
-const BG_TINT = 0.12;
-
-// Precompute bgColor on each channel. d3.interpolateRgb
-// mixes in linear-RGB space (closer to how the eye
-// perceives colour) so the tints don't look muddy. We do
-// this once at module init rather than inside the render
-// loop, since the channel colours are static.
-for (const c of CHANNELS) {
-  c.bgColor = d3.interpolateRgb(TREEMAP_PAPER, c.color)(BG_TINT);
-}
-
 // Tiny monochrome icons drawn into pattern tiles (viewBox 0 0 12 12).
 // Each icon is a simple glyph so dense tiling stays readable at small size.
 const ICONS = {
@@ -430,7 +415,7 @@ export function renderTreemap(container, days, stats) {
             .attr('y', (d) => d.y0)
             .attr('width', (d) => Math.max(0, d.x1 - d.x0))
             .attr('height', (d) => Math.max(0, d.y1 - d.y0))
-            .attr('fill', (d) => d.data.bgColor)
+            .attr('fill', 'var(--paper, #f7f3ee)')
             .attr('stroke', 'none')
             .attr('rx', 2)
             .attr('ry', 2);

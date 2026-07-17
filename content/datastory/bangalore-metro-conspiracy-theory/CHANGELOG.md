@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.20 — Treemap: revert rectangle tints back to paper (2026-07-18)
+
+Reverts the v0.18 tinted-rectangle change. The treemap rectangles are back to a flat paper base, with the icon pattern (in the channel's full saturation) carrying the mode identity on its own. After sitting with the tinted base for a beat, the user decided the seven competing colour blocks were too busy — the icons alone are enough, and the paper base keeps the chart reading as a single neutral surface.
+
+### What changed
+
+- **Rectangle base: paper, not a light tint.** `segment-base` fill is back to `var(--paper, #f7f3ee)`. The `bgColor` precomputation (`d3.interpolateRgb(paper, channelColor)(0.12)`) is gone, the `BG_TINT` and `TREEMAP_PAPER` constants are gone, and the per-channel `bgColor` field is gone. Each rectangle is now a paper-coloured card with the channel's icon pattern in its full brand colour, no tinted base getting in the way.
+- **Channel identity via icons alone.** The legend's `treemap-legend__label` is still rendered in the channel's full saturation (so the colour cue is preserved in the legend column), and the icon pattern inside each rectangle is still in the channel's full colour (so the rectangles read as "this is the smartcard area", "this is the token area", etc.). The reader gets the channel identity from the icons; the base stays neutral.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/treemap.js` — `segment-base` fill: `d.data.bgColor` → `var(--paper, #f7f3ee)`. Removed: `TREEMAP_PAPER` and `BG_TINT` constants; the `for (const c of CHANNELS) c.bgColor = ...` precomputation loop; the `bgColor` field on each channel. Doc comment on `CHANNELS` updated to reflect the single-colour model.
+
 ## v0.19 — Calendar reveal: restore fade-in-from-zero (2026-07-18)
 
 Reverts the v0.15 baseline-opacity change on the calendar cells. The cells now start at `opacity: 0` and the scroll-reveal ramps each row from 0 → 1.0 (the v0.14 behavior). The v0.15 baseline of 0.35 was a guardrail against a different bug — the treemap TDZ, which was killing the chapter mount and leaving the calendar's ScrollTrigger uncreated. That bug is fixed in v0.15 (chapter mount is now try/catch around the treemap, so the calendar always gets a working trigger). With the TDZ fixed, the calendar's reveal works reliably, and the baseline 0.35 is no longer needed — and was getting in the way of the editorial intent: the calendar is the chapter's central visualisation, and a true fade-in-from-zero reveal is what makes the 191 days feel like a sequence the reader is being walked through, not a wall of cells to parse at once.
