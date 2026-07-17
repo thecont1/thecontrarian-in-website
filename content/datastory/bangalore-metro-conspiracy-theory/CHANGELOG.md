@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.22 — Chapter 2: unified top-10 / bottom-10 chart + TOI screenshot (2026-07-18)
+
+The Ch 2 "The Metro is Getting Crowded" chapter gets a new chart and a press-screenshot opener.
+
+### What changed
+
+- **One chart, not two.** The old chapter had two separate horizontal bar charts (top-10 busiest weekdays, top-10 least busy days) sitting side by side. They were replaced with a single ranked bar chart of 20 days, sorted descending by ridership, with a thin divider between row 10 and row 11 marking the "10 BUSIEST  |  10 QUIETEST" boundary. The empty stretch in the middle of the chart is the visual point: the dataset has a "busy cluster" around 8.5–9.1L and a "quiet cluster" around 4.0–5.0L, with very few days in between. Two side-by-side bar lists would have obscured the gap; one ranked list makes it obvious at a glance.
+- **Median line for reference.** A thin red dashed vertical line at the dataset's median (8.0L, pre-computed by the notebook and shipped in `daily-stats.json` as `stats.median`) sits between the two clusters, anchored at the top of the chart with a small "MEDIAN" label. The median's position — closer to the busy cluster than the quiet cluster — is itself a data point (the dataset is right-skewed; most days sit in the upper half of the range). The line gives the eye a fixed reference against which to read the dramatic spread of the 20 extremes.
+- **X-axis with gridlines + caption.** Subtle vertical gridlines at 0, 2L, 4L, 6L, 8L, and the dataset max. Tick labels in Lakh, with an italic "Daily ridership" caption beneath. The gridlines are dashed (except 0) so they sit behind the bars visually rather than competing with them.
+- **Single BMRCL purple for all bars.** Every bar is the same colour (`#5E2D8C`, the same purple as the calendar's legend). The row position alone tells you whether a day is in the busy or quiet cluster; a second colour would be redundant.
+- **Times of India screenshot as the chapter opener.** Chapter 2's lead says "The ridership hit a record of 700,000 passengers in October 2023" — the `images/nammametro_record1.png` image (a 13 October 2023 TOI article about NammaMetro crossing the 7-lakh mark) now opens the chapter, anchoring the editorial claim in primary press coverage. The image was sitting in `images/` from an earlier version but the reference had fallen off; the figure is back, with a `datastory-photo--orange` treatment matching the other press screenshots in the story.
+
+### Files touched
+
+- `index.html` — replaced the two `[data-viz="top-10-busy"]` and `[data-viz="top-10-quiet"]` slots with a single `[data-viz="extreme-days"]` slot; updated the caption; added the TOI screenshot figure as the chapter opener (just after the lead paragraph, before the new chart).
+- `src/chapters/ch2-crowded.js` — rewritten to mount a single `renderExtremeDays` viz, pass `stats.median` and `stats.max` from `daily-stats.json`, set up one ScrollTrigger. The Mon–Thu weekday filter for the busy cluster was removed — the user broadened the request to "10 busiest days" without a weekday filter, so the chart now uses the full daily array.
+- `src/viz/extreme-days.js` (NEW) — the unified ranked bar chart. 20 horizontal bars sorted descending, single BMRCL purple, divider between row 10 and row 11 with a "10 BUSIEST | 10 QUIETEST" label, median line + label, x-axis gridlines, scroll-revealed (bars grow from 0 to full width as the user scrolls). All values are Lakh (1 decimal), matching the calendar's "Min 4.0L / Max 9.1L" format.
+- `src/viz/horizontal-bar.js` — DELETED. Replaced by `extreme-days.js`; no other module referenced it.
+
 ## v0.21 — Treemap: hover-only date selector with box around hovered day (2026-07-18)
 
 The treemap's day selector strips out click-to-select and treats hover as the only selection interaction. The chart follows the cursor (already the v0.17 behavior) and a 0.5px black box now draws around the hovered row's chip (square + date label), so the "this is the day the chart is currently showing" marker is unambiguous and follows the mouse as the user sweeps across the 7 days.
