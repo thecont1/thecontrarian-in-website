@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.11 — Calendar month gutter + month labels (2026-07-17)
+
+The Ch 1 calendar's week columns now have a wider horizontal gap (10px vs the regular 3px) when the month changes, and a short month label ("Nov", "Dec", "Jan", …) sits above the first column of each month-block. The user can read the monthly structure at a glance.
+
+### What changed
+
+- **Month gutter.** A column where the Monday is in a different calendar month than the previous column's Monday is a "month break". The first Monday of each new month is pushed right by 10px (`MONTH_GUTTER`) on top of the regular 3px cell-to-cell gap. The cumulative offset per column is precomputed once and added to every cell's `transform`. For the editorial window Nov 16 2024 → Apr 14 2025 there are 5 month breaks: Dec 2, Dec 30, Feb 3, Mar 3, Mar 31. So 6 month-blocks: Nov (3 weeks), Dec (4), Jan (5), Feb (4), Mar (4), Apr (2).
+- **Month labels.** A row of short labels above the cells, anchored to the first column of each block: "Nov" above col 0, "Dec" above col 3, "Jan" above col 7, "Feb" above col 12, "Mar" above col 16, "Apr" above col 20. Mono font, 8px, weight 500, `var(--muted-2)` colour — quieter than the cells so they don't compete with the data.
+- **`LABEL_ROW_HEIGHT = 16` reserves vertical space** at the top of the SVG. The cells and Y-axis day labels (Mon, Tue, …) are pushed down by that amount. The SVG is now 16px taller; the cell layout is otherwise unchanged.
+
+### How to verify
+
+1. Open the page in a browser. Look at the Ch 1 calendar.
+2. The first row of the calendar is now a thin strip of month labels: `Nov` `Dec` `Jan` `Feb` `Mar` `Apr`.
+3. Between each block of weeks, there's a slightly wider gap (you can see it by eye).
+4. The day labels (Mon, Tue, …) are still on the left, aligned with the first row of cells.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `MONTH_GUTTER = 10`, `LABEL_ROW_HEIGHT = 16`, `MONTH_NAMES` constants; `monthBreaks` and `colGutterOffset` computed once after the cell list; `WIDTH` and `HEIGHT` updated; Y-axis day labels and cell `transform` push down by `LABEL_ROW_HEIGHT`; new `monthLabels` array drives a row of `text.month-label` elements anchored to the first column of each block.
+
 ## v0.10 — Calendar tooltip: 5 quintile bands, Min/Max from the notebook, visible 1px padding (2026-07-17)
 
 The Ch 1 calendar's tooltip chart and the legend strip now use 5 quintile bands — each band holds ~20% of the days, so the data distributes evenly across the colour scale instead of bunching up in the dark bands. The Min/Max labels in the legend read the dataset's actual extremes (4.0L / 9.1L), and every value on the tooltip (min, max, mean, the 4 quintile boundaries) is pre-computed by the aggregation notebook and shipped in `daily-stats.json`. The bar's 1px padding is now actually visible — the bar is a "track" (full chart height, paper-coloured padding) with a variable-height fill child inside it.

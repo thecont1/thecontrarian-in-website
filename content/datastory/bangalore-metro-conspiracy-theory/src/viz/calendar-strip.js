@@ -5,6 +5,11 @@
 //   - Columns = weeks. The first column starts on the Monday on or
 //     before the editorial window's start date; the last column ends
 //     on the Sunday on or after the end date.
+//   - When the month changes between adjacent columns, a wider
+//     horizontal gutter is inserted between them (MONTH_GUTTER,
+//     10px vs the regular 3px between cells). A short month label
+//     (e.g. "Nov", "Dec") sits in that gutter space so the user
+//     can read the month-block boundaries at a glance.
 //   - Each cell = a single day. Cells outside the editorial window
 //     are rendered empty (no fill, no border, no X). Cells inside
 //     the window that BMRCL didn't publish are rendered with a
@@ -27,6 +32,16 @@ const GAP = 3;              // px between cells
 const LABEL_WIDTH = 36;     // px reserved on the left for day-of-week labels
 const ROWS = 7;             // Mon, Tue, Wed, Thu, Fri, Sat, Sun
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// Month gutter + label row. A wider gap (MONTH_GUTTER) is inserted
+// between week columns when the month changes, so the user can see
+// the monthly blocks at a glance. A short month label (e.g. "Nov",
+// "Dec") sits in the row above the cells, anchored to the first
+// column of each block. LABEL_ROW_HEIGHT reserves vertical space
+// for that label row.
+const MONTH_GUTTER = 10;
+const LABEL_ROW_HEIGHT = 16;
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // Namma Metro purple scale — 5 distinct buckets from light lavender to
 // deep BMRCL purple. The dataset is divided into 5 equal-width bands
@@ -166,11 +181,52 @@ export function renderCalendarStrip(container, daily, window, stats) {
     });
   }
 
+  // 3b. Month gutter. A "break" is a column where the Monday is
+  //     in a different calendar month than the previous column's
+  //     Monday. We insert a wider horizontal gap (MONTH_GUTTER,
+  //     10px) between such columns so the user can spot monthly
+  //     blocks of weeks at a glance. The first column is never a
+  //     break. For the editorial window Nov 16 2024 → Apr 14
+  //     2025 the breaks are at the first Monday of each new
+  //     month: Dec 2, Dec 30, Feb 3, Mar 3, Mar 31 — five breaks.
+  //     A short month label ("Nov", "Dec", "Jan", …) sits above
+  //     each block, anchored to its first column.
+  const monthBreaks = new Set();
+  {
+    let prevMonth = cells[0].date.getMonth();
+    for (let i = 7; i < cells.length; i += 7) {
+      const curMonth = cells[i].date.getMonth();
+      if (curMonth !== prevMonth) {
+        monthBreaks.add(cells[i].col);
+        prevMonth = curMonth;
+      }
+    }
+  }
+  const numMonthBreaks = monthBreaks.size;
+
+  // Cumulative gutter offset per column. Column c's offset is the
+  // sum of MONTH_GUTTERs for all month breaks at columns ≤ c. So
+  // the first Monday of each month sits an extra MONTH_GUTTER to
+  // the right of where a uniform grid would put it; the gutter
+  // sits in the space immediately to its left.
+  const colGutterOffset = new Array(numWeeks);
+  {
+    let offset = 0;
+    for (let c = 0; c < numWeeks; c++) {
+      if (monthBreaks.has(c)) offset += MONTH_GUTTER;
+      colGutterOffset[c] = offset;
+    }
+  }
+
   // 4. (no separate scale step — bucketing lives in 1b)
 
-  // 5. SVG dimensions
-  const WIDTH = LABEL_WIDTH + numWeeks * (CELL + GAP);
-  const HEIGHT = ROWS * (CELL + GAP);
+  // 5. SVG dimensions — account for the month gutters
+  const WIDTH = LABEL_WIDTH + numWeeks * (CELL + GAP) + numMonthBreaks * MONTH_GUTTER;
+  // LABEL_ROW_HEIGHT reserves vertical space at the top for the
+  // month labels (Nov, Dec, Jan, …). The cells and Y-axis day
+  // labels are pushed down by that amount (see cell transform and
+  // Y-axis label code below).
+  const HEIGHT = LABEL_ROW_HEIGHT + ROWS * (CELL + GAP);
 
   // 6. Build the SVG
   const svg = d3
@@ -277,12 +333,41 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .join('text')
     .attr('class', 'label')
     .attr('x', 0)
-    .attr('y', (_, i) => i * (CELL + GAP) + CELL * 0.72)
+    .attr('y', (_, i) => LABEL_ROW_HEIGHT + i * (CELL + GAP) + CELL * 0.72)
     .attr('font-size', 9)
     .attr('font-weight', 400)
     .attr('fill', COLORS.text)
     .attr('letter-spacing', '0.04em')
     .text((d) => d);
+
+  // 6c. Month labels. For each month-block, a short label ("Nov",
+  //     "Dec", "Jan", …) sits in the row above the cells, anchored
+  //     to the first column of that block. The first column (col 0)
+  //     is always the start of a block; subsequent blocks start at
+  //     each month-break column.
+  const monthLabels = [];
+  for (let c = 0; c < numWeeks; c++) {
+    if (c === 0 || monthBreaks.has(c)) {
+      const monday = cells[c * 7];
+      monthLabels.push({
+        col: c,
+        x: LABEL_WIDTH + c * (CELL + GAP) + colGutterOffset[c],
+        text: MONTH_NAMES[monday.date.getMonth()],
+      });
+    }
+  }
+  svg
+    .selectAll('text.month-label')
+    .data(monthLabels)
+    .join('text')
+    .attr('class', 'month-label')
+    .attr('x', (d) => d.x)
+    .attr('y', LABEL_ROW_HEIGHT - 5)   // baseline ~5px above the top row
+    .attr('font-size', 8)
+    .attr('font-weight', 500)
+    .attr('fill', 'var(--muted-2)')
+    .attr('letter-spacing', '0.05em')
+    .text((d) => d.text);
 
   // 8. Cells. Initial state: invisible. The update() below reveals them
   //    row by row, top to bottom.
@@ -291,7 +376,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
     .data(cells)
     .join('g')
     .attr('class', 'cell')
-    .attr('transform', (d) => `translate(${LABEL_WIDTH + d.col * (CELL + GAP)}, ${d.row * (CELL + GAP)})`)
+    .attr('transform', (d) => `translate(${LABEL_WIDTH + d.col * (CELL + GAP) + colGutterOffset[d.col]}, ${LABEL_ROW_HEIGHT + d.row * (CELL + GAP)})`)
     .attr('tabindex', (d) => (d.inRange ? 0 : -1))    // focusable for keyboard nav
     .attr('data-bucket', (d) => d.reported ? bucketForValue(d.total) : 'unreported')
     .attr('opacity', 0);
