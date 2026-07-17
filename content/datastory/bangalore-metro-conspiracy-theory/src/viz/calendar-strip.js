@@ -60,50 +60,71 @@ const TIP_CELL_OFFSET = CELL + TIP_GAP;  // 30px — used when tooltip sits belo
 
 /**
  * Build the calendar grid. Returns the SVG and an `update` function.
+ *
+ * @param {Element} container - the viz container
+ * @param {Array}  daily      - daily-by-mode records
+ * @param {Object} window     - { startDate, endDate }
+ * @param {Object} stats      - daily-stats.json payload
+ *   - { min, max, count, bucketCount, buckets: { p20, p40, p60, p80 } }
+ *   The HTML page does no analytics of its own: min, max, and the
+ *   four bucket boundaries are pre-computed by the aggregation
+ *   notebook and shipped in the JSON.
  */
-export function renderCalendarStrip(container, daily, window) {
+export function renderCalendarStrip(container, daily, window, stats) {
   const { startDate, endDate } = window;
 
   // 1. Index daily by ISO date for O(1) lookup
   const byDate = new Map(daily.map((d) => [d.date, d]));
 
-  // 1b. Value-based bucketing. Five equal-width bands across the
-  //     dataset's absolute min–max range. This replaces the earlier
-  //     percentile-based scheme so:
-  //       - the legend's Min/Max labels read the actual dataset
-  //         extremes (4.0L / 9.1L) instead of the 10th/90th
-  //         percentile (6.4L / 8.8L),
-  //       - the bar's value-to-height mapping is linear across the
-  //         full observed range, and
-  //       - the chart's banded background, the cell colours, the
-  //         tooltip bar fill, and the legend strip all use the same
-  //         five bands (no white-below-p10 or extra-deep-above-p90
-  //         zones that didn't have a matching legend stop).
-  const reportedTotals = daily.map((d) => d.total);
-  const dataMin = d3.min(reportedTotals);
-  const dataMax = d3.max(reportedTotals);
+  // 1b. Percentile (quintile) bucketing. Five equal-count bands
+  //     across the dataset's reported totals: each band holds
+  //     ~20% of the days. The boundaries (p20, p40, p60, p80) and
+  //     the dataset min/max come pre-computed from the aggregation
+  //     notebook — see daily-stats.json. The bucketing is read
+  //     here, not derived: the HTML/JS does no analytics of its
+  //     own, just maps values into the 5 pre-computed bands.
+  //
+  //     The bar's value-to-height mapping is still linear across
+  //     the absolute min–max range (so the bar visually spans the
+  //     full chart height), but the *colour* of the bar is the
+  //     band the value lands in. With the dataset right-skewed
+  //     toward higher values, a value-based bucketing bunches days
+  //     into the dark bands; the quintile scheme keeps the
+  //     distribution even.
+  const dataMin = stats.min;
+  const dataMax = stats.max;
   const dataRange = dataMax - dataMin;
+  // Bucket boundaries, sorted ascending. Quintile scheme: 4
+  // boundaries dividing the data into 5 equal-count bands.
+  const boundaries = [
+    stats.buckets.p20,
+    stats.buckets.p40,
+    stats.buckets.p60,
+    stats.buckets.p80,
+  ];
 
-  // valueToPct: 0% sits at the dataset's absolute minimum, 100% at
-  // the absolute maximum. The bar's height maps linearly to this
-  // percentage; the reference lines (min/avg/max) use the same scale.
+  // valueToPct: 0% sits at the dataset's absolute minimum, 100%
+  // at the absolute maximum. Linear scale, used by the bar's
+  // height and the (min/avg/max) reference lines.
   function valueToPct(v) {
     if (v == null) return 0;
     return Math.max(0, Math.min(100, ((v - dataMin) / dataRange) * 100));
   }
-  // bucketForValue: returns 0..4. The five band boundaries are at
-  //   dataMin, dataMin + 0.2·dataRange, ..., dataMax
-  // Values are clamped to the nearest band (no -1 "below min" or
-  // 5 "above max" cases — every observed value falls in 0..4).
+  // bucketForValue: returns 0..4. The four boundaries are the
+  // 20th, 40th, 60th, 80th percentiles of the dataset's daily
+  // totals. v < p20 → bucket 0, p20 ≤ v < p40 → bucket 1, etc.
+  // v ≥ p80 → bucket 4 (top). null → -1 (unreported).
   function bucketForValue(v) {
     if (v == null) return -1;
-    if (v <= dataMin) return 0;
-    if (v >= dataMax) return BUCKET_COUNT - 1;
-    const idx = Math.floor(((v - dataMin) / dataRange) * BUCKET_COUNT);
-    return Math.min(Math.max(idx, 0), BUCKET_COUNT - 1);
+    if (v < boundaries[0]) return 0;
+    if (v < boundaries[1]) return 1;
+    if (v < boundaries[2]) return 2;
+    if (v < boundaries[3]) return 3;
+    return 4;
   }
   // color: maps the bucket to its PURPLE_BUCKETS colour. -1 (no
-  // value) clamps to bucket 0 (palest lavender).
+  // value) clamps to bucket 0 (palest lavender) — unreported days
+  // pick up the palest colour, matching the bottom of the scale.
   function color(v) {
     const b = bucketForValue(v);
     if (b < 0) return PURPLE_BUCKETS[0];
@@ -184,13 +205,19 @@ export function renderCalendarStrip(container, daily, window) {
   }
 
   // 6b. Gradient legend — 5-zone strip below the calendar. The strip
-  //     is the 5 PURPLE_BUCKETS, one band per equal-width slice of
-  //     the dataset's min–max range. No white below and no extra
-  //     deep purple above: the value bucketing now covers the full
-  //     range, so the 5 bands are the whole story. Below the strip,
-  //     a single row of labels: "Min <value>" anchored at the left
-  //     edge, "Daily Ridership" centred, "Max <value>" anchored at
-  //     the right edge. No tick marks at band boundaries.
+  //     is the 5 PURPLE_BUCKETS, one band per quintile of the
+  //     dataset's reported totals. The strip itself doesn't show
+  //     the band positions in value space (they're not equal-width
+  //     — see the comment at 9a for the chart's banded background
+  //     for the actual positions); the strip is just 5 equal-
+  //     width swatches of the 5 colours, palest to deepest. Below
+  //     the strip, a single row of labels: "Min <value>" anchored
+  //     at the left edge, "Daily Ridership" centred, "Max <value>"
+  //     anchored at the right edge. The Min/Max values are the
+  //     dataset's actual extremes (stats.min and stats.max), not
+  //     the 10th/90th percentiles — so the user sees the true
+  //     range of the data, not a clipped middle. No tick marks
+  //     at band boundaries.
   const legend = d3.select(container)
     .append('div')
     .attr('class', 'cal-legend')
@@ -339,18 +366,28 @@ export function renderCalendarStrip(container, daily, window) {
   const tipChart = tooltip.append('div').attr('class', 'cal-tooltip__chart');
 
   // 9a. Tooltip chart's banded background. 5 hard-stop colour
-  //     zones, each 20% of the bar-container height, mapped to the
-  //     5 PURPLE_BUCKETS (palest at the bottom, deepest at the
-  //     top). The bar's height maps linearly to the dataset's
-  //     min–max range, so a value at the dataset minimum sits at
-  //     the bottom of the palest band, and a value at the dataset
-  //     maximum sits at the top of the deepest band.
+  //     zones mapped to the 5 quintile bands. Each zone's height
+  //     is NOT equal — the zones are positioned at the value-
+  //     positions of the 4 bucket boundaries (p20, p40, p60, p80)
+  //     inside the absolute min–max range. The dataset is right-
+  //     skewed (most days are 7-9L), so the bottom band spans a
+  //     large value range and the top bands are compressed. The
+  //     bar's height still maps linearly to the absolute range,
+  //     so the bar visually tells you "where in the value range
+  //     am I?" while its fill tells you "which quintile band
+  //     am I in?". Each band holds ~20% of the days.
+  const positions = [
+    0,
+    valueToPct(boundaries[0]),
+    valueToPct(boundaries[1]),
+    valueToPct(boundaries[2]),
+    valueToPct(boundaries[3]),
+    100,
+  ];
   const zoneStops = [];
   for (let i = 0; i < BUCKET_COUNT; i++) {
-    const startPct = (i / BUCKET_COUNT) * 100;
-    const endPct = ((i + 1) / BUCKET_COUNT) * 100;
-    zoneStops.push(`${PURPLE_BUCKETS[i]} ${startPct.toFixed(2)}%`);
-    zoneStops.push(`${PURPLE_BUCKETS[i]} ${endPct.toFixed(2)}%`);
+    zoneStops.push(`${PURPLE_BUCKETS[i]} ${positions[i].toFixed(2)}%`);
+    zoneStops.push(`${PURPLE_BUCKETS[i]} ${positions[i + 1].toFixed(2)}%`);
   }
   const bandGradient = `linear-gradient(to top, ${zoneStops.join(', ')})`;
 
@@ -384,10 +421,12 @@ export function renderCalendarStrip(container, daily, window) {
   //     (0%), max at the top (100%), avg somewhere in the middle.
   //     The labels (min / avg / max) are tucked to the right of
   //     the bar so the chart's vertical scale is implied, not
-  //     spelled out.
+  //     spelled out. Min/avg/max are all pre-computed by the
+  //     aggregation notebook (daily-stats.json) — the page does
+  //     no analytics of its own.
   const refMin = dataMin;
   const refMax = dataMax;
-  const refAvg = d3.mean(reportedTotals) ?? 0;
+  const refAvg = stats.mean;
   const refs = [
     { key: 'min', value: refMin, label: 'min' },
     { key: 'avg', value: refAvg, label: 'avg' },

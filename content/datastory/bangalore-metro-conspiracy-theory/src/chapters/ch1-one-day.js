@@ -10,6 +10,7 @@
 
 import {
   loadDailyByMode,
+  loadDailyStats,
   loadSignificantEvents,
 } from '../data/loaders.js';
 import { gsap, ScrollTrigger } from '@thecontrarian/scrollytelling-core';
@@ -34,9 +35,10 @@ function pickRepresentativeWeekday(daily) {
 
 export async function mountCh1OneDay(chapterEl) {
   // 1. Load data
-  const [daily, events] = await Promise.all([
+  const [daily, events, stats] = await Promise.all([
     loadDailyByMode(),
     loadSignificantEvents(),
+    loadDailyStats(),
   ]);
 
   // 2. Find the viz container
@@ -49,7 +51,7 @@ export async function mountCh1OneDay(chapterEl) {
 
   // 3. Render the calendar strip
   const window = extractWindow(daily);
-  const calViz = renderCalendarStrip(calendarSlot, daily, window);
+  const calViz = renderCalendarStrip(calendarSlot, daily, window, stats);
 
   // 4. Render the single-day stacked bar
   const repDay = pickRepresentativeWeekday(daily);

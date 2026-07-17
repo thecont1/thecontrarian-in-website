@@ -11,6 +11,7 @@ const FILES = {
   stations:           'stations.geojson',
   hypothesisWindow:   'hypothesis-window.json',
   fareHikeWindow:     'fare-hike-window.json',
+  dailyStats:         'daily-stats.json',
 };
 
 const cache = new Map();
@@ -31,8 +32,8 @@ async function load(key) {
 }
 
 /**
- * Pre-fetch all 7 JSONs in parallel. Call this on init to warm the cache.
- * @returns {Promise<{dailyByMode, modeShares, significantEvents, anomalies, stations, hypothesisWindow, fareHikeWindow}>}
+ * Pre-fetch all 8 JSONs in parallel. Call this on init to warm the cache.
+ * @returns {Promise<{dailyByMode, modeShares, significantEvents, anomalies, stations, hypothesisWindow, fareHikeWindow, dailyStats}>}
  */
 export async function loadAll() {
   const entries = await Promise.all(
@@ -48,3 +49,4 @@ export const loadAnomalies         = () => load('anomalies');
 export const loadStations          = () => load('stations');
 export const loadHypothesisWindow  = () => load('hypothesisWindow');
 export const loadFareHikeWindow    = () => load('fareHikeWindow');
+export const loadDailyStats        = () => load('dailyStats');

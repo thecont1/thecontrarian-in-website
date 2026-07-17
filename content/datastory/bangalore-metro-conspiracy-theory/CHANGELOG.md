@@ -1,27 +1,36 @@
 # Changelog
 
-## v0.10 — Calendar tooltip: 5 bands, real Min/Max, visible 1px padding (2026-07-17)
+## v0.10 — Calendar tooltip: 5 quintile bands, Min/Max from the notebook, visible 1px padding (2026-07-17)
 
-The Ch 1 calendar's tooltip chart and the legend strip below the calendar now use the same 5 bands across the dataset's absolute min–max range (4.0L → 9.1L), instead of the previous 7-zone scheme anchored to the 10th–90th percentile range. The bar's 1px padding is now actually visible — the bar is a "track" (full chart height, paper-coloured padding) with a variable-height fill child inside it.
+The Ch 1 calendar's tooltip chart and the legend strip now use 5 quintile bands — each band holds ~20% of the days, so the data distributes evenly across the colour scale instead of bunching up in the dark bands. The Min/Max labels in the legend read the dataset's actual extremes (4.0L / 9.1L), and every value on the tooltip (min, max, mean, the 4 quintile boundaries) is pre-computed by the aggregation notebook and shipped in `daily-stats.json`. The bar's 1px padding is now actually visible — the bar is a "track" (full chart height, paper-coloured padding) with a variable-height fill child inside it.
+
+### Why quintile bucketing
+
+The earlier v0.10 used value-based bucketing (5 equal-width bands across the absolute min–max range), but with the data right-skewed toward higher values that put most days in the dark bands. The quintile scheme — 5 equal-count bands at the 20th, 40th, 60th, 80th percentiles — distributes the data evenly: each band holds ~25 of the 123 reported days. The band boundaries are 7.1L, 7.9L, 8.3L, 8.7L.
 
 ### What changed
 
-- **Bucketing: value-based across absolute min–max**, not percentile. Five equal-width bands: `[4.0L, 5.0L)`, `[5.0L, 6.1L)`, `[6.1L, 7.1L)`, `[7.1L, 8.1L)`, `[8.1L, 9.1L]`. The previous 7-zone scheme (white + 5 PURPLE_BUCKETS + deep purple) had no minimum or maximum that matched the legend's "Min / Max" labels — the legend said 6.4L / 8.8L (the 10th/90th percentiles) but the actual dataset range is 4.0L / 9.1L. The new bucketing shows the real extremes and keeps the 5-band count.
-- **Tooltip chart's banded background: 5 zones** (the 5 PURPLE_BUCKETS only). No white below and no extra deep purple above. The chart's vertical scale is now `0% = 4.0L`, `100% = 9.1L`, so a value at the dataset minimum sits at the bottom of the palest band, and a value at the maximum sits at the top of the deepest band. The bar's height maps linearly across this full range.
-- **Legend: single caption row, no tick marks.** Below the 5-stop strip: a single row with `Min 4.0L` anchored at the left, `Daily Ridership` centred, `Max 9.1L` anchored at the right. All three labels are on the same row, no tick marks at band boundaries, no intermediate boundary values. The strip itself is the entire scale.
+- **Bucketing: quintile, not value-based.** Five equal-count bands at p20, p40, p60, p80. The chart's vertical scale is still `0% = dataMin = 4.0L` and `100% = dataMax = 9.1L`, so the bar's height is still linear in the value range — the bar visually tells you "where in the value range am I?" while its fill tells you "which quintile band am I in?".
+- **Notebook outputs `daily-stats.json`.** A new code cell at the end of `scrolly-article/aggregate-scrolly.ipynb` computes the dataset's `min`, `max`, `mean`, and the 4 quintile boundaries from `by_mode['total']` and writes them to `daily-stats.json`. The web app reads this JSON and does **no analytics of its own** — it just maps each day's value into the pre-computed band. Mean, too, is shipped in the JSON so the chart's `avg` reference line doesn't have to be computed client-side.
+- **Tooltip chart's banded background: 5 zones at the value-positions of the boundaries.** The zones are not equal-height in the chart — they are positioned at `valueToPct(p20)`, `valueToPct(p40)`, `valueToPct(p60)`, `valueToPct(p80)`. The dataset is right-skewed, so the bottom band (4.0L–7.1L) takes ~60% of the chart height and the top band (8.7L–9.1L) takes ~8%. Each colour band still holds ~20% of the days — the visual height is just a side-effect of the data distribution.
+- **Legend: `Min 4.0L` ... `Daily Ridership` ... `Max 9.1L`.** Single row below the 5-stop strip, no tick marks. The Min/Max values are the dataset's actual extremes (from `stats.min` and `stats.max`), not the 10th/90th percentiles that the v0.9 era showed.
 - **Bar: track + fill so the 1px padding shows.** The bar element is now a "track" that spans the full chart height, with a 0.5px black border and **1px paper-coloured padding**. The variable-height fill is a child element whose background is the bucket colour. The 1px paper padding is now visibly sandwiched between the bar's border and the fill, so the bar stands off the chart's banded background even when the fill matches the band the value lands in.
-- **Bar fill: bucket colour, same as before.** `bucketForValue(d.total)` maps to `PURPLE_BUCKETS[bucket]` — the bar's fill matches the highest band it reaches.
 
 ### How to verify
 
 1. Open the page in a browser.
-2. Hover any reported calendar cell. The tooltip chart shows the bar in the band matching the value, with a 1px paper gap visible between the bar's black border and the fill.
+2. Hover any reported calendar cell. The tooltip chart shows the bar in the band matching the day's quintile, with a 1px paper gap visible between the bar's black border and the fill.
 3. Look below the calendar: the strip has 5 bands, and the row below reads `Min 4.0L` ... `Daily Ridership` ... `Max 9.1L`.
+4. The Min reference line sits at the bottom of the chart, the Max line at the top, the Avg line at the dataset's mean (7.8L, ~75% of the chart height).
 
 ### Files touched
 
-- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `valueToPct` and `bucketForValue` rewritten for value-based bucketing across absolute min–max; tooltip chart's banded background is now 5 zones (was 7); bar restructured into track + fill; legend caption row replaces the old `__title` / `__values` / `__extremes` triple; `formatCompact` Lakh values always show one decimal so the legend reads `4.0L` not `4L`.
-- `packages/scrollytelling-core/styles/scrolly.css` — `.cal-tooltip__bar` is now the full-height track with paper background and `display: flex; justify-content: flex-end`; new `.cal-tooltip__bar-fill` for the variable inner element; `.cal-tooltip__bar-container` background is the 5-stop gradient (was 5-stop too, but the band boundaries are now 20% / 40% / 60% / 80% to match the new 5-zone scheme); `.cal-legend` simplified to a single `.cal-legend__caption` row.
+- **New** `scrolly-article/daily-stats.json` (and `content/datastory/.../public/data/daily-stats.json` after fetch) — `{ min, max, mean, count, bucketCount, buckets: { p20, p40, p60, p80 }, bucketLabels }`. Written by the aggregation notebook.
+- **Modified** `scrolly-article/aggregate-scrolly.ipynb` — new code cell at the end computes and writes `daily-stats.json`.
+- **Modified** `content/datastory/bangalore-metro-conspiracy-theory/scripts/fetch-data.mjs` — `daily-stats.json` added to the fetch list.
+- **Modified** `content/datastory/bangalore-metro-conspiracy-theory/src/data/loaders.js` — `loadDailyStats` accessor.
+- **Modified** `content/datastory/bangalore-metro-conspiracy-theory/src/chapters/ch1-one-day.js` — loads stats and passes them to `renderCalendarStrip`.
+- **Modified** `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `renderCalendarStrip(container, daily, window, stats)` now takes the stats object; `bucketForValue` and `valueToPct` use `stats.min` / `stats.max` / `stats.buckets.{p20..p80}` instead of computing; the chart's banded background is positioned at the value-positions of the boundaries; the bar's `avg` reference uses `stats.mean`.
 
 ## v0.8 — Bun workspace + @thecontrarian/scrollytelling-core (2026-07-17)
 

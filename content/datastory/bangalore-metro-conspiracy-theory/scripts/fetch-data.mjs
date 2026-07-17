@@ -35,6 +35,7 @@ const FILES = [
   'stations.geojson',
   'hypothesis-window.json',
   'fare-hike-window.json',
+  'daily-stats.json',
 ];
 
 async function fetchOne(filename) {
