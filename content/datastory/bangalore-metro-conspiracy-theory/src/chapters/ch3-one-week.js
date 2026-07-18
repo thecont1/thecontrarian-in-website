@@ -13,8 +13,7 @@ export async function mountCh3OneWeek(chapterEl) {
   if (!slot) return;
 
   const viz = renderDowLines(slot, daily, {
-    title: 'One Week on NammaMetro',
-    yLabel: 'Total ridership',
+    yLabel: 'Total Ridership',
   });
 
   return () => {

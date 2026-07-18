@@ -11,11 +11,13 @@ import { gsap, ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 
 const WIDTH = 960;
 const HEIGHT = 480;
-const MARGIN = { top: 70, right: 30, bottom: 80, left: 70 };
+const MARGIN = { top: 70, right: 30, bottom: 70, left: 60 };
 const WEEKS = 8;
 const DAYS_PER_WEEK = 7;
+const Y_BASELINE = 350000; // truncate the y-axis below this value
+const GRID = { cols: 4, rows: 2, gap: 20 };
 
-// Mon..Sun ordering for the legend and the seven lines.
+// Mon..Sun ordering for the subplots.
 const DAYS = [
   { name: 'Mon', dow: 1 },
   { name: 'Tue', dow: 2 },
@@ -35,42 +37,62 @@ const COLORS = d3.schemeTableau10.slice(0, 7);
  * @returns {{ update, destroy }}
  */
 export function renderDowLines(container, daily, options = {}) {
-  const { title = 'Ridership by day of week', yLabel = 'Total ridership' } = options;
+  const { title = 'Ridership Patterns by Day of Week', yLabel = 'Total ridership' } = options;
 
   const parseDate = (d) => new Date(d.date);
   const sorted = [...daily].sort((a, b) => parseDate(a) - parseDate(b));
-  const recent = sorted.slice(-(WEEKS * DAYS_PER_WEEK));
 
-  const dateFmt = d3.timeFormat('%b %d, %Y');
-  const subtitle = `${dateFmt(recent[0].date)} – ${dateFmt(recent[recent.length - 1].date)}`;
+  const lastDate = parseDate(sorted[sorted.length - 1]);
+  const firstDate = new Date(lastDate);
+  firstDate.setDate(firstDate.getDate() - (WEEKS * DAYS_PER_WEEK - 1));
 
-  const innerW = WIDTH - MARGIN.left - MARGIN.right;
-  const innerH = HEIGHT - MARGIN.top - MARGIN.bottom;
+  // Build a full calendar window (56 days) because the dataset has
+  // gaps where NammaMetro did not report. Missing days are imputed
+  // per day-of-week line after the values are collected.
+  const dateKey = d3.timeFormat('%Y-%m-%d');
+  const rowByDate = new Map(sorted.map((d) => [d.date, d]));
+  const calendarRows = [];
+  for (let d = new Date(firstDate); d <= lastDate; d.setDate(d.getDate() + 1)) {
+    const key = dateKey(d);
+    const row = rowByDate.get(key);
+    calendarRows.push({ date: key, total: row ? row.total : null });
+  }
 
-  // Split the recent window into eight weeks (oldest to newest).
-  const withWeek = recent.map((d, i) => ({ ...d, week: Math.floor(i / DAYS_PER_WEEK) }));
+  // Split the calendar window into eight weeks (oldest to newest).
+  const withWeek = calendarRows.map((d, i) => ({ ...d, week: Math.floor(i / DAYS_PER_WEEK) }));
   const weekGroups = d3.groups(withWeek, (d) => d.week).sort((a, b) => a[0] - b[0]);
 
-  // Build one series per day-of-week.
+  // Build one series per day-of-week. Values keep their original
+  // nulls so missing days can be shown with dashed connectors.
   const series = DAYS.map(({ name, dow }, i) => ({
     name,
     dow,
     color: COLORS[i],
     values: weekGroups.map(([week, rows]) => {
-      const row = rows.find((d) => parseDate(d).getDay() === dow);
-      return { week, value: row ? row.total : null };
+      const row = rows.find((d) => new Date(d.date).getDay() === dow);
+      return { week, date: row?.date ?? null, value: row ? row.total : null };
     }),
   }));
 
-  // X axis: week index, labelled with the last date in each week.
-  const x = d3.scalePoint().domain(d3.range(WEEKS)).range([0, innerW]).padding(0);
-  const weekLabels = weekGroups.map(([, rows]) =>
-    d3.timeFormat('%b %d')(d3.max(rows, (d) => parseDate(d)))
-  );
+  // Small-multiples layout.
+  const cellInnerW =
+    (WIDTH - MARGIN.left - MARGIN.right - (GRID.cols - 1) * GRID.gap) / GRID.cols;
+  const cellInnerH =
+    (HEIGHT - MARGIN.top - MARGIN.bottom - (GRID.rows - 1) * GRID.gap) / GRID.rows;
 
-  // Y axis: total ridership.
+  const cellX = (col) => MARGIN.left + col * (cellInnerW + GRID.gap);
+  const cellY = (row) => MARGIN.top + row * (cellInnerH + GRID.gap);
+
+  // Shared scales: x is week index; y starts at the truncated baseline.
+  const x = d3.scalePoint().domain(d3.range(WEEKS)).range([0, cellInnerW]).padding(0);
   const yMax = d3.max(series, (s) => d3.max(s.values, (v) => v.value ?? 0));
-  const y = d3.scaleLinear().domain([0, yMax * 1.05]).range([innerH, 0]).nice();
+  const y = d3.scaleLinear()
+    .domain([Y_BASELINE, yMax * 1.05])
+    .range([cellInnerH, 0])
+    .nice();
+
+  const dateFmt = d3.timeFormat('%b %d, %Y');
+  const subtitle = `${dateFmt(firstDate)} – ${dateFmt(lastDate)}`;
 
   const svg = d3
     .select(container)
@@ -83,8 +105,6 @@ export function renderDowLines(container, daily, options = {}) {
     .style('height', 'auto')
     .style('font-family', 'var(--font-mono)')
     .style('font-size', '10px');
-
-  const g = svg.append('g').attr('transform', `translate(${MARGIN.left}, ${MARGIN.top})`);
 
   // Title and subtitle.
   const titleGroup = svg.append('g').attr('class', 'dow-lines__title');
@@ -109,139 +129,200 @@ export function renderDowLines(container, daily, options = {}) {
     .attr('fill', 'var(--muted)')
     .text(subtitle);
 
-  // Gridlines (horizontal).
-  g.append('g')
-    .attr('class', 'grid')
-    .selectAll('line')
-    .data(y.ticks(5))
-    .join('line')
-    .attr('x1', 0)
-    .attr('x2', innerW)
-    .attr('y1', (d) => y(d))
-    .attr('y2', (d) => y(d))
-    .attr('stroke', 'rgba(0, 0, 0, 0.08)');
+  // Shared y-axis, drawn once for each row so both rows have a scale.
+  for (let row = 0; row < GRID.rows; row++) {
+    const rowAxis = svg
+      .append('g')
+      .attr('class', 'y-axis')
+      .attr('transform', `translate(${MARGIN.left}, ${cellY(row)})`)
+      .call(d3.axisLeft(y).ticks(4).tickFormat(d3.format('~s')))
+      .call((sel) => sel.selectAll('text').attr('fill', 'var(--muted)'))
+      .call((sel) => sel.selectAll('line, path').attr('stroke', 'rgba(0, 0, 0, 0.2)'));
 
-  // Axes.
-  g.append('g')
-    .attr('class', 'x-axis')
-    .attr('transform', `translate(0, ${innerH})`)
-    .call(
-      d3
-        .axisBottom(x)
-        .tickFormat((i) => weekLabels[i] ?? '')
-        .tickSizeOuter(0)
-    )
-    .call((sel) => sel.selectAll('text').attr('fill', 'var(--muted)'))
-    .call((sel) => sel.selectAll('line, path').attr('stroke', 'rgba(0, 0, 0, 0.2)'));
+    // Squiggle break on the y-axis to show the base is truncated at 350K.
+    const breakY = y(Y_BASELINE);
+    rowAxis
+      .append('path')
+      .attr('d', `M -6,${breakY - 6} L -3,${breakY} L 0,${breakY - 6} L 3,${breakY} L 6,${breakY - 6}`)
+      .attr('stroke', 'var(--ink)')
+      .attr('stroke-width', 1)
+      .attr('fill', 'none');
+  }
 
-  g.append('g')
-    .attr('class', 'y-axis')
-    .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('~s')))
-    .call((sel) => sel.selectAll('text').attr('fill', 'var(--muted)'))
-    .call((sel) => sel.selectAll('line, path').attr('stroke', 'rgba(0, 0, 0, 0.2)'));
-
-  // Y-axis label.
-  g.append('text')
-    .attr('transform', `translate(${-MARGIN.left + 8}, ${innerH / 2}) rotate(-90)`)
+  // Y-axis label, centered on the full grid height.
+  const gridMidY = MARGIN.top + (GRID.rows * cellInnerH + (GRID.rows - 1) * GRID.gap) / 2;
+  svg
+    .append('text')
+    .attr('transform', `translate(${-MARGIN.left + 10}, ${gridMidY}) rotate(-90)`)
     .attr('text-anchor', 'middle')
     .attr('font-size', '11px')
     .attr('fill', 'var(--muted)')
     .text(yLabel);
 
-  // The seven day-of-week lines.
-  const line = d3
-    .line()
-    .x((d) => x(d.week))
-    .y((d) => y(d.value))
-    .defined((d) => d.value !== null)
-    .curve(d3.curveMonotoneX);
+  // Draw each sparkline cell.
+  const cellGroup = svg.append('g').attr('class', 'dow-lines__cells');
+  const allLinePaths = [];
+  const allDotGroups = [];
 
-  const seriesGroup = g.append('g').attr('class', 'series-group');
+  series.forEach((s, i) => {
+    const col = i % GRID.cols;
+    const row = Math.floor(i / GRID.cols);
+    const cx = cellX(col);
+    const cy = cellY(row);
+    const gCell = cellGroup
+      .append('g')
+      .attr('transform', `translate(${cx}, ${cy})`);
 
-  const paths = seriesGroup
-    .selectAll('path.dow-line')
-    .data(series)
-    .join('path')
-    .attr('class', 'dow-line')
-    .attr('fill', 'none')
-    .attr('stroke', (d) => d.color)
-    .attr('stroke-width', 2.5)
-    .attr('stroke-linecap', 'round')
-    .attr('stroke-linejoin', 'round')
-    .attr('d', (d) => line(d.values))
-    .each(function () {
-      const length = this.getTotalLength();
-      d3.select(this)
-        .attr('stroke-dasharray', `${length} ${length}`)
-        .attr('stroke-dashoffset', length);
-    });
-
-  // Small dots at each data point, hidden until the line draws in.
-  const dots = seriesGroup
-    .selectAll('g.dow-points')
-    .data(series)
-    .join('g')
-    .attr('class', 'dow-points')
-    .style('opacity', 0);
-
-  dots
-    .selectAll('circle')
-    .data((d) => d.values.filter((v) => v.value !== null))
-    .join('circle')
-    .attr('cx', (d) => x(d.week))
-    .attr('cy', (d) => y(d.value))
-    .attr('r', 3)
-    .attr('fill', 'var(--paper)')
-    .attr('stroke', function () {
-      return d3.select(this.parentNode).datum().color;
-    })
-    .attr('stroke-width', 2);
-
-  // Legend at the bottom.
-  const legendGroup = svg.append('g').attr('class', 'dow-lines__legend');
-  const legendItemW = 82;
-  const legendStartX = (WIDTH - DAYS.length * legendItemW) / 2;
-  const legendY = HEIGHT - 30;
-
-  DAYS.forEach(({ name }, i) => {
-    const lx = legendStartX + i * legendItemW;
-    legendGroup
-      .append('line')
-      .attr('x1', lx)
-      .attr('x2', lx + 16)
-      .attr('y1', legendY)
-      .attr('y2', legendY)
-      .attr('stroke', COLORS[i])
-      .attr('stroke-width', 3);
-    legendGroup
+    // Cell title.
+    gCell
       .append('text')
-      .attr('x', lx + 22)
-      .attr('y', legendY + 3)
-      .attr('font-size', '11px')
+      .attr('x', cellInnerW / 2)
+      .attr('y', -8)
+      .attr('text-anchor', 'middle')
+      .attr('font-family', 'var(--font-display)')
+      .attr('font-size', '12px')
       .attr('font-weight', 600)
-      .attr('fill', 'var(--ink)')
-      .text(name);
+      .attr('fill', s.color)
+      .text(s.name);
+
+    // Faint horizontal gridlines inside the cell.
+    gCell
+      .append('g')
+      .attr('class', 'grid')
+      .selectAll('line')
+      .data(y.ticks(4))
+      .join('line')
+      .attr('x1', 0)
+      .attr('x2', cellInnerW)
+      .attr('y1', (d) => y(d))
+      .attr('y2', (d) => y(d))
+      .attr('stroke', 'rgba(0, 0, 0, 0.06)');
+
+    // X-axis baseline.
+    const baselineY = y(Y_BASELINE);
+    gCell
+      .append('line')
+      .attr('x1', 0)
+      .attr('x2', cellInnerW)
+      .attr('y1', baselineY)
+      .attr('y2', baselineY)
+      .attr('stroke', 'rgba(0, 0, 0, 0.2)');
+
+    // Week labels (first and last only).
+    gCell
+      .append('text')
+      .attr('x', x(0))
+      .attr('y', baselineY + 12)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '9px')
+      .attr('fill', 'var(--muted)')
+      .text('W1');
+    gCell
+      .append('text')
+      .attr('x', x(WEEKS - 1))
+      .attr('y', baselineY + 12)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '9px')
+      .attr('fill', 'var(--muted)')
+      .text('W8');
+
+    // Build solid and dashed segments from consecutive real points.
+    const known = s.values
+      .map((p, idx) => (p.value !== null ? { ...p, idx } : null))
+      .filter(Boolean);
+
+    const segments = [];
+    for (let k = 1; k < known.length; k++) {
+      const a = known[k - 1];
+      const b = known[k];
+      segments.push({
+        from: a,
+        to: b,
+        dashed: b.idx - a.idx > 1,
+      });
+    }
+
+    const lineGen = d3
+      .line()
+      .x((d) => x(d.idx))
+      .y((d) => y(d.value))
+      .curve(d3.curveLinear);
+
+    const cellPaths = gCell
+      .append('g')
+      .attr('class', 'dow-line-group')
+      .selectAll('path')
+      .data(segments)
+      .join('path')
+      .attr('fill', 'none')
+      .attr('stroke', s.color)
+      .attr('stroke-width', 2)
+      .attr('stroke-linecap', 'round')
+      .attr('stroke-linejoin', 'round')
+      .attr('stroke-dasharray', (d) => (d.dashed ? '4 3' : null))
+      .attr('d', (d) => lineGen([d.from, d.to]))
+      .each(function () {
+        const length = this.getTotalLength();
+        const d3Sel = d3.select(this);
+        if (d3Sel.datum().dashed) {
+          // Keep the 4-3 dash pattern and reveal it via dashoffset.
+          d3Sel.attr('stroke-dasharray', `4 3`).attr('stroke-dashoffset', length);
+        } else {
+          d3Sel.attr('stroke-dasharray', `${length} ${length}`).attr('stroke-dashoffset', length);
+        }
+      });
+
+    allLinePaths.push(...cellPaths.nodes());
+
+    // Dots at real points.
+    const dotGroup = gCell
+      .append('g')
+      .attr('class', 'dow-points')
+      .style('opacity', 0);
+
+    dotGroup
+      .selectAll('circle')
+      .data(known)
+      .join('circle')
+      .attr('cx', (d) => x(d.idx))
+      .attr('cy', (d) => y(d.value))
+      .attr('r', 2.5)
+      .attr('fill', 'var(--paper)')
+      .attr('stroke', s.color)
+      .attr('stroke-width', 2);
+
+    allDotGroups.push(dotGroup.node());
   });
 
-  // Scroll-driven draw animation.
+  // Note about missing data.
+  svg
+    .append('text')
+    .attr('x', WIDTH / 2)
+    .attr('y', HEIGHT - 10)
+    .attr('text-anchor', 'middle')
+    .attr('font-size', '10px')
+    .attr('fill', 'var(--muted)')
+    .text('Dashed segments connect days when Metro did not report ridership.');
+
+  // Scroll-driven draw animation: reveal all line segments, then dots.
   const tl = gsap.timeline({ paused: true });
-  paths.nodes().forEach((node, i) => {
+  allLinePaths.forEach((node) => {
     tl.to(
       node,
       {
         attr: { 'stroke-dashoffset': 0 },
-        duration: 0.75,
+        duration: 0.55,
         ease: 'none',
       },
-      i * 0.05
+      '<0.02'
     );
   });
-  tl.to(dots.nodes(), { opacity: 1, duration: 0.2 }, '-=0.1');
+  tl.to(allDotGroups, { opacity: 1, duration: 0.15 }, '-=0.05');
 
   const trigger = ScrollTrigger.create({
     trigger: container,
     start: 'top 80%',
-    end: 'center center',
+    end: 'top 50%',
     scrub: 0.5,
     animation: tl,
   });
