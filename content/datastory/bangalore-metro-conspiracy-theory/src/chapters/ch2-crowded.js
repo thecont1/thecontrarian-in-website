@@ -14,7 +14,6 @@
 // range. The 10 quietest days are a long tail below.
 
 import { loadDailyByMode, loadDailyStats } from '../data/loaders.js';
-import { ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 import { renderExtremeDays } from '../viz/extreme-days.js';
 
 export async function mountCh2Crowded(chapterEl) {
@@ -26,25 +25,19 @@ export async function mountCh2Crowded(chapterEl) {
   const slot = chapterEl.querySelector('[data-viz="extreme-days"]');
   if (!slot) return;
 
+  // The viz owns its own GSAP spring-in: when the chart's
+  // base crosses the viewport bottom, the 20 bars spring
+  // into place (back.out(1.7), 30ms stagger, busy first
+  // then quiet). We don't need a chapter-level ScrollTrigger
+  // — the spring's internal trigger handles the reveal.
   const viz = renderExtremeDays(slot, daily, {
     median: stats.median,
     max: stats.max,
-  });
-
-  // ScrollTrigger: the chart animates as it scrolls into view.
-  // Bars grow from 0 to their final width as the user moves
-  // the chart up through the viewport. Same start/end as the
-  // other chapter 2 charts would have used.
-  const trigger = ScrollTrigger.create({
-    trigger: slot,
-    start: 'top 85%',
-    end: 'center center',
-    scrub: 0.5,
-    onUpdate: (self) => viz.update(self.progress),
+    min: stats.min,
+    buckets: stats.buckets,
   });
 
   return () => {
     viz.destroy();
-    trigger.kill();
   };
 }
