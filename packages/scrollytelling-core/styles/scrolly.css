@@ -1042,8 +1042,8 @@ main {
   border: 0.5px solid #000;
   box-shadow: 3px 3px 0 var(--accent);
   padding: 0.85em 1.1em 0.8em;
-  width: 350px;
-  max-width: min(90vw, 380px);
+  width: 450px;
+  max-width: min(90vw, 500px);
   z-index: 200;
   font-size: 0.8rem;
   font-style: normal;
@@ -1069,7 +1069,7 @@ main {
      line-clamp. */
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.10rem;
   line-height: 1.2;
   letter-spacing: -0.005em;
   color: var(--ink);
@@ -1097,7 +1097,7 @@ main {
   width: 100%;
   max-width: 100%;
   height: auto;
-  max-height: 235px;
+  max-height: 300px;
   object-fit: contain;
   border: 0.5px solid var(--hairline);
   background: var(--surface);
@@ -1131,10 +1131,8 @@ main {
 .fn-popover__desc {
   color: var(--ink-muted);
   margin: 0;
-  font-size: 0.72rem;
-  line-height: 1.35;
-  /* Full text, no clamp — the user wants the entire
-     description readable without truncation. */
+  font-size: 0.5rem;
+  line-height: 1.2;
   display: block;
   overflow: visible;
 }
@@ -1153,7 +1151,7 @@ main {
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  font-size: 0.66rem;
+  font-size: 0.6rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
