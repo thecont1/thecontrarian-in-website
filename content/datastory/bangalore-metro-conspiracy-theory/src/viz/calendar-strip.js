@@ -156,11 +156,28 @@ export function renderCalendarStrip(container, daily, window, stats) {
 
   // valueToPct: 0% sits at the dataset's absolute minimum, 100%
   // at the absolute maximum. Linear scale, used by the bar's
-  // height and the (min/avg/max) reference lines.
+  // height, the (min/med/max) reference lines, AND the
+  // positions of the banded-background zones. The "0% at MIN,
+  // 100% at MAX" mapping makes the chart's bottom = the
+  // dataset's smallest reported ridership, not zero ridership.
+  // The "0" axis label was misleading: a 4L day sat at 0% on a
+  // "0 → max" axis, but the bar's height was 0% which made it
+  // invisible. Now the bottom of the chart IS MIN, the axis
+  // label is "MIN 4.0L", and the bar at MIN has a small visible
+  // sliver (BAR_MIN_PCT) so the reader can see the day even
+  // when its value lands at the bottom of the range.
   function valueToPct(v) {
     if (v == null) return 0;
     return Math.max(0, Math.min(100, ((v - dataMin) / dataRange) * 100));
   }
+  // BAR_MIN_PCT: the bar's minimum height as a percentage of
+  // the chart. Even at the dataset's smallest value (4.0L), the
+  // bar is rendered at 4% of the chart's height — a thin sliver
+  // that's clearly visible but reads as "this is the floor of
+  // the data, not zero". The bar's actual VALUE is still
+  // conveyed by its tip position; BAR_MIN_PCT is purely
+  // cosmetic so the bar doesn't disappear at the floor.
+  const BAR_MIN_PCT = 4;
   // bucketForValue: returns 0..BUCKET_COUNT-1. Walks the
   // boundaries list — value below the first boundary is
   // bucket 0, between first and second is bucket 1, etc.
@@ -715,13 +732,17 @@ export function renderCalendarStrip(container, daily, window, stats) {
       .text(r.label);
   }
 
-  // 9d. The scale axis only shows `0` on the left now. The right-
-  //     hand end was just echoing the dataset max (same number on
-  //     every hover) — the dashed MAX reference line already tells
-  //     the reader where the ceiling sits, and the cell's own
-  //     value tells them where they are.
+  // 9d. The scale axis only shows the dataset's MIN on the
+  //     left now — the bar's bottom anchor is MIN, not 0, so
+  //     labeling the axis "0" was a lie (a 4.0L day at "0" is
+  //     not zero ridership, it's the dataset's smallest
+  //     reported value). The right-hand end was just echoing
+  //     the dataset max (same number on every hover) — the
+  //     dashed MAX reference line already tells the reader
+  //     where the ceiling sits, and the cell's own value
+  //     tells them where they are.
   const tipScale = tipChart.append('div').attr('class', 'cal-tooltip__scale');
-  tipScale.append('span').attr('class', 'cal-tooltip__scale-min').text('0');
+  tipScale.append('span').attr('class', 'cal-tooltip__scale-min').text(`MIN ${formatCompact(dataMin)}`);
 
   function formatRiders(v) {
     return v.toLocaleString('en-IN', { maximumFractionDigits: 0 }) + ' riders';
@@ -803,11 +824,14 @@ export function renderCalendarStrip(container, daily, window, stats) {
 
       if (d.reported) {
         tipValue.text(formatRiders(d.total));
-        // Bar height maps linearly to value position in the dataset's
-        // absolute min–max range. The fill is the same purple as the
-        // band the bar's value lands in — second visual encoding
-        // (which bucket) on top of the bar's height (how far up).
-        const heightPct = valueToPct(d.total);
+        // Bar height maps linearly to value position in the
+        // dataset's absolute min–max range, with a min-floor of
+        // BAR_MIN_PCT so the bar at MIN is still visible as a
+        // thin sliver (otherwise it'd be 0% and disappear).
+        // The fill is the same purple as the band the bar's
+        // value lands in — second visual encoding (which
+        // bucket) on top of the bar's height (how far up).
+        const heightPct = Math.max(BAR_MIN_PCT, valueToPct(d.total));
         const bucket = bucketForValue(d.total);
         const barFill = BAND_COLORS[
           Math.max(0, Math.min(BUCKET_COUNT - 1, bucket))
@@ -819,7 +843,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
       } else {
         tipValue.text('Not reported by BMRCL');
         tipBarFill
-          .style('height', '4%')
+          .style('height', BAR_MIN_PCT + '%')
           .style('background', X_STROKE)
           .style('opacity', 1);
       }

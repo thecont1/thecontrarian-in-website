@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.24 — Calendar tooltip anchored to MIN; in-chapter photos 20% larger (2026-07-18)
+
+Two small visual corrections, both in service of "the chart's bottom is the dataset's MIN, not zero".
+
+### What changed
+
+- **Calendar tooltip: bottom = MIN, not 0.** The tooltip's bar maps a day's ridership linearly to a height percentage, with 0% at the dataset's minimum (4.0L) and 100% at the dataset's maximum (9.1L). The previous axis label was just "0" at the bottom — but a 4.0L day at "0%" was invisible, and the label lied about what the bottom of the chart represented. Two fixes:
+   - **Bar min-floor**: a `BAR_MIN_PCT = 4` constant caps the bar's minimum height at 4% of the chart, so the bar at MIN is rendered as a thin sliver (clearly visible, reads as "this is the floor of the data, not zero"). The bar's actual value is still conveyed by its tip position; the min-floor is purely cosmetic.
+   - **Axis label**: the bottom-left "0" label is now `MIN ${formatCompact(dataMin)}` (e.g. "MIN 4.0L"), matching the calendar's `Min 4.0L · Daily Ridership · Max 9.1L` legend format. The chart's range is now self-documenting: the bottom of the chart is the dataset's smallest reported day, not zero ridership.
+- **In-chapter photos 20% larger.** The `.datastory-photo` `max-width` was 75% of the reading column — bumped to 90% (a 20% increase). The hero image at the top of the article uses a different layout and is unaffected. The photos now read as a more present part of the page, less like a sidebar accent.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `valueToPct` comment updated to describe the new "0% = MIN" semantic; new `BAR_MIN_PCT = 4` constant; the bar's `heightPct` is now `Math.max(BAR_MIN_PCT, valueToPct(d.total))` so the bar at MIN is visible; the "not reported" bar's `4%` height is also sourced from `BAR_MIN_PCT` for consistency; the tooltip's bottom-left scale label is `MIN ${formatCompact(dataMin)}` (was `'0'`).
+- `packages/scrollytelling-core/styles/scrolly.css` — `.datastory-photo { max-width: 75% }` → `90%`.
+
 ## v0.22 — Chapter 2: unified top-10 / bottom-10 chart + TOI screenshot (2026-07-18)
 
 The Ch 2 "The Metro is Getting Crowded" chapter gets a new chart and a press-screenshot opener.
