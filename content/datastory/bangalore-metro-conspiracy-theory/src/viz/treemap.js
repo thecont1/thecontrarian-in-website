@@ -149,22 +149,29 @@ const HEIGHT = 360;
 // the chip for day 1 (the default selection) without the chart
 // already morphing underneath them. Once the user scrolls past
 // this threshold, the auto-play starts, taking the chart
-// through the 7 days in order. 0.2 means the first 20% of the
-// trigger's range is a "lead-in" with the chart parked on day
-// 1, then the morph begins.
-const AUTO_PLAY_START = 0.2;
+// through the 7 days in order. 0.1 means the first 10% of the
+// trigger's range is a brief "lead-in" with the chart parked on
+// day 1, then the morph begins.
+const AUTO_PLAY_START = 0.1;
 
 // AUTO_PLAY_END: the trigger's progress (0..1) at which the
 // scroll-driven day-morph lands on the LAST day. Below this
 // progress, the chart cycles through the 7 days in order;
-// above it, the chart sits on the last day. 0.85 means the
-// auto-play completes at 85% of the trigger's range, then
-// the remaining 15% is a "settling" zone where the chart
-// sits still. The bar's auto-play is intended to suggest the
-// day-on-day variation in payment mixes; finishing the cycle
-// before the trigger's end means the user has a beat at the
-// end to read the final day at their own pace.
-const AUTO_PLAY_END = 0.85;
+// above it, the chart sits on the last day. 1.0 means the
+// auto-play uses the FULL trigger range — no settle zone —
+// so the morph has as much scroll range as possible and each
+// day holds for a perceptible beat. The bar trigger was
+// stretched (end: 'top 50%' → 'top 35%') so the chart's top
+// is still well within the viewport by the time the auto-play
+// finishes on the last day. Earlier configs (AUTO_PLAY_END
+// = 0.7, 0.85) raced the morph: each day held for only ~3% of
+// the viewport, which felt like the chart was advancing before
+// the reader's eye could register the previous day. The user's
+// feedback was that the selected day should always be one the
+// reader can already see — pacing should lag the eye, not race
+// it. 1.0 + the wider trigger gives each day roughly 7% of the
+// viewport (≈56px on an 800px screen) — slow enough to read.
+const AUTO_PLAY_END = 1.0;
 
 function formatCompact(n) {
   if (n >= 10000000) return `${(n / 10000000).toFixed(1)}Cr`;
@@ -550,21 +557,28 @@ export function renderTreemap(container, days, stats) {
     // combination of payment methods changes day on day.
     //
     // Three zones in the trigger's progress (0..1):
-    //   1. LEAD-IN (progress < AUTO_PLAY_START = 0.2):
+    //   1. LEAD-IN (progress < AUTO_PLAY_START = 0.1):
     //      chart sits still on day 0 (the default selection).
     //      The user sees the first date highlighted in the
     //      day-selector and the chart at rest, so the chip
     //      and the chart read as one thing for a beat.
-    //   2. PLAY (AUTO_PLAY_START → AUTO_PLAY_END = 0.2..0.85):
+    //   2. PLAY (AUTO_PLAY_START → AUTO_PLAY_END = 0.1..1.0):
     //      chart cycles through all 7 days. The progress
     //      inside this zone is mapped linearly to the day
     //      index, so day 0 is at the start of the zone and
-    //      day 6 is at the end.
-    //   3. SETTLE (progress >= AUTO_PLAY_END = 0.85):
-    //      chart sits on day 6 (the last day). The user has
-    //      a beat to read the final mix at their own pace
-    //      before the chart scrolls out of view. Hover
-    //      still overrides the auto-play.
+    //      day 6 is at the end. With AUTO_PLAY_END = 1.0
+    //      the play zone covers 90% of the trigger's range
+    //      (the rest of the trigger is the lead-in), giving
+    //      each day a comfortable dwell. The bar trigger is
+    //      also wider now (end: 'top 50%' → 'top 35%'), so
+    //      each day holds for ~7% of the viewport — enough
+    //      for the reader's eye to register the new date
+    //      before the chart morphs on.
+    //   3. SETTLE (progress >= AUTO_PLAY_END = 1.0):
+    //      effectively unreachable now that AUTO_PLAY_END =
+    //      1.0 — the chart lands on day 6 exactly at the
+    //      trigger's end. Kept as a safety branch in case
+    //      AUTO_PLAY_END is dialed back below 1.0 later.
     lastProgress = progress;
     const p = Math.max(0, Math.min(1, progress));
     let dayIdx;

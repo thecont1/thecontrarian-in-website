@@ -92,8 +92,18 @@ export async function mountCh1OneDay(chapterEl) {
   const barTrigger = barViz
     ? ScrollTrigger.create({
         trigger: barSlot,
+        // Wider trigger so the treemap's scroll-driven auto-play
+        // has more viewport range to spread the 7 days across.
+        // end: 'top 50%' was too tight — each day held for only
+        // ~3% of the viewport, which raced the reader's eye.
+        // 'top 35%' gives each day ~7% of the viewport (≈56px
+        // on 800px), slow enough to read, and keeps the day-
+        // selector (right column) fully in view at the trigger's
+        // end. The start is unchanged at 'top 90%' — the chart
+        // begins morphing only when its top crosses 90% of the
+        // viewport (just barely peeking up from below).
         start: 'top 90%',
-        end: 'top 50%',
+        end: 'top 35%',
         scrub: 0.5,
         onUpdate: (self) => barViz.update(self.progress),
       })
