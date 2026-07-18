@@ -232,17 +232,20 @@ export function renderTreemap(container, days, stats) {
     .attr('class', 'treemap-legend');
 
   // Day rows: hover is the only interaction. Hovering a
-  // row drives the chart to that day's mix; the same
-  // hover state also draws the 0.5px black box around the
-  // chip (CSS :hover). No click-to-lock, no separate
-  // "active" class — the box is the "this is the day the
-  // chart is showing" marker, and it follows the cursor.
-  // On mouseleave, the chart stays on the last-hovered day
-  // (no flicker-back). Keyboard / touch users don't have a
-  // way to drive the chart; the box is decoration for the
-  // mouse case. The selector remains focusable for screen
-  // readers, but the rows themselves are not interactive
-  // (no `role="button"`, no `tabindex`).
+  // row drives the chart to that day's mix; the same row
+  // gets a 0.5px black box drawn around the chip (square
+  // + date label) so the "this is the day the chart is
+  // showing" marker is unambiguous.
+  //
+  // The box persists after mouseleave: a JS-tracked
+  // `selectedDay` records the most recently hovered day,
+  // and a `.treemap-day-row--active` class is applied to
+  // that row. The CSS :hover state and the --active class
+  // are both drawn (a hovered row gets both, a non-hovered-
+  // but-active row gets just the box). This means the user
+  // can mouse off the selector to read the legend or scroll
+  // the article, and the box still tells them which day the
+  // chart is showing.
   const dayRows = selector
     .selectAll('div.treemap-day-row')
     .data(selectorDays)
@@ -251,14 +254,23 @@ export function renderTreemap(container, days, stats) {
     .attr('aria-label', (d) => `${formatDateLabel(d.date)}, ${formatRiders(d.total)}`)
     .on('mouseenter', function (_event, d) {
       // Live-preview: the chart morphs to this day's mix on
-      // hover. The CSS :hover state draws the box around
-      // the chip simultaneously — no JS-driven class
-      // toggling needed.
+      // hover, and the row gets the --active class so the
+      // box follows. (The CSS :hover state ALSO fires on
+      // this row while the cursor is on it — both visual
+      // states overlap, then :hover fades off on mouseleave
+      // and --active keeps the box visible.)
+      selectedDay = d;
+      updateDaySelector();
       renderDay(d);
     });
   // (No `mouseleave` handler: the chart stays on the
-  // last-hovered day. No `click` / `keydown` handlers:
+  // last-hovered day, AND the --active class on that row
+  // keeps the box visible. No `click` / `keydown` handlers:
   // hover is the only selection interaction.)
+
+  function updateDaySelector() {
+    dayRows.classed('treemap-day-row--active', (d) => d.date === selectedDay.date);
+  }
 
   // The date label sits BELOW the square. Two lines: day-of-week
   // on top, "Month DD" below. The hovered row's chip (square +
@@ -498,6 +510,11 @@ export function renderTreemap(container, days, stats) {
   }
 
   renderDay(selectedDay);
+  // Initial state: the first day is the default selection,
+  // so the box is drawn around it from the moment the
+  // treemap mounts. Hovering any other row moves the box
+  // to that row.
+  updateDaySelector();
 
   function destroy() {
     wrapper.remove();

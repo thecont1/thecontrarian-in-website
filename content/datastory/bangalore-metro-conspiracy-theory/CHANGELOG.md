@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.26 — Treemap: persistent "selected day" box (2026-07-18)
+
+Restores the persistent "selected day" box around the treemap's day row. The v0.22 hover-only rewrite had replaced the click-driven `--active` class with a CSS `:hover` rule — which only fired while the cursor was on the row. The user noticed: there was no indication of "which day the chart is showing" once the cursor moved off the selector to read the legend or scroll the article.
+
+### What changed
+
+- **Persistent box around the selected day.** A JS-tracked `selectedDay` variable records the most recently hovered day (and defaults to the first day on mount). A new `.treemap-day-row--active` class is applied to that row, drawing the same 0.5px black box + pale ink background that `:hover` draws. A hovered row gets both states (the box is drawn), the class remains after mouseleave so the box stays visible on the last-hovered row. Hovering a different row moves the box to that row.
+- **CSS rule reinstated.** The v0.22 commit had removed `.treemap-day-row--active` and put everything on `:hover`. The class is back, with the same `border-color: var(--ink)` + `background: rgba(0, 0, 0, 0.04)` as the `:hover` rule. A small comment in the CSS explains the two-state model: `:hover` for immediate feedback, `--active` for the persistent "currently shown" marker.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/treemap.js` — the `mouseenter` handler now sets `selectedDay = d` and calls `updateDaySelector()` (a small function that toggles the `treemap-day-row--active` class on the row whose date matches `selectedDay.date`). The function is also called once on initial mount so the first day gets the box from the start.
+- `packages/scrollytelling-core/styles/scrolly.css` — `.treemap-day-row--active { border-color, background }` rule reinstated, plus `.treemap-day-row--active .treemap-day-row__label { opacity: 1 }` for the full-opacity date label on the active row.
+
 ## v0.25 — Calendar tooltip: +50% taller chart, no MIN label, mobile responsive (2026-07-18)
 
 The cell-hover tooltip gets more vertical space to make the value spread more visible, loses the redundant MIN label, and shrinks down for small phones.

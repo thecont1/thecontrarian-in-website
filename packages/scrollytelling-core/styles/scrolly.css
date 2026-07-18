@@ -614,14 +614,35 @@ main {
   transition: border-color 0.12s ease-out, background 0.12s ease-out;
 }
 
-/* Hover is the only selection state — no click-to-lock, no
-   separate "active" class. The black border + pale ink
-   background is the "you are pointing at this day" signal,
-   and it follows the cursor as the user sweeps across the
-   7 days. */
+/* Hover is the immediate "you are pointing at this day"
+   signal — the black border + pale ink background appears
+   the moment the cursor enters the row, and fades when it
+   leaves. The persistent "selected day" marker is the
+   `.treemap-day-row--active` class below. A hovered row
+   gets BOTH states (the box is drawn), and the class
+   remains after mouseleave so the box stays visible on
+   the last-hovered row even when the cursor moves to the
+   legend or elsewhere. */
 .treemap-day-row:hover {
   border-color: var(--ink);
   background: rgba(0, 0, 0, 0.04);
+}
+
+/* Persistent "selected day" marker. The JS tracks which
+   day the chart is currently showing (the most recently
+   hovered day, or the default at mount) and adds this
+   class to the matching row. The box is identical to the
+   :hover state's box — the difference is that this one
+   doesn't fade on mouseleave. When the user mouses off
+   the selector to read the legend or scroll the article,
+   the box still tells them which day the chart is
+   showing. */
+.treemap-day-row--active {
+  border-color: var(--ink);
+  background: rgba(0, 0, 0, 0.04);
+}
+.treemap-day-row--active .treemap-day-row__label {
+  opacity: 1;
 }
 
 .treemap-day-row__label {
