@@ -524,6 +524,21 @@ main {
   aspect-ratio: 7 / 6;
 }
 
+/* Extreme days (Ch 2 "Metro is Getting Crowded"): a tall
+   vertical barchart. Fills the container's full width
+   and is capped at 90% of the viewport height so the
+   title-to-legend content fits on all screen sizes,
+   including mobile. The SVG uses preserveAspectRatio:
+   xMidYMid meet (the default) so the viewBox scales to
+   fit the box without distortion. */
+.extreme-days-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 90vh;
+  max-height: 90dvh;
+}
+
 /* Treemap layout: main chart, legend below, day selector on the right. */
 .treemap-wrap {
   display: grid;
