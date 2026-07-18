@@ -539,6 +539,17 @@ main {
   max-height: 90dvh;
 }
 
+/* Day-of-week lines (Ch 3 "One Week on NammaMetro"): a wide
+   7-line chart. The whole SVG — title, axes, legend and all —
+   is capped at 60% of the viewport height. */
+.dow-lines-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 60vh;
+  max-height: 60dvh;
+}
+
 /* Treemap layout: main chart, legend below, day selector on the right. */
 .treemap-wrap {
   display: grid;
