@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.29 — Calendar palette: more color separation, almost-white to deep purple (2026-07-18)
+
+The calendar's purple palette gets more visual separation between adjacent bands. The bottom band is now barely a step away from the page's paper background; the top band is the story's BMRCL purple. The middle bands are spread out so each tier is clearly distinct from its neighbours — the reader can pick out "this cell is in the bottom band" from "this cell is in the next band up" at a glance, without having to consult the legend.
+
+### What changed
+
+- **New 5-anchor palette.** `#f2ecf4` (almost paper, just a whisper of purple) → `#d4bee0` (light lavender) → `#a37ac0` (medium wisteria, more saturated) → `#7a3fa8` (deep violet) → `#5E2D8C` (BMRCL purple). The previous palette's bottom anchor (`#ead7f3`) was a clearly-visible lavender — readable as "this is a cell, not the page background", but the user wanted the bottom band to be near-invisible against paper, with much bigger jumps between adjacent bands. The new bottom is a tint that's only discernible on close inspection; the new top is unchanged (BMRCL purple is the story's accent colour and shows up across the article). The middle three anchors are spaced out so each band reads as a distinct tier.
+- **Treemap's day-selector palette synced.** The treemap's `PURPLE_BUCKETS` (used to paint the day-selector's percentile-coloured squares) was a separate 7-anchor array (`#ead7f3` → `#5E2D8C` with 5 mid stops). It's now the same 5-anchor palette as the calendar, so the calendar cells and the day-selector squares share one continuous value space. The treemap's rectangles themselves are still per-channel colours (Smart Card, Tokens, etc.) — only the ridership-encoded day-selector uses this palette.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `PURPLE_BUCKETS` array replaced: `[#ead7f3, #caa6dd, #a06ec0, #7a3fa8, #5E2D8C]` → `[#f2ecf4, #d4bee0, #a37ac0, #7a3fa8, #5E2D8C]`. The `computeBandColors` and the rest of the chart's colour logic are unchanged — they interpolate the 5 anchors to N stops (N is the band count, currently 10, driven by `daily-stats.json`).
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/treemap.js` — `PURPLE_BUCKETS` array replaced with the same 5-anchor palette as the calendar. The treemap's day-selector squares and the calendar's cells now use the same colour encoding.
+
 ## v0.28 — Treemap: scroll-driven auto-play through the 7 days (2026-07-18)
 
 A "preview reel" effect: as the treemap scrolls into view, the chart auto-plays through the 7 days in sequence — day 1 (Sun Dec 08) at the start, day 7 (Sat Dec 14) by the time the chart is 70% into the viewport. The day-selector's box follows the auto-play. Hover still works as an override: hovering a row pauses the auto-play on that day, and mouseleave resumes the cycle from the current scroll position.

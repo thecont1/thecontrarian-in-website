@@ -47,16 +47,24 @@ const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const LABEL_ROW_HEIGHT = 24;
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-// Namma Metro purple scale — 5 distinct buckets from light lavender to
-// deep BMRCL purple. The dataset is divided into 5 equal-width bands
-// across its absolute min–max range, each band mapped to one of these
-// 5 colours. This is the same palette that paints the calendar cells,
-// the tooltip chart's banded background, the tooltip bar's fill, and
-// the legend strip — so all four encodings stay in lockstep.
+// Namma Metro purple scale — 5 distinct buckets from "almost paper"
+// at the bottom to deep BMRCL purple at the top. The dataset is
+// divided into N bands (driven by the notebook's percentile
+// boundaries in daily-stats.json — currently 10), and the bands
+// are painted by `d3.interpolateRgbBasis(PURPLE_BUCKETS)` so
+// the N stops are smooth blends between these 5 anchor colours.
+// The bottom anchor (`#f2ecf4`) is barely a step away from the
+// page's paper background (`#f7f3ee`); the top anchor is the
+// story's BMRCL purple (`#5E2D8C`) used elsewhere in the
+// article. The middle three are spaced out so each band is
+// visually distinct from its neighbours — the eye can pick
+// out "this cell is in the bottom band" from "this cell is in
+// the next band up" at a glance, without having to consult
+// the legend.
 const PURPLE_BUCKETS = [
-  '#ead7f3',  // 0 — palest lavender (lowest ridership band)
-  '#caa6dd',  // 1 — light wisteria
-  '#a06ec0',  // 2 — mid violet
+  '#f2ecf4',  // 0 — almost paper, just a whisper of purple
+  '#d4bee0',  // 1 — light lavender (clearly lavender, not paper)
+  '#a37ac0',  // 2 — medium wisteria, more saturated
   '#7a3fa8',  // 3 — deep violet
   '#5E2D8C',  // 4 — BMRCL purple (highest ridership band)
 ];

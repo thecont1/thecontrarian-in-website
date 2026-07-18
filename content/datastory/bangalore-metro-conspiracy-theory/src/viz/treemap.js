@@ -8,7 +8,24 @@
 
 import * as d3 from 'd3';
 
-const PURPLE_BUCKETS = ['#ead7f3', '#d4b0e6', '#c08bd6', '#a96cc5', '#8e4bb0', '#7a3fa8', '#5E2D8C'];
+// Namma Metro purple scale — 5 anchor colours from "almost
+// paper" at the bottom to BMRCL purple at the top. Matches
+// the calendar's PURPLE_BUCKETS exactly so the day-selector
+// squares (which use this palette) and the calendar cells
+// (which use the same palette via calendar-strip.js) read
+// as one continuous value space. The treemap itself uses
+// per-channel colours for the rectangles, so this palette
+// only paints the day-selector and any other ridership
+// encoding. The number of bands is determined by
+// daily-stats.json's bucket count; `computeBandColors`
+// interpolates these 5 anchors to N stops.
+const PURPLE_BUCKETS = [
+  '#f2ecf4',  // 0 — almost paper, just a whisper of purple
+  '#d4bee0',  // 1 — light lavender
+  '#a37ac0',  // 2 — medium wisteria, more saturated
+  '#7a3fa8',  // 3 — deep violet
+  '#5E2D8C',  // 4 — BMRCL purple
+];
 
 // CHANNELS is the canonical, EDITORIAL order of payment modes
 // (Smart Card → Tokens → Whatsapp → Metro QR → Paytm → NCMC →
