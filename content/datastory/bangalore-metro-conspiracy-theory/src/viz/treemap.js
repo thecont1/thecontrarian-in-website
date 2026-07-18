@@ -152,14 +152,15 @@ const HEIGHT = 360;
 // threshold, the auto-play starts, taking the chart through
 // the 7 days in order.
 //
-// 0.5 means the chart is parked on day 0 (Sun Dec 08) for
-// the first HALF of the trigger. With the bar trigger at
-// 'top 90%' → 'top 35%' (55% of viewport), progress 0.5
-// corresponds to the treemap's top at ~62% of viewport —
-// the lower-middle of the screen, where the day-selector
-// is just becoming fully visible (its bottom row sits at
-// ~106% of viewport at this point, so the user can read
-// all 7 day chips by the time the morph starts).
+// 0.3 means the chart is parked on day 0 (Sun Dec 08) for
+// the first 30% of the trigger. With the bar trigger at
+// 'top 90%' → 'top 10%' (80% of viewport), progress 0.3
+// corresponds to the treemap's top at 90% - 0.3*80% = 66%
+// of viewport — the lower portion of the screen, where
+// the day-selector is just becoming visible. The morph
+// starts when the user is reading the chart in the middle
+// of the viewport, not before they've even seen the day-
+// selector.
 //
 // Tuning rationale: the user said the auto-play was
 // "settling long before the dates even appear in the
@@ -167,10 +168,10 @@ const HEIGHT = 360;
 // had the morph running from the trigger's start, which
 // meant the chart was already on day 3-4 by the time the
 // day-selector was visible — the user never saw the
-// animation unfold. 0.5 delays the morph so the day-
+// animation unfold. 0.3 delays the morph so the day-
 // selector appears FIRST (parked on day 0), and the morph
 // runs WHILE the user is reading the chart.
-const AUTO_PLAY_START = 0.5;
+const AUTO_PLAY_START = 0.3;
 
 // AUTO_PLAY_END: the trigger's progress (0..1) at which the
 // scroll-driven day-morph lands on the LAST day. Below this
@@ -322,18 +323,27 @@ export function renderTreemap(container, days, stats) {
       // and the row gets the --active class so the box
       // follows. (The CSS :hover state ALSO fires on this
       // row while the cursor is on it — both visual states
-      // overlap.)
+      // overlap.) Setting `hoveredDay` makes the auto-play's
+      // `update(progress)` a no-op while the cursor is on
+      // the day-selector — otherwise, the auto-play's next
+      // onUpdate call (triggered by any tiny scroll change
+      // — including the smooth-scroll lag from scrub) would
+      // snap the chart back to the auto-play's day and
+      // override the user's hover selection.
+      hoveredDay = d;
       selectedDay = d;
       updateDaySelector();
       renderDay(d);
     })
     .on('mouseleave', function () {
-      // Resume the auto-play from the current scroll
-      // position. update(lastProgress) computes the day
-      // index for the current progress, sets selectedDay,
-      // and re-applies the class + chart. If lastProgress
-      // is past AUTO_PLAY_END, the chart sits on the last
-      // day; otherwise, the chart resumes the cycle.
+      // Clear the hover override and resume the auto-play
+      // from the current scroll position. update(lastProgress)
+      // computes the day index for the current progress,
+      // sets selectedDay, and re-applies the class + chart.
+      // If lastProgress is past AUTO_PLAY_END, the chart
+      // sits on the last day; otherwise, the chart resumes
+      // the cycle.
+      hoveredDay = null;
       update(lastProgress);
     });
   // (No `click` / `keydown` handlers: hover is the only
@@ -405,6 +415,18 @@ export function renderTreemap(container, days, stats) {
 
   let hoverKey = null;
   let lastProgress = 0;
+  // hoveredDay: set to the day-row's data object while the
+  // cursor is over a day-selector row, null otherwise. When
+  // non-null, the auto-play's `update(progress)` is a no-op
+  // (the user is in control — the chart should show the day
+  // they hovered, not the day the auto-play thinks it should
+  // be on). The flag is cleared on mouseleave and the auto-
+  // play then takes over again from the current scroll
+  // position. Without this flag, the auto-play's per-frame
+  // `update(progress)` call (fired by the scroll trigger's
+  // scrub) would snap the chart back to the auto-play's
+  // day and the user's hover would have no visible effect.
+  let hoveredDay = null;
 
   function setHover(key) {
     hoverKey = key;
@@ -508,7 +530,12 @@ export function renderTreemap(container, days, stats) {
       });
 
     updateLegend(day);
-    update(lastProgress);
+    // (No `update(lastProgress)` here — that would re-apply
+    // the auto-play's day and override the hover selection
+    // the caller just set. The auto-play's next onUpdate
+    // call (from a scroll tick) will fire normally and the
+    // hoveredDay check in `update` will keep the chart on
+    // the hovered day until the user mouseleave's.)
     if (hoverKey) setHover(hoverKey);
   }
 
@@ -569,31 +596,42 @@ export function renderTreemap(container, days, stats) {
     // combination of payment methods changes day on day.
     //
     // Three zones in the trigger's progress (0..1):
-    //   1. LEAD-IN (progress < AUTO_PLAY_START = 0.5):
+    //   1. LEAD-IN (progress < AUTO_PLAY_START = 0.3):
     //      chart sits still on day 0 (Sun Dec 08). The
     //      user reads the chapter lead-in and watches the
     //      treemap's top edge emerge in the viewport, with
     //      the day-0 chip lit and the chart at rest. By
-    //      the end of the lead-in (treemap's top at ~62%
-    //      of viewport), the day-selector is fully visible
-    //      — all 7 day chips in the right column. The
-    //      morph hasn't started yet, so the user has time
-    //      to register that the chart is on day 0.
-    //   2. PLAY (AUTO_PLAY_START → AUTO_PLAY_END = 0.5..1.0):
+    //      the end of the lead-in (treemap's top at ~66%
+    //      of viewport), the day-selector is just becoming
+    //      visible. The morph hasn't started yet, so the
+    //      user has time to register that the chart is on
+    //      day 0 before the day-cycling begins.
+    //   2. PLAY (AUTO_PLAY_START → AUTO_PLAY_END = 0.3..1.0):
     //      chart cycles through all 7 days. The progress
     //      inside this zone is mapped linearly to the day
     //      index, so day 0 is at the start of the zone and
     //      day 6 is at the end. The morph runs WHILE the
     //      user is reading the chart (the day-selector is
-    //      fully visible throughout), so each day-morph
-    //      happens in the user's reading flow rather than
-    //      before they've seen the day-selector.
+    //      visible throughout), so each day-morph happens
+    //      in the user's reading flow rather than before
+    //      they've seen the day-selector.
     //   3. SETTLE (progress >= AUTO_PLAY_END = 1.0):
     //      effectively unreachable now that AUTO_PLAY_END =
     //      1.0 — the chart lands on day 6 exactly at the
     //      trigger's end. Kept as a safety branch in case
     //      AUTO_PLAY_END is dialed back below 1.0 later.
+    //
+    // Hover override: if the user is currently hovering a
+    // day-selector row, the auto-play yields — the chart
+    // stays on the hovered day regardless of scroll. The
+    // user's selection is preserved across scroll events
+    // (the trigger keeps firing onUpdate on every scroll
+    // tick, but the no-op short-circuits it). lastProgress
+    // IS still updated so that when the user mouseleave's,
+    // the auto-play resumes from the current scroll
+    // position, not from wherever it was last.
     lastProgress = progress;
+    if (hoveredDay) return;
     const p = Math.max(0, Math.min(1, progress));
     let dayIdx;
     if (p < AUTO_PLAY_START) {
