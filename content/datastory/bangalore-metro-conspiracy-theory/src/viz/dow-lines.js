@@ -44,37 +44,26 @@ export function renderDowLines(container, daily, options = {}) {
   const parseDate = (d) => new Date(d.date);
   const sorted = [...daily].sort((a, b) => parseDate(a) - parseDate(b));
 
-  const lastDate = parseDate(sorted[sorted.length - 1]);
-  const firstDate = new Date(lastDate);
-  firstDate.setDate(firstDate.getDate() - (WEEKS * DAYS_PER_WEEK - 1));
+  // Build one series per day-of-week using the last 8 reported values.
+  // No calendar windowing: every point is real, so there are no gaps to
+  // bridge and no dashed connectors.
+  const series = DAYS.map(({ name, dow }, i) => {
+    const dayRows = sorted.filter((d) => parseDate(d).getDay() === dow);
+    const tail = dayRows.slice(-WEEKS);
+    return {
+      name,
+      dow,
+      color: COLORS[i],
+      values: tail.map((row, idx) => ({
+        week: idx,
+        date: row.date,
+        value: row.total,
+      })),
+    };
+  });
 
-  // Build a full calendar window (56 days) because the dataset has
-  // gaps where NammaMetro did not report. Missing days are imputed
-  // per day-of-week line after the values are collected.
-  const dateKey = d3.timeFormat('%Y-%m-%d');
-  const rowByDate = new Map(sorted.map((d) => [d.date, d]));
-  const calendarRows = [];
-  for (let d = new Date(firstDate); d <= lastDate; d.setDate(d.getDate() + 1)) {
-    const key = dateKey(d);
-    const row = rowByDate.get(key);
-    calendarRows.push({ date: key, total: row ? row.total : null });
-  }
-
-  // Split the calendar window into eight weeks (oldest to newest).
-  const withWeek = calendarRows.map((d, i) => ({ ...d, week: Math.floor(i / DAYS_PER_WEEK) }));
-  const weekGroups = d3.groups(withWeek, (d) => d.week).sort((a, b) => a[0] - b[0]);
-
-  // Build one series per day-of-week. Values keep their original
-  // nulls so missing days can be shown with dashed connectors.
-  const series = DAYS.map(({ name, dow }, i) => ({
-    name,
-    dow,
-    color: COLORS[i],
-    values: weekGroups.map(([week, rows]) => {
-      const row = rows.find((d) => new Date(d.date).getDay() === dow);
-      return { week, date: row?.date ?? null, value: row ? row.total : null };
-    }),
-  }));
+  const firstDate = parseDate(sorted[0].date);
+  const lastDate = parseDate(sorted[sorted.length - 1].date);
 
   // Single row of seven perfect-square sparkline cells.
   const cellInnerW = CELL_SIZE;
@@ -92,7 +81,9 @@ export function renderDowLines(container, daily, options = {}) {
     .nice();
 
   const dateFmt = d3.timeFormat('%b %d, %Y');
-  const subtitle = `${dateFmt(firstDate)} – ${dateFmt(lastDate)}`;
+  const selectedFirst = d3.min(series, (s) => parseDate(s.values[0].date));
+  const selectedLast = d3.max(series, (s) => parseDate(s.values[s.values.length - 1].date));
+  const subtitle = `${dateFmt(selectedFirst)} – ${dateFmt(selectedLast)}`;
 
   const svg = d3
     .select(container)
@@ -222,55 +213,32 @@ export function renderDowLines(container, daily, options = {}) {
       .attr('fill', 'var(--muted)')
       .text('W8');
 
-    // Build solid and dashed segments from consecutive real points.
-    const known = s.values
-      .map((p, idx) => (p.value !== null ? { ...p, idx } : null))
-      .filter(Boolean);
-
-    const segments = [];
-    for (let k = 1; k < known.length; k++) {
-      const a = known[k - 1];
-      const b = known[k];
-      segments.push({
-        from: a,
-        to: b,
-        dashed: b.idx - a.idx > 1,
-      });
-    }
-
+    // Solid line through the 8 real points for this day.
     const lineGen = d3
       .line()
-      .x((d) => x(d.idx))
+      .x((d) => x(d.week))
       .y((d) => y(d.value))
       .curve(d3.curveLinear);
 
-    const cellPaths = gCell
-      .append('g')
-      .attr('class', 'dow-line-group')
-      .selectAll('path')
-      .data(segments)
-      .join('path')
+    const cellPath = gCell
+      .append('path')
+      .attr('class', 'dow-line')
       .attr('fill', 'none')
       .attr('stroke', s.color)
       .attr('stroke-width', 2)
       .attr('stroke-linecap', 'round')
       .attr('stroke-linejoin', 'round')
-      .attr('stroke-dasharray', (d) => (d.dashed ? '4 3' : null))
-      .attr('d', (d) => lineGen([d.from, d.to]))
+      .attr('d', lineGen(s.values))
       .each(function () {
         const length = this.getTotalLength();
-        const d3Sel = d3.select(this);
-        if (d3Sel.datum().dashed) {
-          // Keep the 4-3 dash pattern and reveal it via dashoffset.
-          d3Sel.attr('stroke-dasharray', `4 3`).attr('stroke-dashoffset', length);
-        } else {
-          d3Sel.attr('stroke-dasharray', `${length} ${length}`).attr('stroke-dashoffset', length);
-        }
+        d3.select(this)
+          .attr('stroke-dasharray', `${length} ${length}`)
+          .attr('stroke-dashoffset', length);
       });
 
-    allLinePaths.push(...cellPaths.nodes());
+    allLinePaths.push(cellPath.node());
 
-    // Dots at real points.
+    // Dots at each of the 8 points.
     const dotGroup = gCell
       .append('g')
       .attr('class', 'dow-points')
@@ -278,9 +246,9 @@ export function renderDowLines(container, daily, options = {}) {
 
     dotGroup
       .selectAll('circle')
-      .data(known)
+      .data(s.values)
       .join('circle')
-      .attr('cx', (d) => x(d.idx))
+      .attr('cx', (d) => x(d.week))
       .attr('cy', (d) => y(d.value))
       .attr('r', 2.5)
       .attr('fill', 'var(--paper)')
@@ -290,7 +258,7 @@ export function renderDowLines(container, daily, options = {}) {
     allDotGroups.push(dotGroup.node());
   });
 
-  // Note about missing data.
+  // Note about what the sparklines show.
   svg
     .append('text')
     .attr('x', WIDTH / 2)
@@ -298,7 +266,7 @@ export function renderDowLines(container, daily, options = {}) {
     .attr('text-anchor', 'middle')
     .attr('font-size', '10px')
     .attr('fill', 'var(--muted)')
-    .text('Dashed segments connect days when Metro did not report ridership.');
+    .text('Each sparkline shows the last 8 reported ridership values for that day of the week.');
 
   // Scroll-driven draw animation: reveal all line segments, then dots.
   const tl = gsap.timeline({ paused: true });
