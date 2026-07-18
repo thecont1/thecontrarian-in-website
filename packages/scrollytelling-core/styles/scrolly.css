@@ -1022,16 +1022,15 @@ main {
   text-decoration-style: solid;
 }
 
-/* Footnote popover: a vertical card with title, hero image,
-   description, and footer. The image is the visual hero —
-   centered, 90% of the popover's content width — so the reader
-   gets an immediate sense of which publication the citation
-   comes from. The title and description print in full
-   (no line-clamp) since the user wants to see the entire
-   citation without truncation.
+/* Footnote popover: a vertical card with hero image, title,
+   description, and footer. The OG image sits at the very top,
+   full-width, so the reader gets an immediate visual cue for
+   which publication the citation comes from. The title and
+   description print in full (no line-clamp) since the user wants
+   to see the entire citation without truncation.
    Content layout (single column, vertical stack):
+     [ image               (full-width hero)         ]
      [ title               (spans full width)        ]
-     [ image               (centered, 90% width)     ]
      [ description         (full text, no clamp)     ]
      [ siteName | "View source →"                     ] */
 .fn-popover {
@@ -1043,8 +1042,8 @@ main {
   border: 0.5px solid #000;
   box-shadow: 3px 3px 0 var(--accent);
   padding: 0.85em 1.1em 0.8em;
-  width: 480px;
-  max-width: min(90vw, 520px);
+  width: 350px;
+  max-width: min(90vw, 380px);
   z-index: 200;
   font-size: 0.8rem;
   font-style: normal;
@@ -1070,7 +1069,7 @@ main {
      line-clamp. */
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.02rem;
+  font-size: 1.1rem;
   line-height: 1.2;
   letter-spacing: -0.005em;
   color: var(--ink);
@@ -1081,23 +1080,24 @@ main {
   text-overflow: clip;
 }
 
-/* Image wrapper: centers the hero image and constrains it to
-   90% of the popover's content width. The image itself
+/* Image wrapper: pulls the hero image to the top of the popover
+   and lets it span the full content width. The image itself
    preserves the OG image's native aspect ratio (object-fit:
    contain) so we never crop the source's visual. */
 .fn-popover__thumb-wrap {
   display: flex;
   justify-content: center;
   align-items: center;
+  order: -1;
   width: 100%;
 }
 
 .fn-popover__thumb {
   display: block;
-  width: 90%;
-  max-width: 90%;
+  width: 100%;
+  max-width: 100%;
   height: auto;
-  max-height: 320px;
+  max-height: 235px;
   object-fit: contain;
   border: 0.5px solid var(--hairline);
   background: var(--surface);
@@ -1110,8 +1110,8 @@ main {
   justify-content: center;
   color: var(--accent-color, #5E2D8C);
   background: color-mix(in srgb, var(--accent-color, #5E2D8C) 6%, var(--paper));
-  width: 90%;
-  max-width: 90%;
+  width: 100%;
+  max-width: 100%;
   aspect-ratio: 16 / 9;
 }
 
@@ -1131,7 +1131,7 @@ main {
 .fn-popover__desc {
   color: var(--ink-muted);
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   line-height: 1.35;
   /* Full text, no clamp — the user wants the entire
      description readable without truncation. */
