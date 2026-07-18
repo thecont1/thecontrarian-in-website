@@ -106,21 +106,25 @@ function renderFootnote(footnote) {
   const site = og.siteName
     ? `<span class="fn-popover__site">${escapeHtml(og.siteName)}</span>`
     : '';
+  // The thumbnail is the visual hero of the citation card: a
+  // centered image taking 90% of the box's content width.
+  // `alt` is intentionally empty — the citation's title and
+  // description already convey the source's content, and the
+  // image is purely decorative (a visual cue for which
+  // publication the citation comes from).
   const thumb = og.image
-    ? `<img class="fn-popover__thumb" src="${escapeAttr(og.image)}" alt="" loading="lazy" />`
-    : `<div class="fn-popover__thumb fn-popover__thumb--default" role="img" aria-label="Citation thumbnail">${DEFAULT_THUMB_SVG}</div>`;
+    ? `<div class="fn-popover__thumb-wrap"><img class="fn-popover__thumb" src="${escapeAttr(og.image)}" alt="" loading="lazy" /></div>`
+    : `<div class="fn-popover__thumb-wrap"><div class="fn-popover__thumb fn-popover__thumb--default" role="img" aria-label="Citation thumbnail">${DEFAULT_THUMB_SVG}</div></div>`;
   return `
     <div class="fn-popover__head">
       <h4 class="fn-popover__title">${headline}</h4>
     </div>
-    <div class="fn-popover__body">
-      ${thumb}
-      <div class="fn-popover__text">
-        ${desc}
-        <div class="fn-popover__foot">
-          ${site}
-          <a class="fn-popover__link" href="${escapeAttr(footnote.url)}" target="_blank" rel="noopener noreferrer">View source →</a>
-        </div>
+    ${thumb}
+    <div class="fn-popover__text">
+      ${desc}
+      <div class="fn-popover__foot">
+        ${site}
+        <a class="fn-popover__link" href="${escapeAttr(footnote.url)}" target="_blank" rel="noopener noreferrer">View source →</a>
       </div>
     </div>
   `;
