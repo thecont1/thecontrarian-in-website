@@ -387,7 +387,12 @@ main {
 
 .datastory-photo {
   margin: 2.5rem auto;
-  max-width: 75%;
+  /* 90% of the reading column (was 75% before v0.23 — bumped
+     20% per the user's request so the photos read as a more
+     present part of the page, not a sidebar accent). The
+     hero image above uses a different layout, so this rule
+     only affects the in-chapter figures. */
+  max-width: 90%;
 }
 
 /* Image reveal: 300 blocks fading randomly.
