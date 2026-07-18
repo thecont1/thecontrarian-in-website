@@ -147,31 +147,33 @@ const HEIGHT = 360;
 // scroll-driven day-morph BEGINS cycling. Below this progress,
 // the chart sits still on the first day — the user can read
 // the chip for day 1 (the default selection) without the chart
-// already morphing underneath them. Once the user scrolls past
-// this threshold, the auto-play starts, taking the chart
-// through the 7 days in order. 0.1 means the first 10% of the
-// trigger's range is a brief "lead-in" with the chart parked on
-// day 1, then the morph begins.
-const AUTO_PLAY_START = 0.1;
+// already morphing underneath them. 0 means the morph is
+// already in progress at the trigger's start; the chart never
+// "rests" on day 0. This is what the user wants: by the time
+// they scroll to the treemap and see its top edge emerging in
+// the viewport, the auto-play is already a few days in.
+const AUTO_PLAY_START = 0;
 
 // AUTO_PLAY_END: the trigger's progress (0..1) at which the
 // scroll-driven day-morph lands on the LAST day. Below this
 // progress, the chart cycles through the 7 days in order;
-// above it, the chart sits on the last day. 1.0 means the
-// auto-play uses the FULL trigger range — no settle zone —
-// so the morph has as much scroll range as possible and each
-// day holds for a perceptible beat. The bar trigger was
-// stretched (end: 'top 50%' → 'top 35%') so the chart's top
-// is still well within the viewport by the time the auto-play
-// finishes on the last day. Earlier configs (AUTO_PLAY_END
-// = 0.7, 0.85) raced the morph: each day held for only ~3% of
-// the viewport, which felt like the chart was advancing before
-// the reader's eye could register the previous day. The user's
-// feedback was that the selected day should always be one the
-// reader can already see — pacing should lag the eye, not race
-// it. 1.0 + the wider trigger gives each day roughly 7% of the
-// viewport (≈56px on an 800px screen) — slow enough to read.
-const AUTO_PLAY_END = 1.0;
+// above it, the chart sits on the last day. 0.6 means the
+// auto-play completes at 60% of the trigger's range, then
+// the remaining 40% is a "settling" zone where the chart
+// sits still on day 6.
+//
+// Tuning rationale: with the bar trigger at
+// 'top 90%' → 'top 35%' (55% of viewport), the user's "I'm
+// reading the chapter" scroll position has the treemap's
+// top at roughly 60-70% of viewport — i.e. progress ≈ 0.30.
+// At progress 0.30, the linear playProgress = 0.30/0.6 = 0.5,
+// which maps to day 3 (Sun-Tue Dec 10). That's exactly the
+// day the user said they want to see selected when the
+// treemap is just becoming visible. The play zone is the
+// first 60% of the trigger; the remaining 40% is the
+// settle zone where the chart parks on day 6 and the user
+// has time to read the final mix at their own pace.
+const AUTO_PLAY_END = 0.6;
 
 function formatCompact(n) {
   if (n >= 10000000) return `${(n / 10000000).toFixed(1)}Cr`;
@@ -557,28 +559,24 @@ export function renderTreemap(container, days, stats) {
     // combination of payment methods changes day on day.
     //
     // Three zones in the trigger's progress (0..1):
-    //   1. LEAD-IN (progress < AUTO_PLAY_START = 0.1):
-    //      chart sits still on day 0 (the default selection).
-    //      The user sees the first date highlighted in the
-    //      day-selector and the chart at rest, so the chip
-    //      and the chart read as one thing for a beat.
-    //   2. PLAY (AUTO_PLAY_START → AUTO_PLAY_END = 0.1..1.0):
+    //   1. LEAD-IN (progress < AUTO_PLAY_START = 0):
+    //      empty zone — AUTO_PLAY_START is 0 so the morph
+    //      is already in progress at the trigger's start.
+    //   2. PLAY (AUTO_PLAY_START → AUTO_PLAY_END = 0..0.6):
     //      chart cycles through all 7 days. The progress
     //      inside this zone is mapped linearly to the day
     //      index, so day 0 is at the start of the zone and
-    //      day 6 is at the end. With AUTO_PLAY_END = 1.0
-    //      the play zone covers 90% of the trigger's range
-    //      (the rest of the trigger is the lead-in), giving
-    //      each day a comfortable dwell. The bar trigger is
-    //      also wider now (end: 'top 50%' → 'top 35%'), so
-    //      each day holds for ~7% of the viewport — enough
-    //      for the reader's eye to register the new date
-    //      before the chart morphs on.
-    //   3. SETTLE (progress >= AUTO_PLAY_END = 1.0):
-    //      effectively unreachable now that AUTO_PLAY_END =
-    //      1.0 — the chart lands on day 6 exactly at the
-    //      trigger's end. Kept as a safety branch in case
-    //      AUTO_PLAY_END is dialed back below 1.0 later.
+    //      day 6 is at the end. At the user's typical
+    //      "reading the chapter" scroll position (progress
+    //      ~0.30), the chart is on day 3 (Sun-Tue Dec 10) —
+    //      the day the user wants to see selected when the
+    //      treemap is just becoming visible.
+    //   3. SETTLE (progress >= AUTO_PLAY_END = 0.6):
+    //      chart sits on day 6 (the last day). The user has
+    //      the last 40% of the trigger's range to read the
+    //      final mix at their own pace before the chart
+    //      scrolls out of view. Hover still overrides the
+    //      auto-play.
     lastProgress = progress;
     const p = Math.max(0, Math.min(1, progress));
     let dayIdx;
