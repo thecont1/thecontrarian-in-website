@@ -194,14 +194,16 @@ export function renderDowLines(container, daily, options = {}) {
   // Draw each sparkline cell.
   const cellGroup = svg.append('g').attr('class', 'dow-lines__cells');
   const allLinePaths = [];
+  const cells = [];
 
   series.forEach((s, i) => {
     const col = i % GRID.cols;
     const cx = cellX(col);
     const cy = cellY();
+    const initialTransform = `translate(${cx}, ${cy})`;
     const gCell = cellGroup
       .append('g')
-      .attr('transform', `translate(${cx}, ${cy})`);
+      .attr('transform', initialTransform);
 
     // Cell title.
     gCell
@@ -247,6 +249,8 @@ export function renderDowLines(container, daily, options = {}) {
       });
 
     allLinePaths.push(...lineGroup.selectAll('line').nodes());
+
+    cells.push({ node: gCell.node(), cx, cy, initialTransform, title: gCell.select('text').node() });
   });
 
   // Note about what the sparklines show.
@@ -259,10 +263,11 @@ export function renderDowLines(container, daily, options = {}) {
     .attr('fill', 'var(--muted)')
     .text('Each plot shows the last 8 reported ridership values for that day of the week.');
 
-  // Scroll-driven draw animation: reveal each horizontal tick.
-  const tl = gsap.timeline({ paused: true });
+  // Phase 1: reveal each horizontal tick by the time the chart body is
+  // fully visible (bottom of the container hits the bottom of the viewport).
+  const revealTl = gsap.timeline({ paused: true });
   allLinePaths.forEach((node) => {
-    tl.to(
+    revealTl.to(
       node,
       {
         attr: { 'stroke-dashoffset': 0 },
@@ -273,20 +278,45 @@ export function renderDowLines(container, daily, options = {}) {
     );
   });
 
-  const trigger = ScrollTrigger.create({
+  const revealTrigger = ScrollTrigger.create({
     trigger: container,
-    start: 'top 80%',
-    end: 'top 50%',
+    start: 'top bottom',
+    end: 'bottom bottom',
     scrub: 0.5,
-    animation: tl,
+    animation: revealTl,
+  });
+
+  // Phase 2: collapse the seven cells into a single square as the chart
+  // scrolls up to 40% from the top of the viewport.
+  const targetX = cellX(Math.floor(GRID.cols / 2));
+  const targetY = MARGIN.top;
+  const collapseTl = gsap.timeline({ paused: true });
+
+  cells.forEach(({ node, initialTransform, title }) => {
+    collapseTl.fromTo(
+      node,
+      { attr: { transform: initialTransform } },
+      { attr: { transform: `translate(${targetX}, ${targetY})` }, duration: 1, ease: 'none' },
+      0
+    );
+    collapseTl.fromTo(title, { opacity: 1 }, { opacity: 0, duration: 0.2 }, 0);
+  });
+
+  const collapseTrigger = ScrollTrigger.create({
+    trigger: container,
+    start: 'bottom bottom',
+    end: 'top 40%',
+    scrub: 0.5,
+    animation: collapseTl,
   });
 
   function update() {
-    // No per-frame work needed; ScrollTrigger drives the timeline.
+    // No per-frame work needed; ScrollTriggers drive the timelines.
   }
 
   function destroy() {
-    trigger.kill();
+    revealTrigger.kill();
+    collapseTrigger.kill();
     svg.remove();
   }
 
