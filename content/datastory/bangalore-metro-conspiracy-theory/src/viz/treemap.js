@@ -143,18 +143,28 @@ const ICONS = {
 const WIDTH = 420;
 const HEIGHT = 360;
 
+// AUTO_PLAY_START: the trigger's progress (0..1) at which the
+// scroll-driven day-morph BEGINS cycling. Below this progress,
+// the chart sits still on the first day — the user can read
+// the chip for day 1 (the default selection) without the chart
+// already morphing underneath them. Once the user scrolls past
+// this threshold, the auto-play starts, taking the chart
+// through the 7 days in order. 0.2 means the first 20% of the
+// trigger's range is a "lead-in" with the chart parked on day
+// 1, then the morph begins.
+const AUTO_PLAY_START = 0.2;
+
 // AUTO_PLAY_END: the trigger's progress (0..1) at which the
 // scroll-driven day-morph lands on the LAST day. Below this
 // progress, the chart cycles through the 7 days in order;
-// above it, the chart sits on the last day. 0.7 means the
-// auto-play completes at 70% of the trigger's range, then
-// the remaining 30% is a "settling" zone where the chart
-// sits still. The bar's auto-play is intended to suggest
-// the day-on-day variation in payment mixes; finishing the
-// cycle at 70% (rather than 100%) means the user has more
-// of the trigger's range to read the final day at their
-// own pace.
-const AUTO_PLAY_END = 0.7;
+// above it, the chart sits on the last day. 0.85 means the
+// auto-play completes at 85% of the trigger's range, then
+// the remaining 15% is a "settling" zone where the chart
+// sits still. The bar's auto-play is intended to suggest the
+// day-on-day variation in payment mixes; finishing the cycle
+// before the trigger's end means the user has a beat at the
+// end to read the final day at their own pace.
+const AUTO_PLAY_END = 0.85;
 
 function formatCompact(n) {
   if (n >= 10000000) return `${(n / 10000000).toFixed(1)}Cr`;
@@ -537,31 +547,41 @@ export function renderTreemap(container, days, stats) {
   function update(progress) {
     // Auto-play: the chart cycles through the 7 days as the
     // user scrolls the chapter into view, suggesting how the
-    // combination of payment methods changes day on day. The
-    // morph is compressed into the FIRST 70% of the trigger's
-    // progress — by the time the chart is 70% into the
-    // viewport, it has already landed on the last day. After
-    // that, the chart sits on the last day as the user
-    // continues scrolling (and the user can still hover a
-    // different row to override the auto-play).
+    // combination of payment methods changes day on day.
     //
-    // Compression math: the linear scroll progress 0..1 is
-    // squashed into 0..(1 / AUTO_PLAY_END) = 0..1.43, then
-    // clamped to 0..1. At progress 0 → day 0 (first). At
-    // progress AUTO_PLAY_END → day 6 (last). At progress 1
-    // → still day 6 (clamped). So the chart cycles through
-    // the 7 days in the first 70% of the trigger, then
-    // sits on the last day for the remaining 30%.
+    // Three zones in the trigger's progress (0..1):
+    //   1. LEAD-IN (progress < AUTO_PLAY_START = 0.2):
+    //      chart sits still on day 0 (the default selection).
+    //      The user sees the first date highlighted in the
+    //      day-selector and the chart at rest, so the chip
+    //      and the chart read as one thing for a beat.
+    //   2. PLAY (AUTO_PLAY_START → AUTO_PLAY_END = 0.2..0.85):
+    //      chart cycles through all 7 days. The progress
+    //      inside this zone is mapped linearly to the day
+    //      index, so day 0 is at the start of the zone and
+    //      day 6 is at the end.
+    //   3. SETTLE (progress >= AUTO_PLAY_END = 0.85):
+    //      chart sits on day 6 (the last day). The user has
+    //      a beat to read the final mix at their own pace
+    //      before the chart scrolls out of view. Hover
+    //      still overrides the auto-play.
     lastProgress = progress;
     const p = Math.max(0, Math.min(1, progress));
-    const compressed = Math.min(1, p / AUTO_PLAY_END);
-    const dayIdx = Math.min(
-      selectorDays.length - 1,
-      Math.floor(compressed * selectorDays.length),
-    );
+    let dayIdx;
+    if (p < AUTO_PLAY_START) {
+      dayIdx = 0;
+    } else if (p >= AUTO_PLAY_END) {
+      dayIdx = selectorDays.length - 1;
+    } else {
+      const playProgress = (p - AUTO_PLAY_START) / (AUTO_PLAY_END - AUTO_PLAY_START);
+      dayIdx = Math.min(
+        selectorDays.length - 1,
+        Math.floor(playProgress * selectorDays.length),
+      );
+    }
     // Only update if the day actually changed — avoids a
-    // redundant renderDay call when the chart is past the
-    // last day and the trigger keeps firing.
+    // redundant renderDay call when the chart is parked on
+    // a day and the trigger keeps firing.
     if (selectorDays[dayIdx].date !== selectedDay.date) {
       selectedDay = selectorDays[dayIdx];
       updateDaySelector();
