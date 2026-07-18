@@ -9,13 +9,15 @@
 import * as d3 from 'd3';
 import { gsap, ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 
-const WIDTH = 960;
-const HEIGHT = 480;
-const MARGIN = { top: 70, right: 30, bottom: 70, left: 60 };
+const CELL_SIZE = 120; // each sparkline cell is a perfect square
+const GRID = { cols: 7, rows: 1, gap: 12 };
+const MARGIN = { top: 70, right: 20, bottom: 55, left: 55 };
+const WIDTH =
+  MARGIN.left + MARGIN.right + GRID.cols * CELL_SIZE + (GRID.cols - 1) * GRID.gap;
+const HEIGHT = MARGIN.top + MARGIN.bottom + CELL_SIZE;
 const WEEKS = 8;
 const DAYS_PER_WEEK = 7;
 const Y_BASELINE = 350000; // truncate the y-axis below this value
-const GRID = { cols: 4, rows: 2, gap: 20 };
 
 // Mon..Sun ordering for the subplots.
 const DAYS = [
@@ -74,14 +76,12 @@ export function renderDowLines(container, daily, options = {}) {
     }),
   }));
 
-  // Small-multiples layout.
-  const cellInnerW =
-    (WIDTH - MARGIN.left - MARGIN.right - (GRID.cols - 1) * GRID.gap) / GRID.cols;
-  const cellInnerH =
-    (HEIGHT - MARGIN.top - MARGIN.bottom - (GRID.rows - 1) * GRID.gap) / GRID.rows;
+  // Single row of seven perfect-square sparkline cells.
+  const cellInnerW = CELL_SIZE;
+  const cellInnerH = CELL_SIZE;
 
   const cellX = (col) => MARGIN.left + col * (cellInnerW + GRID.gap);
-  const cellY = (row) => MARGIN.top + row * (cellInnerH + GRID.gap);
+  const cellY = () => MARGIN.top;
 
   // Shared scales: x is week index; y starts at the truncated baseline.
   const x = d3.scalePoint().domain(d3.range(WEEKS)).range([0, cellInnerW]).padding(0);
@@ -129,31 +129,28 @@ export function renderDowLines(container, daily, options = {}) {
     .attr('fill', 'var(--muted)')
     .text(subtitle);
 
-  // Shared y-axis, drawn once for each row so both rows have a scale.
-  for (let row = 0; row < GRID.rows; row++) {
-    const rowAxis = svg
-      .append('g')
-      .attr('class', 'y-axis')
-      .attr('transform', `translate(${MARGIN.left}, ${cellY(row)})`)
-      .call(d3.axisLeft(y).ticks(4).tickFormat(d3.format('~s')))
-      .call((sel) => sel.selectAll('text').attr('fill', 'var(--muted)'))
-      .call((sel) => sel.selectAll('line, path').attr('stroke', 'rgba(0, 0, 0, 0.2)'));
+  // Shared y-axis on the left of the single row.
+  const axisGroup = svg
+    .append('g')
+    .attr('class', 'y-axis')
+    .attr('transform', `translate(${MARGIN.left}, ${MARGIN.top})`)
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('~s')))
+    .call((sel) => sel.selectAll('text').attr('fill', 'var(--muted)'))
+    .call((sel) => sel.selectAll('line, path').attr('stroke', 'rgba(0, 0, 0, 0.2)'));
 
-    // Squiggle break on the y-axis to show the base is truncated at 350K.
-    const breakY = y(Y_BASELINE);
-    rowAxis
-      .append('path')
-      .attr('d', `M -6,${breakY - 6} L -3,${breakY} L 0,${breakY - 6} L 3,${breakY} L 6,${breakY - 6}`)
-      .attr('stroke', 'var(--ink)')
-      .attr('stroke-width', 1)
-      .attr('fill', 'none');
-  }
+  // Squiggle break on the y-axis to show the base is truncated at 350K.
+  const breakY = y(Y_BASELINE);
+  axisGroup
+    .append('path')
+    .attr('d', `M -6,${breakY - 6} L -3,${breakY} L 0,${breakY - 6} L 3,${breakY} L 6,${breakY - 6}`)
+    .attr('stroke', 'var(--ink)')
+    .attr('stroke-width', 1)
+    .attr('fill', 'none');
 
-  // Y-axis label, centered on the full grid height.
-  const gridMidY = MARGIN.top + (GRID.rows * cellInnerH + (GRID.rows - 1) * GRID.gap) / 2;
+  // Y-axis label.
   svg
     .append('text')
-    .attr('transform', `translate(${-MARGIN.left + 10}, ${gridMidY}) rotate(-90)`)
+    .attr('transform', `translate(${-MARGIN.left + 10}, ${MARGIN.top + cellInnerH / 2}) rotate(-90)`)
     .attr('text-anchor', 'middle')
     .attr('font-size', '11px')
     .attr('fill', 'var(--muted)')
@@ -166,9 +163,8 @@ export function renderDowLines(container, daily, options = {}) {
 
   series.forEach((s, i) => {
     const col = i % GRID.cols;
-    const row = Math.floor(i / GRID.cols);
     const cx = cellX(col);
-    const cy = cellY(row);
+    const cy = cellY();
     const gCell = cellGroup
       .append('g')
       .attr('transform', `translate(${cx}, ${cy})`);
