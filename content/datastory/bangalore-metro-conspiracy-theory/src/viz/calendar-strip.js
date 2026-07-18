@@ -732,17 +732,18 @@ export function renderCalendarStrip(container, daily, window, stats) {
       .text(r.label);
   }
 
-  // 9d. The scale axis only shows the dataset's MIN on the
-  //     left now — the bar's bottom anchor is MIN, not 0, so
-  //     labeling the axis "0" was a lie (a 4.0L day at "0" is
-  //     not zero ridership, it's the dataset's smallest
-  //     reported value). The right-hand end was just echoing
-  //     the dataset max (same number on every hover) — the
-  //     dashed MAX reference line already tells the reader
-  //     where the ceiling sits, and the cell's own value
-  //     tells them where they are.
-  const tipScale = tipChart.append('div').attr('class', 'cal-tooltip__scale');
-  tipScale.append('span').attr('class', 'cal-tooltip__scale-min').text(`MIN ${formatCompact(dataMin)}`);
+  // 9d. The scale axis label was previously a "MIN 4.0L" tag
+  //     at the bottom-left of the chart — but the dashed MIN
+  //     reference line on the right edge of the bar already
+  //     labels the floor, and the chart's bottom = MIN is now
+  //     self-evident from the bar's bottom anchor. A redundant
+  //     label at the bottom-left just adds visual weight to
+  //     the lowest part of the chart, which is where the eye
+  //     least needs help. Gone. (The `.cal-tooltip__scale` div
+  //     is kept as an empty placeholder so any future scale
+  //     label can re-attach to it without re-architecting the
+  //     tooltip — the `.cal-tooltip__scale-min` CSS rule is
+  //     also still in place for that case.)
 
   function formatRiders(v) {
     return v.toLocaleString('en-IN', { maximumFractionDigits: 0 }) + ' riders';

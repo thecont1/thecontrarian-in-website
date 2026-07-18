@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.25 — Calendar tooltip: +50% taller chart, no MIN label, mobile responsive (2026-07-18)
+
+The cell-hover tooltip gets more vertical space to make the value spread more visible, loses the redundant MIN label, and shrinks down for small phones.
+
+### What changed
+
+- **Chart +50% taller.** The tooltip's chart is now 293px tall (was 195px in v0.16, was 130px before that). The extra height gives the bar's value range more vertical space — a 4.0L day at the bottom and a 9.1L day at the top now have ~280px of vertical real estate between them, so the difference between a high day and a low day reads as a long, distinct bar rather than a subtle gradient. The bar itself got +50% wider too (66px → 88px) so its visual weight stays proportional to the chart's new height — a 66×293 bar would have looked thin against a 252×293 chart.
+- **MIN label removed.** The "MIN 4.0L" tag at the bottom-left of the chart is gone. The dashed MIN reference line on the right edge of the bar already labels the floor, and the chart's bottom = MIN is now self-evident from the bar's bottom anchor. The redundant label at the bottom-left just added visual weight to the lowest part of the chart, which is where the eye least needs help. (The `.cal-tooltip__scale` div is still in the DOM as an empty placeholder; the `.cal-tooltip__scale-min` CSS rule is also still in place — if the label is ever wanted back, just append a span to the empty div.)
+- **Mobile responsive.** A new `@media (max-width: 480px)` block shrinks the tooltip and chart so the popup fits inside a 360px phone viewport with a 12px gutter. The desktop dimensions (300px / 252×293 / 88px) are too big for a phone — the tooltip would overflow horizontally and the chart would dominate the screen. Mobile dimensions are roughly 80% of the desktop sizes (300px tooltip with `min(300px, calc(100vw - 24px))` clamp, 200×233 chart, 70px bar, 1.27rem date-dow, 0.85rem date-rest and value, 0.7rem ref labels and scale), which keeps the chart's proportions and the bar's visual weight while fitting comfortably on a phone. Border weights and ref-line thicknesses are also scaled down to match.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `tipScale.append('span').text(\`MIN ${formatCompact(dataMin)}\`)` removed; the `tipScale` div is still appended (as an empty placeholder) and the comment now explains why.
+- `packages/scrollytelling-core/styles/scrolly.css` — `.cal-tooltip__chart { height: 195px }` → `293px`; `.cal-tooltip__bar { width: 66px }` → `88px`. New `@media (max-width: 480px)` block with mobile-scaled versions of `.cal-tooltip`, `.cal-tooltip__chart`, `.cal-tooltip__bar`, `.cal-tooltip__bar-container`, `.cal-tooltip__date-dow`, `.cal-tooltip__date-rest`, `.cal-tooltip__value`, `.cal-tooltip__ref`, `.cal-tooltip__ref-rule`, `.cal-tooltip__ref-label`, `.cal-tooltip__scale`.
+
 ## v0.24 — Calendar tooltip anchored to MIN; in-chapter photos 20% larger (2026-07-18)
 
 Two small visual corrections, both in service of "the chart's bottom is the dataset's MIN, not zero".

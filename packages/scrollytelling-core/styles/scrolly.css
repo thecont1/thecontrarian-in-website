@@ -757,7 +757,14 @@ main {
 
 .cal-tooltip__chart {
   width: 252px;   /* +50% from 168px */
-  height: 195px;  /* +50% from 130px */
+  height: 293px;  /* +50% again on top of the v0.16 +50%, per the
+                     user's v0.25 ask. The taller chart gives the
+                     bar's value range more vertical space, so the
+                     difference between a high day (8–9L) and a low
+                     day (4–5L) reads as a long, distinct bar
+                     rather than a subtle gradient. The bar width
+                     scales up below to keep the bar's visual weight
+                     proportional to the chart's new height. */
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -803,7 +810,11 @@ main {
      track's border and the fill is the key piece: it makes the
      bar visibly stand off the chart's banded background even
      when the fill matches the band the value lands in. */
-  width: 66px;   /* +50% from 44px */
+  width: 88px;   /* +50% on the 66px from v0.16, per the v0.25 ask
+                     to keep the bar's visual weight proportional
+                     to the chart's new height. The bar would
+                     otherwise look thin against the taller chart
+                     (66×195 → 66×293). */
   height: 100%;
   border: 0.75px solid var(--ink);   /* bumped 0.5px → 0.75px for visual weight */
   padding: 1.5px;   /* bumped 1px → 1.5px for visual weight */
@@ -1221,6 +1232,54 @@ main {
   .footer-inner {
     flex-direction: column;
     text-align: center;
+  }
+}
+
+/* Calendar tooltip on small screens: shrink the tooltip,
+   chart, and bar so the popup fits inside a 360px phone
+   viewport with a 12px gutter. The desktop dimensions
+   (300px / 252×293 / 88px) are too big for a phone — the
+   tooltip would overflow the page horizontally and the
+   chart would dominate the screen. The mobile dimensions
+   are roughly 80% of the desktop sizes, which keeps the
+   chart's proportions and the bar's visual weight while
+   fitting comfortably on a phone. */
+@media (max-width: 480px) {
+  .cal-tooltip {
+    width: min(300px, calc(100vw - 24px));
+    padding: 1em 1.2em 0.85em;
+    font-size: 0.94rem;
+  }
+  .cal-tooltip__chart {
+    width: 200px;
+    height: 233px;
+  }
+  .cal-tooltip__bar {
+    width: 70px;
+    border-width: 0.5px;
+    padding: 1px;
+  }
+  .cal-tooltip__bar-container {
+    border-bottom-width: 1px;
+    padding-bottom: 1px;
+  }
+  .cal-tooltip__date-dow {
+    font-size: 1.27rem;
+  }
+  .cal-tooltip__date-rest,
+  .cal-tooltip__value {
+    font-size: 0.85rem;
+  }
+  .cal-tooltip__ref-label,
+  .cal-tooltip__scale {
+    font-size: 0.7rem;
+  }
+  .cal-tooltip__ref {
+    height: 1px;
+    margin-top: -0.5px;
+  }
+  .cal-tooltip__ref-rule {
+    border-top-width: 1px;
   }
 }
 
