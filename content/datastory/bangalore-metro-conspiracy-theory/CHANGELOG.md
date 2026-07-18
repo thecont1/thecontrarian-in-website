@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.27 — Calendar tooltip: reference lines aligned with the bar's tip (2026-07-18)
+
+The MIN/MED/MAX reference lines in the calendar's cell-hover tooltip now sit at exactly the bar's tip position for those values — they no longer drift below the bar at the data's minimum.
+
+### What changed
+
+- **Unified scale for bar and reference lines.** `valueToPct` now maps the dataset's value range [MIN, MAX] to a height percentage in [BAR_MIN_PCT, 100] — i.e. the bar at MIN is rendered at 4% (a visible sliver) and the bar at MAX is rendered at 100%. Previously the bar used `Math.max(BAR_MIN_PCT, linear(value))` while the reference lines used just `linear(value)`, so for the day with the minimum ridership, the bar's tip sat at 4% but the MIN reference line sat at 0% — the line was below the bar's top. Now both use the same scale: the MIN line is at 4% (where the bar's tip sits at MIN), the MAX line at 100%, the MED line at the corresponding value's bar tip. The dashed lines and the bar's tip are the same encoding — line for line.
+- **Banded background aligned too.** The percentile-band background's `linear-gradient` stop positions now use `valueToPct(dataMin)` and `valueToPct(dataMax)` for the start and end (was `0%` and `100%`), so the bottom band starts at the bar's tip at MIN, not at the chart's visual floor. The first band (palest lavender, p2-p5) now extends from `valueToPct(dataMin)` to `valueToPct(p5)`, the last band (deep BMRCL purple, p95-p98) extends from `valueToPct(p95)` to `valueToPct(dataMax)`. Everything — bar, reference lines, banded background — uses the same non-linear value-to-height mapping, so the chart is one consistent value space.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/calendar-strip.js` — `valueToPct` updated: instead of returning `(v - dataMin) / dataRange * 100`, it returns `BAR_MIN_PCT + linear * (100 - BAR_MIN_PCT)`. The bar's `heightPct` is now just `valueToPct(d.total)` (no more `Math.max` clamp — `valueToPct` already floors at BAR_MIN_PCT). The banded background's `positions` array now uses `valueToPct(dataMin)` and `valueToPct(dataMax)` for the start and end (was `0` and `100`). Comments updated to describe the new behaviour.
+
 ## v0.26 — Treemap: persistent "selected day" box (2026-07-18)
 
 Restores the persistent "selected day" box around the treemap's day row. The v0.22 hover-only rewrite had replaced the click-driven `--active` class with a CSS `:hover` rule — which only fired while the cursor was on the row. The user noticed: there was no indication of "which day the chart is showing" once the cursor moved off the selector to read the legend or scroll the article.

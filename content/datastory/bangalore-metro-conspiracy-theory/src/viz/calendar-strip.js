@@ -154,29 +154,34 @@ export function renderCalendarStrip(container, daily, window, stats) {
   }
   const BAND_COLORS = computeBandColors(BUCKET_COUNT);
 
-  // valueToPct: 0% sits at the dataset's absolute minimum, 100%
-  // at the absolute maximum. Linear scale, used by the bar's
-  // height, the (min/med/max) reference lines, AND the
-  // positions of the banded-background zones. The "0% at MIN,
-  // 100% at MAX" mapping makes the chart's bottom = the
-  // dataset's smallest reported ridership, not zero ridership.
-  // The "0" axis label was misleading: a 4L day sat at 0% on a
-  // "0 → max" axis, but the bar's height was 0% which made it
-  // invisible. Now the bottom of the chart IS MIN, the axis
-  // label is "MIN 4.0L", and the bar at MIN has a small visible
-  // sliver (BAR_MIN_PCT) so the reader can see the day even
-  // when its value lands at the bottom of the range.
+  // valueToPct: maps the dataset's value range [MIN, MAX]
+  // to a height percentage in [BAR_MIN_PCT, 100]. The
+  // BAR_MIN_PCT floor keeps the bar at MIN visible as a
+  // thin sliver (without it, the bar at MIN would have
+  // 0% height and disappear entirely — the user found
+  // this confusing: "a bar with minimum value is barely
+  // visible, suggesting the bottom of the chart is MIN
+  // and not 0"). The reference lines (min/med/max) and
+  // the banded background positions all use the SAME
+  // mapping, so the MIN line sits at exactly the bar's
+  // tip position when the value is MIN, the MAX line at
+  // the bar's tip when value is MAX, etc. The chart's
+  // visual bottom (0%) is just a small "buffer" below
+  // MIN — the bar never extends below BAR_MIN_PCT.
   function valueToPct(v) {
     if (v == null) return 0;
-    return Math.max(0, Math.min(100, ((v - dataMin) / dataRange) * 100));
+    const linear = (v - dataMin) / dataRange;   // 0..1
+    return BAR_MIN_PCT + linear * (100 - BAR_MIN_PCT);
   }
   // BAR_MIN_PCT: the bar's minimum height as a percentage of
   // the chart. Even at the dataset's smallest value (4.0L), the
   // bar is rendered at 4% of the chart's height — a thin sliver
   // that's clearly visible but reads as "this is the floor of
-  // the data, not zero". The bar's actual VALUE is still
-  // conveyed by its tip position; BAR_MIN_PCT is purely
-  // cosmetic so the bar doesn't disappear at the floor.
+  // the data". The bar's actual VALUE is still conveyed by its
+  // tip position, which now aligns exactly with the MIN/MAX
+  // reference lines (both use valueToPct above, so the line
+  // for a value v sits at the bar's tip position when the
+  // value is v).
   const BAR_MIN_PCT = 4;
   // bucketForValue: returns 0..BUCKET_COUNT-1. Walks the
   // boundaries list — value below the first boundary is
@@ -656,11 +661,18 @@ export function renderCalendarStrip(container, daily, window, stats) {
   //     notebook) inside the absolute min–max range. The
   //     dataset is right-skewed (most days are 7-9L), so the
   //     bottom band spans a large value range and the top bands
-  //     are compressed. The bar's height still maps linearly to
-  //     the absolute range, so the bar visually tells you
-  //     "where in the value range am I?" while its fill tells
-  //     you "which band am I in?".
-  const positions = [0, ...boundaries.map(valueToPct), 100];
+  //     are compressed. The bar's height uses the same
+  //     valueToPct mapping as the band positions, so the bar's
+  //     tip at any value lands exactly in the band that value
+  //     belongs to — the bar's tip position and the band's
+  //     vertical position are the same encoding. The MIN line
+  //     is at the bar's tip at MIN; the MAX line at the bar's
+  //     tip at MAX; everything reads as one value space.
+  const positions = [
+    valueToPct(dataMin),
+    ...boundaries.map(valueToPct),
+    valueToPct(dataMax),
+  ];
   const zoneStops = [];
   for (let i = 0; i < BUCKET_COUNT; i++) {
     zoneStops.push(`${BAND_COLORS[i]} ${positions[i].toFixed(2)}%`);
@@ -825,14 +837,14 @@ export function renderCalendarStrip(container, daily, window, stats) {
 
       if (d.reported) {
         tipValue.text(formatRiders(d.total));
-        // Bar height maps linearly to value position in the
-        // dataset's absolute min–max range, with a min-floor of
-        // BAR_MIN_PCT so the bar at MIN is still visible as a
-        // thin sliver (otherwise it'd be 0% and disappear).
-        // The fill is the same purple as the band the bar's
+        // Bar height uses the same valueToPct as the
+        // reference lines, so the bar's tip at MIN sits
+        // exactly on the dashed MIN line, and the bar's
+        // tip at MAX sits exactly on the dashed MAX line.
+        // The fill is the same purple as the band the
         // value lands in — second visual encoding (which
         // bucket) on top of the bar's height (how far up).
-        const heightPct = Math.max(BAR_MIN_PCT, valueToPct(d.total));
+        const heightPct = valueToPct(d.total);
         const bucket = bucketForValue(d.total);
         const barFill = BAND_COLORS[
           Math.max(0, Math.min(BUCKET_COUNT - 1, bucket))
