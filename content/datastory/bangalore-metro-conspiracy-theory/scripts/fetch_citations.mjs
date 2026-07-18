@@ -166,11 +166,11 @@ async function main() {
     return;
   }
 
-  if (fetched > 0 || failed > 0) {
+  if (fetched > 0) {
     await writeFile(INDEX, rewriteBlock(html, jsonMatch, registry), "utf8");
     log(`wrote ${fetched} new entries${failed ? `, ${failed} failed` : ""} to #article-citations`);
   } else {
-    log("no changes — all URLs already in registry");
+    log(`no changes — ${failed} failed, ${skipped} cached`);
   }
 }
 
