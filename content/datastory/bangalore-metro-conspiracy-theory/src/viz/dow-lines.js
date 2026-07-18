@@ -72,17 +72,24 @@ export function renderDowLines(container, daily, options = {}) {
   const cellX = (col) => MARGIN.left + col * (cellInnerW + GRID.gap);
   const cellY = () => MARGIN.top;
 
-  // Shared scales: x is week index; y starts at the truncated baseline.
+  // Shared x scale; y is a broken scale so the cell bottom is 0, a small
+  // band represents the skipped 0–400K range, and the data region sits above.
   const x = d3.scalePoint().domain(d3.range(WEEKS)).range([0, cellInnerW]).padding(0);
   const yMax = d3.max(series, (s) => d3.max(s.values, (v) => v.value ?? 0));
-  const y = d3.scaleLinear()
-    .domain([Y_BASELINE, yMax * 1.05])
-    .range([cellInnerH, 0])
-    .nice();
+  const Y_MAX = yMax * 1.05;
+  const Y_BREAK = 400000;
+  const BREAK_HEIGHT = 12;
+  const DATA_TOP_Y = cellInnerH - BREAK_HEIGHT;
+  function y(v) {
+    if (v <= Y_BREAK) {
+      return cellInnerH - (v / Y_BREAK) * BREAK_HEIGHT;
+    }
+    return DATA_TOP_Y - ((v - Y_BREAK) / (Y_MAX - Y_BREAK)) * DATA_TOP_Y;
+  }
 
   const dateFmt = d3.timeFormat('%b %d, %Y');
-  const selectedFirst = d3.min(series, (s) => parseDate(s.values[0].date));
-  const selectedLast = d3.max(series, (s) => parseDate(s.values[s.values.length - 1].date));
+  const selectedFirst = d3.min(series, (s) => new Date(s.values[0].date));
+  const selectedLast = d3.max(series, (s) => new Date(s.values[s.values.length - 1].date));
   const subtitle = `${dateFmt(selectedFirst)} – ${dateFmt(selectedLast)}`;
 
   const svg = d3
@@ -120,21 +127,58 @@ export function renderDowLines(container, daily, options = {}) {
     .attr('fill', 'var(--muted)')
     .text(subtitle);
 
-  // Shared y-axis on the left of the single row.
+  // Shared broken y-axis on the left of the single row.
   const axisGroup = svg
     .append('g')
     .attr('class', 'y-axis')
-    .attr('transform', `translate(${MARGIN.left}, ${MARGIN.top})`)
-    .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('~s')))
-    .call((sel) => sel.selectAll('text').attr('fill', 'var(--muted)'))
-    .call((sel) => sel.selectAll('line, path').attr('stroke', 'rgba(0, 0, 0, 0.2)'));
+    .attr('transform', `translate(${MARGIN.left}, ${MARGIN.top})`);
 
-  // Squiggle break on the y-axis to show the base is truncated at 350K.
-  const breakY = y(Y_BASELINE);
+  const tickScale = d3.scaleLinear().domain([Y_BREAK, Y_MAX]).range([DATA_TOP_Y, 0]).nice();
+  const yTicks = [0, ...tickScale.ticks(5).filter((t) => t > Y_BREAK)];
+  const tickFmt = d3.format('~s');
+
+  // Axis line from top down to the squiggle, and from the squiggle down to 0.
+  const breakCenter = DATA_TOP_Y + BREAK_HEIGHT / 2;
+  const breakGap = 3;
+  axisGroup
+    .append('line')
+    .attr('x1', 0)
+    .attr('x2', 0)
+    .attr('y1', 0)
+    .attr('y2', breakCenter - breakGap)
+    .attr('stroke', 'rgba(0, 0, 0, 0.2)');
+  axisGroup
+    .append('line')
+    .attr('x1', 0)
+    .attr('x2', 0)
+    .attr('y1', cellInnerH)
+    .attr('y2', breakCenter + breakGap)
+    .attr('stroke', 'rgba(0, 0, 0, 0.2)');
+
+  // Tick marks and labels.
+  yTicks.forEach((t) => {
+    const ty = y(t);
+    axisGroup.append('line').attr('x1', -6).attr('x2', 0).attr('y1', ty).attr('y2', ty).attr('stroke', 'rgba(0, 0, 0, 0.2)');
+    axisGroup
+      .append('text')
+      .attr('x', -10)
+      .attr('y', ty + 3)
+      .attr('text-anchor', 'end')
+      .attr('font-size', '10px')
+      .attr('fill', 'var(--muted)')
+      .text(tickFmt(t));
+  });
+
+  // Small double-tilde squiggle in the break band, matching axis marker style.
+  const breakY = DATA_TOP_Y + BREAK_HEIGHT / 2;
+  const squiggle = [
+    `M -4,${breakY - 1} Q -2,${breakY - 3} 0,${breakY - 1} T 4,${breakY - 1}`,
+    `M -4,${breakY + 1} Q -2,${breakY - 1} 0,${breakY + 1} T 4,${breakY + 1}`,
+  ].join(' ');
   axisGroup
     .append('path')
-    .attr('d', `M -6,${breakY - 6} L -3,${breakY} L 0,${breakY - 6} L 3,${breakY} L 6,${breakY - 6}`)
-    .attr('stroke', 'var(--ink)')
+    .attr('d', squiggle)
+    .attr('stroke', 'rgba(0, 0, 0, 0.2)')
     .attr('stroke-width', 1)
     .attr('fill', 'none');
 
@@ -150,7 +194,6 @@ export function renderDowLines(container, daily, options = {}) {
   // Draw each sparkline cell.
   const cellGroup = svg.append('g').attr('class', 'dow-lines__cells');
   const allLinePaths = [];
-  const allDotGroups = [];
 
   series.forEach((s, i) => {
     const col = i % GRID.cols;
@@ -172,63 +215,30 @@ export function renderDowLines(container, daily, options = {}) {
       .attr('fill', s.color)
       .text(s.name);
 
-    // Faint horizontal gridlines inside the cell.
-    gCell
-      .append('g')
-      .attr('class', 'grid')
-      .selectAll('line')
-      .data(y.ticks(4))
-      .join('line')
-      .attr('x1', 0)
-      .attr('x2', cellInnerW)
-      .attr('y1', (d) => y(d))
-      .attr('y2', (d) => y(d))
-      .attr('stroke', 'rgba(0, 0, 0, 0.06)');
-
-    // X-axis baseline.
-    const baselineY = y(Y_BASELINE);
+    // Horizontal 0 line across the bottom of the cell.
     gCell
       .append('line')
       .attr('x1', 0)
       .attr('x2', cellInnerW)
-      .attr('y1', baselineY)
-      .attr('y2', baselineY)
+      .attr('y1', cellInnerH)
+      .attr('y2', cellInnerH)
       .attr('stroke', 'rgba(0, 0, 0, 0.2)');
 
-    // Week labels (first and last only).
-    gCell
-      .append('text')
-      .attr('x', x(0))
-      .attr('y', baselineY + 12)
-      .attr('text-anchor', 'middle')
-      .attr('font-size', '9px')
-      .attr('fill', 'var(--muted)')
-      .text('W1');
-    gCell
-      .append('text')
-      .attr('x', x(WEEKS - 1))
-      .attr('y', baselineY + 12)
-      .attr('text-anchor', 'middle')
-      .attr('font-size', '9px')
-      .attr('fill', 'var(--muted)')
-      .text('W8');
+    // Eight full-width horizontal lines, one per reported value.
+    const lineGroup = gCell
+      .append('g')
+      .attr('class', 'dow-lines__bars');
 
-    // Solid line through the 8 real points for this day.
-    const lineGen = d3
-      .line()
-      .x((d) => x(d.week))
-      .y((d) => y(d.value))
-      .curve(d3.curveLinear);
-
-    const cellPath = gCell
-      .append('path')
-      .attr('class', 'dow-line')
-      .attr('fill', 'none')
+    lineGroup
+      .selectAll('line')
+      .data(s.values)
+      .join('line')
+      .attr('x1', 0)
+      .attr('x2', cellInnerW)
+      .attr('y1', (d) => y(d.value))
+      .attr('y2', (d) => y(d.value))
       .attr('stroke', s.color)
-      .attr('stroke-width', 2)
-      .attr('stroke-linecap', 'round')
-      .attr('stroke-linejoin', 'round')
-      .attr('d', lineGen(s.values))
+      .attr('stroke-width', 1)
       .each(function () {
         const length = this.getTotalLength();
         d3.select(this)
@@ -236,26 +246,7 @@ export function renderDowLines(container, daily, options = {}) {
           .attr('stroke-dashoffset', length);
       });
 
-    allLinePaths.push(cellPath.node());
-
-    // Dots at each of the 8 points.
-    const dotGroup = gCell
-      .append('g')
-      .attr('class', 'dow-points')
-      .style('opacity', 0);
-
-    dotGroup
-      .selectAll('circle')
-      .data(s.values)
-      .join('circle')
-      .attr('cx', (d) => x(d.week))
-      .attr('cy', (d) => y(d.value))
-      .attr('r', 2.5)
-      .attr('fill', 'var(--paper)')
-      .attr('stroke', s.color)
-      .attr('stroke-width', 2);
-
-    allDotGroups.push(dotGroup.node());
+    allLinePaths.push(...lineGroup.selectAll('line').nodes());
   });
 
   // Note about what the sparklines show.
@@ -266,9 +257,9 @@ export function renderDowLines(container, daily, options = {}) {
     .attr('text-anchor', 'middle')
     .attr('font-size', '10px')
     .attr('fill', 'var(--muted)')
-    .text('Each sparkline shows the last 8 reported ridership values for that day of the week.');
+    .text('Each plot shows the last 8 reported ridership values for that day of the week.');
 
-  // Scroll-driven draw animation: reveal all line segments, then dots.
+  // Scroll-driven draw animation: reveal each horizontal tick.
   const tl = gsap.timeline({ paused: true });
   allLinePaths.forEach((node) => {
     tl.to(
@@ -281,7 +272,6 @@ export function renderDowLines(container, daily, options = {}) {
       '<0.02'
     );
   });
-  tl.to(allDotGroups, { opacity: 1, duration: 0.15 }, '-=0.05');
 
   const trigger = ScrollTrigger.create({
     trigger: container,
