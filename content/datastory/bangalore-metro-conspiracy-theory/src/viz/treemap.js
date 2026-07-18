@@ -319,33 +319,31 @@ export function renderTreemap(container, days, stats) {
     .attr('class', 'treemap-day-row')
     .attr('aria-label', (d) => `${formatDateLabel(d.date)}, ${formatRiders(d.total)}`)
     .on('mouseenter', function (_event, d) {
-      // Hover override: the chart morphs to this day's mix
+      // Hover selection: the chart morphs to this day's mix
       // and the row gets the --active class so the box
       // follows. (The CSS :hover state ALSO fires on this
       // row while the cursor is on it — both visual states
       // overlap.) Setting `hoveredDay` makes the auto-play's
-      // `update(progress)` a no-op while the cursor is on
-      // the day-selector — otherwise, the auto-play's next
-      // onUpdate call (triggered by any tiny scroll change
-      // — including the smooth-scroll lag from scrub) would
-      // snap the chart back to the auto-play's day and
-      // override the user's hover selection.
+      // `update(progress)` a no-op — the auto-play yields
+      // to the user's selection and never resumes.
+      // Otherwise, the auto-play's next onUpdate call
+      // (triggered by any tiny scroll change — including
+      // the smooth-scroll lag from scrub) would snap the
+      // chart back to the auto-play's day and override
+      // the user's selection.
       hoveredDay = d;
       selectedDay = d;
       updateDaySelector();
       renderDay(d);
-    })
-    .on('mouseleave', function () {
-      // Clear the hover override and resume the auto-play
-      // from the current scroll position. update(lastProgress)
-      // computes the day index for the current progress,
-      // sets selectedDay, and re-applies the class + chart.
-      // If lastProgress is past AUTO_PLAY_END, the chart
-      // sits on the last day; otherwise, the chart resumes
-      // the cycle.
-      hoveredDay = null;
-      update(lastProgress);
     });
+    // (No `mouseleave` handler: the selection is sticky.
+    // Once the user hovers a day, that day stays selected
+    // for the rest of the session. The user said hovering
+    // a date should "treat that as selected" — i.e. the
+    // chart should not snap back to the previous selection
+    // (the auto-play's day) when the mouse moves away.
+    // To reset to the auto-play's day, reload the page or
+    // hover day 0 again at the start of the chapter.)
   // (No `click` / `keydown` handlers: hover is the only
   // selection interaction.)
 
@@ -415,17 +413,21 @@ export function renderTreemap(container, days, stats) {
 
   let hoverKey = null;
   let lastProgress = 0;
-  // hoveredDay: set to the day-row's data object while the
-  // cursor is over a day-selector row, null otherwise. When
-  // non-null, the auto-play's `update(progress)` is a no-op
-  // (the user is in control — the chart should show the day
-  // they hovered, not the day the auto-play thinks it should
-  // be on). The flag is cleared on mouseleave and the auto-
-  // play then takes over again from the current scroll
-  // position. Without this flag, the auto-play's per-frame
-  // `update(progress)` call (fired by the scroll trigger's
-  // scrub) would snap the chart back to the auto-play's
-  // day and the user's hover would have no visible effect.
+  // hoveredDay: set to the day-row's data object the first
+  // time the user hovers a day-selector row, and stays set
+  // for the rest of the session. When non-null, the auto-
+  // play's `update(progress)` is a no-op — the user's
+  // selection is permanent and the auto-play never resumes.
+  // The user said hovering a date should "treat that as
+  // selected" — i.e. the chart should not snap back to the
+  // auto-play's day when the mouse moves away. Without
+  // this flag, the auto-play's per-frame `update(progress)`
+  // call (fired by the scroll trigger's scrub) would snap
+  // the chart back to the auto-play's day and the user's
+  // hover would have no visible effect. The sticky flag
+  // means: once you hover, the chart stays on that day
+  // regardless of scroll. To reset, reload the page (or
+  // implement an explicit "release" gesture later).
   let hoveredDay = null;
 
   function setHover(key) {
