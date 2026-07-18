@@ -126,6 +126,19 @@ const ICONS = {
 const WIDTH = 420;
 const HEIGHT = 360;
 
+// AUTO_PLAY_END: the trigger's progress (0..1) at which the
+// scroll-driven day-morph lands on the LAST day. Below this
+// progress, the chart cycles through the 7 days in order;
+// above it, the chart sits on the last day. 0.7 means the
+// auto-play completes at 70% of the trigger's range, then
+// the remaining 30% is a "settling" zone where the chart
+// sits still. The bar's auto-play is intended to suggest
+// the day-on-day variation in payment mixes; finishing the
+// cycle at 70% (rather than 100%) means the user has more
+// of the trigger's range to read the final day at their
+// own pace.
+const AUTO_PLAY_END = 0.7;
+
 function formatCompact(n) {
   if (n >= 10000000) return `${(n / 10000000).toFixed(1)}Cr`;
   if (n >= 100000) return `${(n / 100000).toFixed(1)}L`;
@@ -242,10 +255,16 @@ export function renderTreemap(container, days, stats) {
   // and a `.treemap-day-row--active` class is applied to
   // that row. The CSS :hover state and the --active class
   // are both drawn (a hovered row gets both, a non-hovered-
-  // but-active row gets just the box). This means the user
-  // can mouse off the selector to read the legend or scroll
-  // the article, and the box still tells them which day the
-  // chart is showing.
+  // but-active row gets just the box).
+  //
+  // Hover is an OVERRIDE on the scroll-driven auto-play:
+  // when the chart comes into view, the auto-play cycles
+  // through the 7 days. When the user hovers a day, the
+  // chart morphs to that day. On mouseleave, the chart
+  // RESUMES the auto-play from the current scroll position
+  // (rather than staying on the hovered day) — so the
+  // user can sample a specific day but the page's overall
+  // scroll-narrative keeps moving forward.
   const dayRows = selector
     .selectAll('div.treemap-day-row')
     .data(selectorDays)
@@ -253,20 +272,26 @@ export function renderTreemap(container, days, stats) {
     .attr('class', 'treemap-day-row')
     .attr('aria-label', (d) => `${formatDateLabel(d.date)}, ${formatRiders(d.total)}`)
     .on('mouseenter', function (_event, d) {
-      // Live-preview: the chart morphs to this day's mix on
-      // hover, and the row gets the --active class so the
-      // box follows. (The CSS :hover state ALSO fires on
-      // this row while the cursor is on it — both visual
-      // states overlap, then :hover fades off on mouseleave
-      // and --active keeps the box visible.)
+      // Hover override: the chart morphs to this day's mix
+      // and the row gets the --active class so the box
+      // follows. (The CSS :hover state ALSO fires on this
+      // row while the cursor is on it — both visual states
+      // overlap.)
       selectedDay = d;
       updateDaySelector();
       renderDay(d);
+    })
+    .on('mouseleave', function () {
+      // Resume the auto-play from the current scroll
+      // position. update(lastProgress) computes the day
+      // index for the current progress, sets selectedDay,
+      // and re-applies the class + chart. If lastProgress
+      // is past AUTO_PLAY_END, the chart sits on the last
+      // day; otherwise, the chart resumes the cycle.
+      update(lastProgress);
     });
-  // (No `mouseleave` handler: the chart stays on the
-  // last-hovered day, AND the --active class on that row
-  // keeps the box visible. No `click` / `keydown` handlers:
-  // hover is the only selection interaction.)
+  // (No `click` / `keydown` handlers: hover is the only
+  // selection interaction.)
 
   function updateDaySelector() {
     dayRows.classed('treemap-day-row--active', (d) => d.date === selectedDay.date);
@@ -334,15 +359,6 @@ export function renderTreemap(container, days, stats) {
 
   let hoverKey = null;
   let lastProgress = 0;
-
-  function segmentTransform() {
-    return (d) => {
-      const cx = d.x0 + (d.x1 - d.x0) / 2;
-      const cy = d.y0 + (d.y1 - d.y0) / 2;
-      const scale = 0.5 + lastProgress * 0.5;
-      return `translate(${cx},${cy}) scale(${scale}) translate(${-cx},${-cy})`;
-    };
-  }
 
   function setHover(key) {
     hoverKey = key;
@@ -502,11 +518,38 @@ export function renderTreemap(container, days, stats) {
   }
 
   function update(progress) {
+    // Auto-play: the chart cycles through the 7 days as the
+    // user scrolls the chapter into view, suggesting how the
+    // combination of payment methods changes day on day. The
+    // morph is compressed into the FIRST 70% of the trigger's
+    // progress — by the time the chart is 70% into the
+    // viewport, it has already landed on the last day. After
+    // that, the chart sits on the last day as the user
+    // continues scrolling (and the user can still hover a
+    // different row to override the auto-play).
+    //
+    // Compression math: the linear scroll progress 0..1 is
+    // squashed into 0..(1 / AUTO_PLAY_END) = 0..1.43, then
+    // clamped to 0..1. At progress 0 → day 0 (first). At
+    // progress AUTO_PLAY_END → day 6 (last). At progress 1
+    // → still day 6 (clamped). So the chart cycles through
+    // the 7 days in the first 70% of the trigger, then
+    // sits on the last day for the remaining 30%.
     lastProgress = progress;
-    treemapGroup
-      .selectAll('g.segment')
-      .attr('opacity', progress)
-      .attr('transform', segmentTransform());
+    const p = Math.max(0, Math.min(1, progress));
+    const compressed = Math.min(1, p / AUTO_PLAY_END);
+    const dayIdx = Math.min(
+      selectorDays.length - 1,
+      Math.floor(compressed * selectorDays.length),
+    );
+    // Only update if the day actually changed — avoids a
+    // redundant renderDay call when the chart is past the
+    // last day and the trigger keeps firing.
+    if (selectorDays[dayIdx].date !== selectedDay.date) {
+      selectedDay = selectorDays[dayIdx];
+      updateDaySelector();
+      renderDay(selectedDay);
+    }
   }
 
   renderDay(selectedDay);

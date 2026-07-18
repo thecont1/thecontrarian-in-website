@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.28 — Treemap: scroll-driven auto-play through the 7 days (2026-07-18)
+
+A "preview reel" effect: as the treemap scrolls into view, the chart auto-plays through the 7 days in sequence — day 1 (Sun Dec 08) at the start, day 7 (Sat Dec 14) by the time the chart is 70% into the viewport. The day-selector's box follows the auto-play. Hover still works as an override: hovering a row pauses the auto-play on that day, and mouseleave resumes the cycle from the current scroll position.
+
+### What changed
+
+- **Scroll-driven day morph.** The treemap's `update(progress)` no longer fades segments in (opacity 0→1) — instead, it computes which day the chart should be showing based on the trigger's progress. A new `AUTO_PLAY_END = 0.7` constant compresses the morph into the first 70% of the trigger's range: at progress 0 the chart shows day 1, at progress 0.7 the chart shows day 7, and at progress 0.7–1.0 the chart sits still on day 7 (a "settling" zone where the user reads the final state at their own pace). The trigger's `scrub: 0.5` smooths the morph so the chart moves fluidly between adjacent days as the user scrolls. The day-selector's `--active` class follows — the box moves from row 1 to row 7 in lockstep with the auto-play.
+- **Hover as an override.** Hovering a day row still drives the chart to that day's mix and draws the box around the hovered row. On `mouseleave`, the chart resumes the auto-play from the current scroll position (rather than staying on the hovered day) — the user can sample a specific day but the page's overall scroll-narrative keeps moving forward. The auto-play's last-known progress is stored in `lastProgress` (kept from the previous opacity-based implementation) so the resume is consistent.
+- **Removed unused scale transform.** The `segmentTransform` function (which scaled the segments from 0.5 to 1.0 as the user scrolled) is gone — the user asked for "rectangles already at full size by default", so the segments never animate their scale. Only the day-morph drives the visual change.
+
+### Files touched
+
+- `content/datastory/bangalore-metro-conspiracy-theory/src/viz/treemap.js` — new `AUTO_PLAY_END = 0.7` constant. `update(progress)` rewritten to compute the day index from progress (with the `min(progress / 0.7, 1)` compression so the auto-play completes at 70%) and call `renderDay` + `updateDaySelector` for that day; the function only re-renders when the day actually changes (avoids redundant work past the last day). New `mouseleave` handler on day rows that calls `update(lastProgress)` to resume the auto-play. `segmentTransform` removed. The day-selector box (`treemap-day-row--active`) now follows both the auto-play AND hover, so the reader always sees which day the chart is currently showing.
+- `CHANGELOG.md` — this entry.
+
 ## v0.27 — Calendar tooltip: reference lines aligned with the bar's tip (2026-07-18)
 
 The MIN/MED/MAX reference lines in the calendar's cell-hover tooltip now sit at exactly the bar's tip position for those values — they no longer drift below the bar at the data's minimum.
