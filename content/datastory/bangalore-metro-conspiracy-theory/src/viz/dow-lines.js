@@ -88,7 +88,7 @@ const FINAL_CENTER_Y = 0;
  * @returns {{ update, destroy }}
  */
 export function renderDowLines(container, daily, options = {}) {
-  const { title = 'Ridership Patterns by Day of Week', yLabel = 'Total ridership' } = options;
+  const { title = 'Ridership Patterns by Day of Week', yLabel = 'Total Daily Ridership' } = options;
 
   const parseDate = (d) => new Date(d.date);
   const sorted = [...daily].sort((a, b) => parseDate(a) - parseDate(b));
