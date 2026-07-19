@@ -623,46 +623,46 @@ export function renderDowLines(container, daily, options = {}) {
   // 35% of the scroll range, then the morph plays over the rest.
   //
   // Timeline (0.0 → 1.0):
-  //   0.00–0.25 : hold on phase 1
-  //   0.25–0.55 : cells collapse to Mon, titles fade, non-Mon cells dim
-  //   0.50–0.65 : phase-1 caption and zero-baseline fade out;
+  //   0.00–0.20 : hold on phase 1
+  //   0.20–0.55 : cells collapse to Mon, titles fade, non-Mon cells dim
+  //   0.50–0.70 : phase-1 caption and zero-baseline fade out;
   //               title/y-axis label fade out
-  //   0.65–0.90 : merged group fades in; plotGroup scales 1x → 4x
-  //   0.90–1.00 : hold on merged state
+  //   0.70–0.95 : merged group fades in; plotGroup scales 1x → 4x
+  //   0.95–1.00 : hold on merged state
   const targetX = MARGIN.left;
   const targetY = PLOT_TOP;
   const collapseTl = gsap.timeline({ paused: true });
 
   // Leading hold: keep the 7 subplots fully visible at the start
   // of the scroll range.
-  collapseTl.to({}, { duration: 0.25 }, 0);
+  collapseTl.to({}, { duration: 0.20 }, 0);
 
   cells.forEach(({ node, initialTransform, title }, i) => {
     collapseTl.fromTo(
       node,
       { attr: { transform: initialTransform } },
-      { attr: { transform: `translate(${targetX}, ${targetY})` }, duration: 0.30, ease: 'power2.inOut' },
-      0.25
+      { attr: { transform: `translate(${targetX}, ${targetY})` }, duration: 0.40, ease: 'sine.inOut' },
+      0.20
     );
-    collapseTl.fromTo(title, { opacity: 1 }, { opacity: 0, duration: 0.20 }, 0.25);
+    collapseTl.fromTo(title, { opacity: 1 }, { opacity: 0, duration: 0.30 }, 0.20);
     if (i !== 0) {
-      collapseTl.fromTo(node, { opacity: 1 }, { opacity: 0, duration: 0.20 }, 0.45);
+      collapseTl.fromTo(node, { opacity: 1 }, { opacity: 0, duration: 0.30 }, 0.45);
     } else {
-      collapseTl.fromTo(node, { opacity: 1 }, { opacity: 0, duration: 0.20 }, 0.52);
+      collapseTl.fromTo(node, { opacity: 1 }, { opacity: 0, duration: 0.30 }, 0.52);
     }
   });
 
   // Fade out the phase-1 caption and the zero-baseline.
-  collapseTl.fromTo(phase1Caption.node(), { opacity: 1 }, { opacity: 0, duration: 0.20 }, 0.50);
-  collapseTl.fromTo(axisGroup.select('.zero-baseline').node(), { opacity: 1 }, { opacity: 0, duration: 0.20 }, 0.50);
+  collapseTl.fromTo(phase1Caption.node(), { opacity: 1 }, { opacity: 0, duration: 0.30 }, 0.50);
+  collapseTl.fromTo(axisGroup.select('.zero-baseline').node(), { opacity: 1 }, { opacity: 0, duration: 0.30 }, 0.50);
 
   // Fade out the phase-1 title and tick labels; the merged
   // overlay provides counter-scaled versions in the final state.
-  collapseTl.fromTo(titleGroup.node(), { opacity: 1 }, { opacity: 0, duration: 0.20 }, 0.50);
-  collapseTl.fromTo(axisGroup.selectAll('text').nodes(), { opacity: 1 }, { opacity: 0, duration: 0.20 }, 0.50);
+  collapseTl.fromTo(titleGroup.node(), { opacity: 1 }, { opacity: 0, duration: 0.30 }, 0.50);
+  collapseTl.fromTo(axisGroup.selectAll('text').nodes(), { opacity: 1 }, { opacity: 0, duration: 0.30 }, 0.50);
 
   // Fade in the merged group.
-  collapseTl.fromTo(mergedGroup.node(), { opacity: 0 }, { opacity: 1, duration: 0.20 }, 0.65);
+  collapseTl.fromTo(mergedGroup.node(), { opacity: 0 }, { opacity: 1, duration: 0.30 }, 0.70);
 
   // Scale plotGroup 4x around the Monday cell's centre, translating
   // the square so it lands in the centre of the SVG viewBox.
@@ -673,13 +673,13 @@ export function renderDowLines(container, daily, options = {}) {
   collapseTl.fromTo(
     plotGroup.node(),
     { attr: { transform: 'translate(0, 0) scale(1)' } },
-    { attr: { transform: expandTransform }, duration: 0.25, ease: 'power2.inOut' },
-    0.65
+    { attr: { transform: expandTransform }, duration: 0.30, ease: 'sine.inOut' },
+    0.70
   );
 
   // Trailing hold: keep the merged state on screen for the final
   // part of the scroll range.
-  collapseTl.to({}, { duration: 0.10 }, '+=0');
+  collapseTl.to({}, { duration: 0.05 }, '+=0');
 
   const collapseTrigger = ScrollTrigger.create({
     trigger: container,

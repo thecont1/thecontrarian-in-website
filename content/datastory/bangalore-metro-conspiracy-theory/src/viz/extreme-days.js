@@ -799,26 +799,26 @@ export function renderExtremeDays(container, daily, options = {}) {
   // back, which reads as playful rather than deliberate.
   // For a data story, the cleaner back.out is the right
   // feel.
-  const SPRING_STAGGER = 0.03;   // 30ms between consecutive bars
-  const SPRING_DURATION = 0.6;   // each bar's spring lasts 600ms
-  const QUIET_START = 0.3;       // quiet set starts 300ms after trigger
+  const SPRING_STAGGER = 0.04;   // 40ms between consecutive bars
+  const SPRING_DURATION = 0.8;   // each bar's spring lasts 800ms
+  const QUIET_START = 0.4;       // quiet set starts 400ms after trigger
   const springTimeline = gsap.timeline({
     paused: true,   // play/reverse controlled by ScrollTriggers below
   });
 
-  // Bars spring in when the chart base crosses the viewport bottom
-  // while scrolling down. They spring back out when the chart top
-  // crosses the viewport top while scrolling up — sooner than the
-  // base re-crossing the viewport bottom.
+  // Bars spring in as the chart enters the viewport and finish
+  // by the time the chart title reaches the top of the viewport.
+  // Previously the scrubbed animation ran from 'bottom 90%' to
+  // 'bottom 40%', which meant it only finished once the chart had
+  // already scrolled halfway out of view. Using the chart's top
+  // edge gives a much earlier, visible finish while keeping the
+  // spring motion scroll-driven.
   const playTrigger = ScrollTrigger.create({
     trigger: container,
-    start: 'bottom 85%',
-    onEnter: () => springTimeline.play(),
-  });
-  const reverseTrigger = ScrollTrigger.create({
-    trigger: container,
-    start: 'top top',
-    onLeaveBack: () => springTimeline.reverse(),
+    start: 'top bottom',
+    end: 'top top',
+    scrub: true,
+    animation: springTimeline,
   });
 
   // Initial state: all bars at height 0, drawn at the
@@ -957,7 +957,6 @@ export function renderExtremeDays(container, daily, options = {}) {
     }
     springTimeline.kill();
     playTrigger.kill();
-    reverseTrigger.kill();
     // Remove the tooltip's transitionend listener. The
     // listener was added with an anonymous function, so
     // we can't remove it by reference. Instead, we just

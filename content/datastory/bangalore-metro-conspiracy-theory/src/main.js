@@ -19,7 +19,7 @@ import { mountCh6LongWeekend } from './chapters/ch6-long-weekend.js';
 import { mountCh7VisitorEconomy } from './chapters/ch7-visitor-economy.js';
 import { mountCh8FareHike } from './chapters/ch8-fare-hike.js';
 import { mountCh9Conspiracy } from './chapters/ch9-conspiracy.js';
-import { setupImageReveals, setupFootnotes } from '@thecontrarian/scrollytelling-core';
+import { setupImageReveals, setupFootnotes, ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 
 // Footer copyright year
 const yearEl = document.getElementById('copyright-year');
@@ -68,7 +68,9 @@ function lazyMountChapters() {
           if (entry.isIntersecting && !mounted) {
             mounted = true;
             observer.disconnect();
-            fn(el).catch((err) => console.error(`Failed to mount ${sel}:`, err));
+            Promise.resolve(fn(el))
+              .then(() => ScrollTrigger.refresh())
+              .catch((err) => console.error(`Failed to mount ${sel}:`, err));
           }
         }
       },
