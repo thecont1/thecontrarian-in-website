@@ -6,6 +6,6 @@
 //   import { setupFootnotes } from '@thecontrarian/scrollytelling-core/components/footnote';
 //   import { setupImageReveals } from '@thecontrarian/scrollytelling-core/motion/image-reveal';
 
-export { setupFootnotes, renderFootnote } from './components/footnote.js';
+export { setupFootnotes } from './components/footnote.js';
 export { setupImageReveals } from './motion/image-reveal.js';
 export { gsap, ScrollTrigger, ScrollSmoother } from './motion/scroll-trigger.js';

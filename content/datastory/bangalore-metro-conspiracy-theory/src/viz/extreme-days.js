@@ -812,7 +812,7 @@ export function renderExtremeDays(container, daily, options = {}) {
   // base re-crossing the viewport bottom.
   const playTrigger = ScrollTrigger.create({
     trigger: container,
-    start: 'bottom bottom',
+    start: 'bottom 85%',
     onEnter: () => springTimeline.play(),
   });
   const reverseTrigger = ScrollTrigger.create({

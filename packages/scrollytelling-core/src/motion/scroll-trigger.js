@@ -6,9 +6,10 @@
 // viz modules stay pure (they accept scrub values as numbers, not GSAP refs).
 
 import gsap from 'gsap';
+import { CSSPlugin } from 'gsap/CSSPlugin';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ScrollSmoother } from 'gsap/ScrollSmoother';
 
-gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+gsap.registerPlugin(CSSPlugin, ScrollTrigger, ScrollSmoother);
 
 export { gsap, ScrollTrigger, ScrollSmoother };
