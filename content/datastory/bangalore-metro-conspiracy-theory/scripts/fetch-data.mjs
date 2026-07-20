@@ -36,6 +36,7 @@ const FILES = [
   'hypothesis-window.json',
   'fare-hike-window.json',
   'daily-stats.json',
+  'dow-mode-stats.json',
 ];
 
 async function fetchOne(filename) {

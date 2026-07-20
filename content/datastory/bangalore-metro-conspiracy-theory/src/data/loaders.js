@@ -12,6 +12,7 @@ const FILES = {
   hypothesisWindow:   'hypothesis-window.json',
   fareHikeWindow:     'fare-hike-window.json',
   dailyStats:         'daily-stats.json',
+  dowModeStats:       'dow-mode-stats.json',
 };
 
 const cache = new Map();
@@ -50,3 +51,4 @@ export const loadStations          = () => load('stations');
 export const loadHypothesisWindow  = () => load('hypothesisWindow');
 export const loadFareHikeWindow    = () => load('fareHikeWindow');
 export const loadDailyStats        = () => load('dailyStats');
+export const loadDowModeStats      = () => load('dowModeStats');
