@@ -41,9 +41,9 @@ const DAYS = [
 const CHANNELS = [
   { key: 'smartcard',     label: 'Smart Card',   color: '#7e3eb5' },
   { key: 'token',          label: 'Tokens',       color: '#a8852b' },
-  { key: 'qrWhatsApp',     label: 'Whatsapp',     color: '#e0633f' },
-  { key: 'qrNammaMetro',   label: 'Metro QR',     color: '#d04b36' },
-  { key: 'qrPaytm',        label: 'Paytm',        color: '#ed7b48' },
+  { key: 'qrWhatsApp',     label: 'QR Whatsapp',     color: '#e0633f' },
+  { key: 'qrNammaMetro',   label: 'QR NammaMetro',     color: '#d04b36' },
+  { key: 'qrPaytm',        label: 'QR Paytm',        color: '#ed7b48' },
   { key: 'ncmc',           label: 'NCMC',         color: '#a13a3a' },
   { key: 'groupTicket',    label: 'Group Ticket', color: '#c8a44d' },
 ];

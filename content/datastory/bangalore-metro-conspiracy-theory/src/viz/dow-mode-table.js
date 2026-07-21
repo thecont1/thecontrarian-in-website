@@ -2,12 +2,12 @@
 //
 // Renders a semantic HTML <table> built with D3 from the `dow-mode-stats.json`
 // payload. Rows = Monday..Sunday (index 0..6), columns = each payment channel
-// plus the total. Each cell shows mean ± sample std (rounded). The "Total"
+// plus the total. Each cell shows mean with std below it (rounded). The "Total"
 // column is emphasised as a summary rail; weekend rows (Sat/Sun) are tinted to
 // echo the "three traffic bands" framing in chapter 4's narrative.
 //
-// This is a static reference table — no scroll-driven update. The chapter
-// mounts it once on first reveal.
+// The table starts collapsed (header only). Clicking the caption toggles the
+// body rows. This is a static reference table — no scroll-driven update.
 
 import * as d3 from 'd3';
 
@@ -31,15 +31,14 @@ export function renderDowModeTable(container, stats, options = {}) {
 
   const wrap = d3.select(container).append('div').attr('class', 'dow-mode-table-wrap');
 
-  const table = wrap.append('table').attr('class', 'dow-mode-table');
+  const table = wrap.append('table').attr('class', 'dow-mode-table is-collapsed');
 
   if (caption) {
-    table.append('caption').text(caption);
+    table.append('caption').html(caption);
   }
 
-  // --- Header: two rows. Row 1 groups channels into "Payment method" +
-  // "Total"; row 2 lists each column. A <colgroup> lets us style the Total
-  // column distinctly without per-cell classes.
+  // --- Header: single row listing each column. A <colgroup> lets us style
+  // the Total column distinctly without per-cell classes.
   const colgroup = table.append('colgroup');
   colgroup.append('col').attr('class', 'dow-mode-table__col-dow');
   for (const m of modes) {
@@ -61,16 +60,6 @@ export function renderDowModeTable(container, stats, options = {}) {
       .text(modeLabels[m] ?? m);
   }
 
-  // Sub-header row: mean / std hint, kept compact.
-  const subRow = thead.append('tr').attr('class', 'dow-mode-table__subhead');
-  subRow.append('th').attr('scope', 'col').attr('class', 'dow-mode-table__th-dow').text('n = days');
-  for (const m of modes) {
-    subRow.append('th')
-      .attr('scope', 'col')
-      .attr('class', `dow-mode-table__th dow-mode-table__th--${m}${m === 'total' ? ' is-total' : ''}`)
-      .html('<span class="dow-mode-table__unit">mean ± std</span>');
-  }
-
   // --- Body ---
   const tbody = table.append('tbody');
   const tr = tbody.selectAll('tr')
@@ -86,7 +75,7 @@ export function renderDowModeTable(container, stats, options = {}) {
     .attr('class', 'dow-mode-table__th-dow')
     .html((d) => `<span class="dow-mode-table__dow">${d.dowName}</span><span class="dow-mode-table__n">n=${d.n}</span>`);
 
-  // One cell per mode.
+  // One cell per mode — mean stacked over std.
   for (const m of modes) {
     tr.append('td')
       .attr('class', `dow-mode-table__cell dow-mode-table__cell--${m}${m === 'total' ? ' is-total' : ''}`)
@@ -94,10 +83,16 @@ export function renderDowModeTable(container, stats, options = {}) {
         const v = d[m];
         if (!v) return '';
         return `<span class="dow-mode-table__mean">${fmtNum(v.mean)}</span>` +
-               `<span class="dow-mode-table__sep"> ± </span>` +
-               `<span class="dow-mode-table__std">${fmtNum(v.std)}</span>`;
+               `<span class="dow-mode-table__std">± ${fmtNum(v.std)}</span>`;
       });
   }
+
+  // --- Collapse / expand toggle ---
+  table.on('click', function () {
+    d3.select(this).classed('is-collapsed', function () {
+      return !d3.select(this).classed('is-collapsed');
+    });
+  });
 
   function destroy() {
     d3.select(container).selectAll('*').remove();
