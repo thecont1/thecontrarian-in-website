@@ -224,7 +224,26 @@ function formatDateParts(dateStr) {
 // reads as "December 10, 2024" (not "Dec 08"). Matches the
 // calendar tooltip's format so both popups read as one
 // design language.
-export function renderTreemap(container, days, stats) {
+export function renderTreemap(container, days, stats, options = {}) {
+  const { title = 'Payment Mix', yLabel = '' } = options;
+
+  // Subtitle: the date range of the 7-day window the treemap
+  // cycles through. "Nov 14 – Nov 20, 2024" reads as a small
+  // chip under the title, like the other charts' date ranges.
+  const firstDay = days[0]?.date;
+  const lastDay = days[days.length - 1]?.date;
+  const subtitle = (() => {
+    if (!firstDay || !lastDay) return '';
+    const a = d3.timeParse('%Y-%m-%d')(firstDay);
+    const b = d3.timeParse('%Y-%m-%d')(lastDay);
+    if (!a || !b) return '';
+    const fmtShort = d3.timeFormat('%b %d');
+    const fmtYear = d3.timeFormat('%Y');
+    if (a.getFullYear() === b.getFullYear()) {
+      return `${fmtShort(a)} – ${fmtShort(b)}, ${fmtYear(a)}`;
+    }
+    return `${fmtShort(a)}, ${fmtYear(a)} – ${fmtShort(b)}, ${fmtYear(b)}`;
+  })();
   const dataMin = stats.min;
   const dataMax = stats.max;
   const dataRange = dataMax - dataMin;
@@ -268,6 +287,28 @@ export function renderTreemap(container, days, stats) {
     .append('div')
     .attr('class', 'treemap-wrap');
 
+  // Title + date-range subtitle. Sits above the chart in the
+  // same visual language as the dow-lines (Ch 3) and stacked-
+  // area (Ch 8) charts: bold serif title with a muted mono
+  // date range below. Without these, the user has no way to
+  // know which 7 days the day-selector is cycling through —
+  // they'd just see chips labelled "Mon / Dec 08" without a
+  // framing "Nov 14 – Nov 20, 2024" telling them what window
+  // they're looking at.
+  const header = wrapper
+    .append('div')
+    .attr('class', 'treemap-header');
+  header
+    .append('div')
+    .attr('class', 'treemap-header__title')
+    .text(title);
+  if (subtitle) {
+    header
+      .append('div')
+      .attr('class', 'treemap-header__subtitle')
+      .text(subtitle);
+  }
+
   const svg = wrapper
     .append('svg')
     .attr('viewBox', `0 0 ${WIDTH} ${HEIGHT}`)
@@ -290,6 +331,20 @@ export function renderTreemap(container, days, stats) {
   const legend = wrapper
     .append('div')
     .attr('class', 'treemap-legend');
+
+  // Segment tooltip — a small card that appears next to the
+  // segment the user is hovering. Shows the channel name, the
+  // raw rider count, and the percentage of that day's mix.
+  // The card is positioned in screen coords (left/top) by
+  // reading the hovered segment's getBoundingClientRect and
+  // offsetting from the wrapper's rect. We use a single
+  // shared element (not one per segment) and just update its
+  // contents + position on each hover. Hidden by default.
+  const tooltip = wrapper
+    .append('div')
+    .attr('class', 'treemap-tooltip')
+    .style('opacity', 0)
+    .style('pointer-events', 'none');
 
   // Day rows: hover is the only interaction. Hovering a
   // row drives the chart to that day's mix; the same row
@@ -445,6 +500,63 @@ export function renderTreemap(container, days, stats) {
     setHover(null);
   }
 
+  // Segment tooltip. Builds a compact card with the channel
+  // name, raw rider count, percentage of that day's mix, and
+  // the day's full date. Positioned to the right of the
+  // hovered segment by default; flips to the left if the
+  // segment is on the right half of the chart (so the
+  // tooltip never falls off the right edge of the chart
+  // container). The card sits in screen coords relative to
+  // the wrapper — top/left in pixels, not SVG units.
+  function showSegmentTooltip(segmentEl, d, day) {
+    const value = d.data.value;
+    const pct = day.total ? (value / day.total) * 100 : 0;
+    const fullDate = d3.timeParse('%Y-%m-%d')(day.date);
+    const longDate = fullDate
+      ? d3.timeFormat('%A, %B %d, %Y')(fullDate)
+      : day.date;
+
+    tooltip
+      .html(
+        `<div class="treemap-tooltip__head">
+           <span class="treemap-tooltip__swatch" style="background:${d.data.color}"></span>
+           <span class="treemap-tooltip__name">${d.data.label}</span>
+         </div>
+         <div class="treemap-tooltip__date">${longDate}</div>
+         <div class="treemap-tooltip__row">
+           <span class="treemap-tooltip__num">${value.toLocaleString('en-IN')}</span>
+           <span class="treemap-tooltip__unit">riders</span>
+         </div>
+         <div class="treemap-tooltip__pct">${pct.toFixed(1)}% of day</div>`
+      )
+      .style('opacity', 1);
+
+    // Position relative to the wrapper. Get the segment's
+    // bounding rect in viewport coords, subtract the wrapper's
+    // rect to get coords inside the wrapper, then offset to
+    // place the tooltip just outside the segment's right
+    // (or left) edge.
+    const segRect = segmentEl.getBoundingClientRect();
+    const wrapRect = wrapper.node().getBoundingClientRect();
+    const segCx = (segRect.left + segRect.right) / 2 - wrapRect.left;
+    const segCy = (segRect.top + segRect.bottom) / 2 - wrapRect.top;
+    // The tooltip's own size isn't known until it renders; use
+    // a generous estimate (the card is ~180px wide, ~110px tall)
+    // to decide which side to place it on.
+    const tooltipW = 200;
+    const tooltipH = 120;
+    const preferRight = segCx < wrapRect.width / 2;
+    const left = preferRight
+      ? segRect.right - wrapRect.left + 12
+      : segRect.left - wrapRect.left - tooltipW - 12;
+    const top = Math.max(8, segCy - tooltipH / 2);
+    tooltip.style('left', `${left}px`).style('top', `${top}px`);
+  }
+
+  function hideSegmentTooltip() {
+    tooltip.style('opacity', 0);
+  }
+
   function renderDay(day) {
     // CHANNELS is in the editorial order (Smart Card, Tokens,
     // Whatsapp, Metro QR, Paytm, NCMC, Group Ticket). The
@@ -526,9 +638,11 @@ export function renderTreemap(container, days, stats) {
     segments
       .on('mouseenter', function (_event, d) {
         setHover(d.data.key);
+        showSegmentTooltip(this, d, day);
       })
       .on('mouseleave', function () {
         clearHover();
+        hideSegmentTooltip();
       });
 
     updateLegend(day);

@@ -1,0 +1,44 @@
+<!-- ============================================================
+     CHAPTER 1 — One Day on NammaMetro
+     ============================================================ -->
+<article class="chapter" data-chapter="1-one-day">
+  <h2 class="chapter__title">1. One Day on NammaMetro</h2>
+  <p class="chapter__lead">Let's take a look at the source of data that informs the analysis to follow.</p>
+
+  <figure class="datastory-photo datastory-photo--orange">
+    <img src="/images/photo_DSF1740.jpg" alt="View from Sri Balagangadharanatha Swamiji Station, Hosahalli" loading="lazy" />
+    <figcaption>View from Sri Balagangadharanatha Swamiji Station, Hosahalli <code>Ⓜ️ Hosahalli</code> 🟣 Purple Line<br /><small><i>© 2023 Mahesh Shantaram. All Rights Reserved.</i></small></figcaption>
+  </figure>
+
+  <p>I've been studying ridership trends based on the data that BMRCL puts out daily. While the data tells many stories, it leaves us with some mysteries that only BMRCL can/should solve. I'm putting it out here for public scrutiny.</p>
+
+  <p>Take a look at the <a href="https://english.bmrc.co.in/ridership/" target="_blank">BMRCL ridership stats page</a>. You get one day's data, (almost) every day, split by payment methods used by passengers entering the system.</p>
+
+  <p>A single day's data is of very little use by itself. So I've been collecting this over time and have made it public<sup class="fn-footnote">https://github.com/thecont1/namma-metro-ridership-tracker/tree/main/scrolly-article/</sup>. It's open data for one and all.</p>
+
+  <figure class="datastory-photo datastory-photo--orange">
+    <img src="/images/nammametro_datapage.png" alt="BMRCL Daily Ridership data page" loading="lazy" />
+    <figcaption>The BMRCL daily ridership data page — Our daily data feed.</figcaption>
+  </figure>
+
+  <h3>The dataset at a glance</h3>
+
+  <p>Let's take a subset of the dataset ranging from November 16, 2024 to April 14, 2025 for the purpose of our discussion. Each cell below is a day in this editorial window . Rows are days of the week — Monday at the top to Sunday at the bottom. Darker purple = more riders; crossed cells = days when BMRCL didn't publish.</p>
+
+  <div class="viz" data-viz="calendar-strip"></div>
+  <p class="viz__caption">120 days, laid out as a Monday-to-Sunday calendar. <br>
+    Colour = total daily ridership. Intensity = percentile. Crossed cells = missing data.</p>
+
+  <p>If it looks like a mouth with a few broken teeth, it's because every now and then, NammaMetro fails to report ridership numbers. This usually happens when the individual tasked with manually updating the data page goes on leave.</p>
+
+  <p>What sort of data imputation makes sense here? Since the dataset is large enough, it makes sense to fill unreported dates with an average of similar days, e.g. If a weekday Tuesday was missing, we would take the average of the last 4-6 available weekday Tuesdays.</p>
+
+  <h3>A single day by how we pay</h3>
+
+  <p>Here's a treemap of 7 payment modes sized by share of the day's total. Smart Cards (the closed-loop channel) still account for the majority of rides 
+    but the convenience of QR is getting more and more popular. NCMC usage hardly registers but with a push from the top – the prime minister was in the city 
+    recently to launch user — this is bound to increase.</p>
+
+    <div class="viz" data-viz="treemap"></div>
+  <p class="viz__caption">Treemap of payment-mode shares in a single day. Switch between days (especially from weekday to weekend) to see what happens to the mix. What do you think the data is trying to tell us?</p>
+</article>

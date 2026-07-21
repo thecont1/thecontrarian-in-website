@@ -1,15 +1,16 @@
-// viz/dow-lines.js — 7-day × 8-week ridership chart, scroll-driven
-// from a 7-cell sparkline grid to a single 4x-scaled merged plot.
+// viz/dow-lines.js — 7-day ridership chart, scroll-driven from a
+// 7-cell sparkline grid to a single 4x-scaled merged plot.
 //
 // Two states, scroll-driven:
 //
 //   Phase 1 (default / as the chart scrolls into view):
 //     Seven sparkline cells in a single row, one per day of the
-//     week. Each cell shows the last 8 reported ridership values
-//     for that day as 8 horizontal lines (one per week, full cell
-//     width). The cells reveal line-by-line as the chart's bottom
-//     reaches the viewport bottom — `stroke-dashoffset` 0.55s
-//     per line, 20ms stagger.
+//     week. Each cell shows EVERY reported ridership value for
+//     that day across the full dataset (~13-20 lines per cell,
+//     one per reported day, full cell width). Lines at the same
+//     y-position stack and read as a single line — the density
+//     of the cell is the visual signal of how often that day
+//     lands at each ridership level.
 //
 //   Phase 2 (as the chart scrolls further up):
 //     The seven cells collapse and fade out. In their place, a
@@ -35,7 +36,6 @@ import { gsap, ScrollTrigger } from '@thecontrarian/scrollytelling-core';
 const CELL_SIZE = 120; // each sparkline cell is a perfect square
 const GRID = { cols: 7, rows: 1, gap: 12 };
 const MARGIN = { top: 90, right: 20, bottom: 55, left: 55 };
-const WEEKS = 8;
 
 // The full width of the phase-1 chart (used for title/caption centreing).
 const WIDTH =
@@ -93,17 +93,20 @@ export function renderDowLines(container, daily, options = {}) {
   const parseDate = (d) => new Date(d.date);
   const sorted = [...daily].sort((a, b) => parseDate(a) - parseDate(b));
 
-  // Build one series per day-of-week using the last 8 reported values.
-  // No calendar windowing: every point is real, so there are no gaps to
-  // bridge and no dashed connectors.
+  // Build one series per day-of-week using EVERY reported value
+  // in the dataset (not a tail window). The chart shows the full
+  // story of that day-of-week across all 5 months of data: 13
+  // Sundays, 18 Mondays, etc. Each line in a cell is one reported
+  // day; lines stack on the shared broken y-axis (squiggle at
+  // 400K, data above), so the density of lines is the visual
+  // signal of how often that day-of-week is reported.
   const series = DAYS.map(({ name, dow }, i) => {
     const dayRows = sorted.filter((d) => parseDate(d).getDay() === dow);
-    const tail = dayRows.slice(-WEEKS);
     return {
       name,
       dow,
       color: COLORS[i],
-      values: tail.map((row, idx) => ({
+      values: dayRows.map((row, idx) => ({
         week: idx,
         date: row.date,
         value: row.total,
@@ -584,7 +587,7 @@ export function renderDowLines(container, daily, options = {}) {
     .attr('text-anchor', 'middle')
     .attr('font-size', '10px')
     .attr('fill', 'var(--muted)')
-    .text('Each sparkline shows the last 8 reported ridership values for that day of the week.');
+    .text('Each sparkline shows every reported ridership value for that day of the week across the full dataset.');
 
   // Simple SVG text wrap: split into <tspan> lines so the caption
   // fits inside `maxWidth` rather than overflowing the chart.
@@ -686,8 +689,10 @@ export function renderDowLines(container, daily, options = {}) {
     // The 7 subplots are the default state while the chart scrolls into
     // view. The collapse starts once the chart is roughly centred, and
     // finishes before the sticky chapter title reaches the fixed header.
-    start: 'top 40%',
-    end: 'top 34%',
+    // The scroll range is kept wide (50% of viewport) so the morph
+    // from 7 subplots to the merged plot plays out gradually.
+    start: 'top 70%',
+    end: 'top 30%',
     scrub: true,
     animation: collapseTl,
   });
