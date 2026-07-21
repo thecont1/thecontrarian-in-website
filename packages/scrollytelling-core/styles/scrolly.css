@@ -548,14 +548,57 @@ main {
 }
 
 /* Day-of-week lines (Ch 3 "One Week on NammaMetro"): a wide
-   7-line chart. The whole SVG — title, axes, legend and all —
-   is capped at 60% of the viewport height. */
+   single-row sparkline chart. The SVG — title, axes, mode
+   selector and all — is capped at 75vh so it stays compact. */
 .dow-lines-svg {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 60vh;
-  max-height: 60dvh;
+  max-height: 150vh;
+  max-height: 150dvh;
+}
+
+/* Day-of-week lines legend — matches the treemap legend style
+   from Chapter 1. Coloured labels, horizontal flex layout. */
+.dow-lines-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.dow-lines-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  transition: background 0.12s ease-out, transform 0.12s ease-out;
+}
+
+.dow-lines-legend__item:hover {
+  background: rgba(0, 0, 0, 0.07);
+  transform: translateY(-1px);
+}
+
+.dow-lines-legend__label {
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Chapter 3 day-of-week lines chart — break out of the narrow
+   content column so the wide chart can use available horizontal
+   space and stand taller. The SVG fills the full container width
+   and is centered vertically. */
+[data-chapter="3-one-week"] .viz[data-viz="dow-lines"] {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Treemap layout: main chart, legend below, day selector on the right. */
