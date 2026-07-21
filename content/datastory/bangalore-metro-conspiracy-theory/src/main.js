@@ -53,6 +53,30 @@ const CHAPTERS = [
 ];
 
 /**
+ * Dev mode: ?chapter=3 isolates a single chapter.
+ *
+ * Hides the datastory header, site header/footer, and all chapters except the
+ * requested one. The chapter is mounted immediately (no lazy observer) and
+ * scrolled into view. Useful for iterating on a single chapter's content/viz.
+ */
+const params = new URLSearchParams(location.search);
+const chapterFilter = params.get('chapter');
+
+if (chapterFilter) {
+  const match = CHAPTERS.find((c) => c.sel.startsWith(`[data-chapter="${chapterFilter}-`));
+  if (match) {
+    for (const { sel } of CHAPTERS) {
+      if (sel !== match.sel) {
+        document.querySelector(sel)?.remove();
+      }
+    }
+    document.querySelector('.datastory-header')?.remove();
+    document.getElementById('site-header')?.remove();
+    document.querySelector('.site-footer')?.remove();
+  }
+}
+
+/**
  * Lazy-mount each chapter when its top edge is within 1.5 viewports of the
  * current viewport. The chapter's D3 viz doesn't render until then, so the
  * initial bundle cost is minimal.
