@@ -42,6 +42,7 @@ export function renderRidershipLine(container, data, options = {}) {
     .attr('viewBox', `0 0 ${WIDTH} ${HEIGHT}`)
     .attr('role', 'img')
     .attr('aria-label', title || 'Daily ridership line chart')
+    .attr('shape-rendering', 'geometricPrecision')
     .style('width', '100%')
     .style('height', 'auto')
     .style('font-family', 'var(--font-mono)')

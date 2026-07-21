@@ -34,6 +34,7 @@ export function renderBoxplot(container, daily, options = {}) {
     .attr('viewBox', `0 0 ${WIDTH} ${HEIGHT}`)
     .attr('role', 'img')
     .attr('aria-label', title)
+    .attr('shape-rendering', 'geometricPrecision')
     .style('width', '100%')
     .style('height', 'auto')
     .style('font-family', 'var(--font-mono)')

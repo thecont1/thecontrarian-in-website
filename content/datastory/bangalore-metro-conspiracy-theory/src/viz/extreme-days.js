@@ -189,6 +189,7 @@ export function renderExtremeDays(container, daily, options = {}) {
     .attr('viewBox', `0 0 ${WIDTH} ${HEIGHT}`)
     .attr('role', 'img')
     .attr('aria-label', `Top 10 and bottom 10 days, vertical overlapping pairs. ${N_PAIRS} pairs.`)
+    .attr('shape-rendering', 'geometricPrecision')
     .style('width', '100%')
     .style('font-family', 'var(--font-mono)')
     .style('font-size', '10px');

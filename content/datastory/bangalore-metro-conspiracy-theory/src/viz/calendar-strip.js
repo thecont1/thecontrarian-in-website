@@ -330,6 +330,7 @@ export function renderCalendarStrip(container, daily, window, stats) {
       'Calendar of reported ridership days. Rows are days of the week from Monday (top) to Sunday (bottom). ' +
       'Cells coloured by total ridership on a Namma Metro purple scale.'
     )
+    .attr('shape-rendering', 'geometricPrecision')
     .style('width', '100%')
     .style('height', 'auto')
     .style('font-family', 'var(--font-mono)');

@@ -314,6 +314,7 @@ export function renderTreemap(container, days, stats, options = {}) {
     .attr('viewBox', `0 0 ${WIDTH} ${HEIGHT}`)
     .attr('role', 'img')
     .attr('aria-label', `Payment-mode shares for ${selectedDay.date}. Total ${selectedDay.total.toLocaleString('en-IN')} riders.`)
+    .attr('shape-rendering', 'geometricPrecision')
     .style('font-family', 'var(--font-mono)')
     .style('font-size', '11px');
 
