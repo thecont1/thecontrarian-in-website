@@ -519,8 +519,16 @@ main {
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 75vh;
-  max-height: 75dvh;
+  /* The chart is part of a layout that also includes a title
+     (~60px), date-range subtitle, a legend below, and a 7-row
+     day-selector to the right. All of that must fit in 80% of
+     viewport height. 75dvh would push the title off the top
+     on shorter viewports; 80dvh - 110px leaves headroom for
+     the title (60px) + legend (25px) + gaps (25px). The
+     viewBox is 420x360 so the aspect-ratio: 7/6 keeps the
+     chart proportional; max-width: 100% caps the width to
+     the container. */
+  max-height: calc(80dvh - 110px);
   aspect-ratio: 7 / 6;
 }
 
@@ -554,21 +562,64 @@ main {
 .treemap-wrap {
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   align-items: center;
   justify-items: center;
-  gap: 1.25rem;
+  gap: 0.6rem;
   width: 100%;
+}
+
+/* Title + date range, sitting above the chart in the same
+   visual language as the dow-lines (Ch 3) and stacked-area
+   (Ch 8) charts. Spans both columns of the first row. */
+.treemap-header {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.treemap-header__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.treemap-header__subtitle {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.01em;
 }
 
 .treemap-wrap svg {
   grid-column: 1;
-  grid-row: 1;
+  grid-row: 2;
+  /* Cap the chart at 80% of viewport height, minus the header
+     and legend overhead (~140px combined: title+subtitle+gap,
+     legend+gap). The viewBox is 420x360, so `width: auto` +
+     `max-height` lets the SVG scale to its natural aspect at
+     that height, capped to the container's width by
+     `max-width: 100%`. The whole treemap (title, chart,
+     legend) fits within 80vh regardless of viewport height. */
+  width: auto;
+  max-width: 100%;
+  max-height: calc(80vh - 140px);
+  display: block;
+  margin: 0 auto;
 }
 
 .treemap-legend {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 3;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.25rem;
@@ -611,9 +662,90 @@ main {
   opacity: 1 !important;
 }
 
+/* Segment hover tooltip — a compact card pinned in screen
+   coords inside the treemap wrapper. Shows the channel name
+   (with a small color swatch), the day's full date, the raw
+   rider count, and the percentage of that day's mix. Same
+   design language as the calendar tooltip and footnote
+   popover: paper background, ink text, muted accents, subtle
+   shadow, small radius. */
+.treemap-tooltip {
+  position: absolute;
+  background: var(--paper, #f7f3ee);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  padding: 0.55rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ink);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  z-index: 30;
+  min-width: 165px;
+  max-width: 230px;
+  transition: opacity 0.12s ease-out;
+}
+
+.treemap-tooltip__head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+}
+
+.treemap-tooltip__swatch {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.treemap-tooltip__name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.treemap-tooltip__date {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+  letter-spacing: 0.01em;
+}
+
+.treemap-tooltip__row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-bottom: 0.15rem;
+}
+
+.treemap-tooltip__num {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.treemap-tooltip__unit {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.treemap-tooltip__pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent, #5E2D8C);
+  letter-spacing: 0.01em;
+}
+
 .treemap-days {
   grid-column: 2;
-  grid-row: 1 / 3;
+  grid-row: 2 / 4;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -1023,6 +1155,151 @@ main {
   text-align: center;
   margin-top: 0.75rem;
   font-style: italic;
+}
+
+/* ======================================================
+   DOW × PAYMENT-MODE STATS TABLE (chapter 4)
+   A dense, scannable reference table. Rows = Mon..Sun,
+   columns = each payment channel + a Total rail. Each cell
+   shows mean ± sample std. Weekend rows are tinted to echo
+   the "three traffic bands" narrative. Horizontal scroll on
+   narrow viewports keeps every column reachable.
+   ====================================================== */
+
+.viz--table {
+  /* A table's height is content-driven; the 320px min-height
+     from .viz would force awkward empty space. */
+  min-height: 0;
+  margin: 2rem 0 0.5rem;
+}
+
+.dow-mode-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dow-mode-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.dow-mode-table caption {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: left;
+  padding: 0 0 0.5rem 0.2rem;
+  font-style: italic;
+  white-space: normal;
+}
+
+.dow-mode-table__col-dow,
+.dow-mode-table__th-dow {
+  /* Pinned-look left rail without actually pinning: a slightly
+     wider first column with the day name stacked over the n. */
+  width: 5.8rem;
+  text-align: left;
+}
+
+.dow-mode-table__th,
+.dow-mode-table__cell {
+  text-align: right;
+  padding: 0.38rem 0.32rem;
+}
+
+.dow-mode-table thead th {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.dow-mode-table__subhead th {
+  font-weight: 400;
+  font-size: 0.62rem;
+  color: var(--muted-2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  padding-top: 0.2rem;
+  padding-bottom: 0.3rem;
+}
+
+.dow-mode-table__unit {
+  font-variant: normal;
+}
+
+.dow-mode-table tbody th {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--ink);
+  border-right: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.dow-mode-table__dow {
+  display: block;
+}
+
+.dow-mode-table__n {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.62rem;
+  color: var(--muted-2);
+}
+
+.dow-mode-table tbody tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.dow-mode-table tbody tr.is-weekend {
+  background: color-mix(in srgb, var(--accent-color) 4%, var(--paper));
+}
+
+.dow-mode-table tbody tr.is-sunday {
+  background: color-mix(in srgb, var(--accent-color) 7%, var(--paper));
+}
+
+.dow-mode-table__cell .dow-mode-table__mean {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.dow-mode-table__cell .dow-mode-table__sep {
+  color: var(--muted-2);
+  padding: 0;
+}
+
+.dow-mode-table__cell .dow-mode-table__std {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Emphasise the Total column as a summary rail. */
+.dow-mode-table__th.is-total,
+.dow-mode-table__cell.is-total {
+  border-left: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  background: color-mix(in srgb, var(--ink) 2.5%, var(--paper));
+}
+
+.dow-mode-table__cell.is-total .dow-mode-table__mean {
+  font-weight: 600;
+}
+
+/* Keep the Total rail's tint above the weekend row tint. */
+.dow-mode-table tbody tr.is-weekend .dow-mode-table__cell.is-total,
+.dow-mode-table tbody tr.is-sunday .dow-mode-table__cell.is-total {
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
 }
 
 /* ======================================================
