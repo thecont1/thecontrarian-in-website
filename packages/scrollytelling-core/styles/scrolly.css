@@ -566,10 +566,25 @@ main {
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
+  margin-bottom: 3rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+/* Legend sits close to the chart, description below it. */
+[data-chapter="3-one-week"] .viz[data-viz="dow-lines"] .treemap-legend {
+  margin-top: 0.25rem;
+}
+
+/* Brief description below the legend — same style as other chart captions. */
+.dow-lines__desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.75rem;
+  font-style: italic;
 }
 
 /* Treemap layout: main chart, legend below, day selector on the right. */
