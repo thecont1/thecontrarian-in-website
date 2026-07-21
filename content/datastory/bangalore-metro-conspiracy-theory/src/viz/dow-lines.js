@@ -48,21 +48,23 @@ const CHANNELS = [
   { key: 'groupTicket',    label: 'Group Ticket', color: '#c8a44d' },
 ];
 
-// The full y-range is 0–1M. The window shows 600K at a time (same
-// graduation as before — just 1.5× taller on screen).
-// fullH is the pixel height of the full 0–1M range in content space.
-// WINDOW_H (360px = cellInnerH) is the visible window = 600K of range.
-// fullH = 360 × (1M / 600K) = 600px.
-const Y_FULL_MAX = 1000000;
-const WINDOW_H = CELL_H;
-const FULL_H = Math.round(WINDOW_H * (Y_FULL_MAX / 600000));
-// Scroll offset: yFull(600K) = 240, so scrolling up 240px brings
-// the 0–600K range into the window.
-const SCROLL_OFFSET = FULL_H - WINDOW_H;
-// Default scroll: 0 = top of content, window shows 400K–1M (black lines).
-// -SCROLL_OFFSET = bottom, window shows 0–600K (payment methods).
-const DEFAULT_SCROLL = 0;
+// Per-mode y-axis scales. Each mode zooms to a range appropriate
+// for its ridership volume.
+const MODE_SCALES = {
+  total:        { yMax: 1000000, ticks: [0, 200000, 400000, 600000, 800000, 1000000] },
+  smartcard:    { yMax: 600000,  ticks: [0, 100000, 200000, 300000, 400000, 500000, 600000] },
+  token:        { yMax: 400000,  ticks: [0, 100000, 200000, 300000, 400000] },
+  qrWhatsApp:   { yMax: 200000,  ticks: [0, 50000, 100000, 150000, 200000] },
+  qrNammaMetro: { yMax: 100000,  ticks: [0, 25000, 50000, 75000, 100000] },
+  qrPaytm:      { yMax: 100000,  ticks: [0, 25000, 50000, 75000, 100000] },
+  ncmc:         { yMax: 50000,   ticks: [0, 10000, 20000, 30000, 40000, 50000] },
+  groupTicket:  { yMax: 50000,   ticks: [0, 10000, 20000, 30000, 40000, 50000] },
+};
 
+// The window height in content pixels. The visible y-range depends
+// on the current scale: 600K for 1M mode, 400K for token, 200K for
+// the smaller methods.
+const WINDOW_H = CELL_H;
 const PLOT_TOP = 0;
 
 /**
@@ -72,7 +74,7 @@ const PLOT_TOP = 0;
  * @returns {{ update, destroy }}
  */
 export function renderDowLines(container, daily, options = {}) {
-  const { title = 'Daily Total Ridership Patterns by Day of Week' } = options;
+  const { title = 'Ridership by Day of Week & Payment Method' } = options;
 
   const parseDate = (d) => new Date(d.date);
   const sorted = [...daily].sort((a, b) => parseDate(a) - parseDate(b));
@@ -98,10 +100,17 @@ export function renderDowLines(container, daily, options = {}) {
   const cellX = (col) => MARGIN.left + col * (cellInnerW + GRID.gap);
   const cellY = () => PLOT_TOP;
 
-  // Single y-scale: maps 0–1M to FULL_H–0 in content space.
-  // The window (240px) shows a 600K slice of this range.
-  function yFull(v) {
-    return FULL_H - (v / Y_FULL_MAX) * FULL_H;
+  // Dynamic y-scale. The content height and yMax change depending on
+  // which payment method is hovered, zooming in for smaller methods.
+  let currentYMax = 1000000;
+  function getContentH(yMax) {
+    return Math.max(WINDOW_H, Math.round(WINDOW_H * (yMax / 600000)));
+  }
+  let currentContentH = getContentH(currentYMax);
+  let currentScrollOffset = currentContentH - WINDOW_H;
+
+  function yScale(v) {
+    return currentContentH - (v / currentYMax) * currentContentH;
   }
 
   const dateFmt = d3.timeFormat('%b %d, %Y');
@@ -191,27 +200,46 @@ export function renderDowLines(container, daily, options = {}) {
 
   // --- Y-axis ticks (inside axis content, scroll with it) ---
   const tickFmt = d3.format('~s');
-  const allTicks = [0, 200000, 400000, 600000, 800000, 1000000];
   const axisGroup = axisContent
     .append('g')
     .attr('class', 'y-axis')
     .attr('transform', `translate(${MARGIN.left}, ${PLOT_TOP})`);
   const tickGroup = axisGroup.append('g').attr('class', 'y-axis__ticks');
-  allTicks.forEach((tVal) => {
-    const ty = yFull(tVal);
-    tickGroup.append('line')
+
+  function renderTicks(ticks, animated) {
+    const sel = tickGroup.selectAll('g.y-axis__tick').data(ticks, (d) => d);
+    const enter = sel.enter()
+      .append('g')
+      .attr('class', 'y-axis__tick')
+      .style('opacity', animated ? 0 : 1)
+      .attr('transform', (d) => `translate(0, ${yScale(d)})`);
+    enter.append('line')
       .attr('x1', -6).attr('x2', 0)
-      .attr('y1', ty).attr('y2', ty)
       .attr('stroke', 'rgba(0, 0, 0, 0.2)')
       .attr('vector-effect', 'non-scaling-stroke');
-    tickGroup.append('text')
+    enter.append('text')
       .attr('x', -10)
-      .attr('y', ty + 3)
+      .attr('y', 3)
       .attr('text-anchor', 'end')
       .attr('font-size', '10px')
-      .attr('fill', 'var(--muted)')
-      .text(tickFmt(tVal));
-  });
+      .attr('fill', 'var(--muted)');
+
+    const merged = enter.merge(sel);
+    merged.select('text').text(tickFmt);
+    if (animated) {
+      merged.transition().duration(600)
+        .style('opacity', 1)
+        .attr('transform', (d) => `translate(0, ${yScale(d)})`);
+    } else {
+      merged.attr('transform', (d) => `translate(0, ${yScale(d)})`);
+    }
+    sel.exit()
+      .transition().duration(300)
+      .style('opacity', 0)
+      .remove();
+  }
+
+  renderTicks(MODE_SCALES.total.ticks, false);
 
   // Data viewport — strict clip (fixed, never transforms).
   // Data content inside it transforms on scroll/hover.
@@ -244,8 +272,8 @@ export function renderDowLines(container, daily, options = {}) {
       .join('line')
       .attr('x1', 0)
       .attr('x2', cellInnerW)
-      .attr('y1', (d) => yFull(d.value))
-      .attr('y2', (d) => yFull(d.value))
+      .attr('y1', (d) => yScale(d.value))
+      .attr('y2', (d) => yScale(d.value))
       .attr('stroke', '#000')
       .attr('stroke-width', 1)
       .attr('vector-effect', 'non-scaling-stroke')
@@ -261,8 +289,8 @@ export function renderDowLines(container, daily, options = {}) {
         .attr('class', `dow-lines__mode-line mode-${modeKey}`)
         .attr('x1', 0)
         .attr('x2', cellInnerW)
-        .attr('y1', (d) => yFull(d.modes.find((md) => md.mode === modeKey).value))
-        .attr('y2', (d) => yFull(d.modes.find((md) => md.mode === modeKey).value))
+        .attr('y1', (d) => yScale(d.modes.find((md) => md.mode === modeKey).value))
+        .attr('y2', (d) => yScale(d.modes.find((md) => md.mode === modeKey).value))
         .attr('stroke', m.color)
         .attr('stroke-width', 1)
         .attr('vector-effect', 'non-scaling-stroke')
@@ -311,7 +339,7 @@ export function renderDowLines(container, daily, options = {}) {
   // Brief description below the legend.
   const descEl = document.createElement('p');
   descEl.className = 'dow-lines__desc';
-  descEl.textContent = 'Each line is one day. Scroll to explore the full 0–1M range. Hover a payment method to filter.';
+  descEl.textContent = 'Each line is one week. Click a payment method to isolate and zoom. Scroll to explore the full range. Click outside to reset.';
   container.appendChild(descEl);
 
   let currentMode = null;
@@ -325,7 +353,7 @@ export function renderDowLines(container, daily, options = {}) {
   let scrollRAF = null;
 
   function clampScroll(v) {
-    return Math.max(-SCROLL_OFFSET, Math.min(0, v));
+    return Math.max(-currentScrollOffset, Math.min(0, v));
   }
 
   function applyScroll(v) {
@@ -355,7 +383,7 @@ export function renderDowLines(container, daily, options = {}) {
   function animatedScrollTo(target) {
     if (scrollRAF) { cancelAnimationFrame(scrollRAF); scrollRAF = null; }
     scrollTarget = clampScroll(target);
-    const start = currentScroll;
+    const start = clampScroll(currentScroll);
     const end = scrollTarget;
     const ease = d3.easeCubicInOut;
     const t0 = performance.now();
@@ -417,45 +445,83 @@ export function renderDowLines(container, daily, options = {}) {
 
   let prevMode = null;
 
+  function applyScale(newYMax, newTicks) {
+    if (currentYMax === newYMax) return;
+    currentYMax = newYMax;
+    currentContentH = getContentH(newYMax);
+    currentScrollOffset = currentContentH - WINDOW_H;
+
+    // Animate all line positions to the new scale.
+    d3.selectAll(totalLines)
+      .transition('pos').duration(600)
+      .attr('y1', (d) => yScale(d.value))
+      .attr('y2', (d) => yScale(d.value));
+    Object.keys(modeLines).forEach((key) => {
+      d3.selectAll(modeLines[key])
+        .transition('pos').duration(600)
+        .attr('y1', (d) => yScale(d.modes.find((md) => md.mode === key).value))
+        .attr('y2', (d) => yScale(d.modes.find((md) => md.mode === key).value));
+    });
+
+    // Update ticks with animation.
+    renderTicks(newTicks, true);
+  }
+
+  function selectLegendItem(key) {
+    legendEl.querySelectorAll('.treemap-legend__item').forEach((el) => {
+      const elKey = el.getAttribute('data-key');
+      const label = el.querySelector('.treemap-legend__label');
+      if (elKey === key) {
+        const chan = CHANNELS.find((c) => c.key === key);
+        const bg = chan ? chan.color : '#000';
+        el.style.background = bg;
+        label.style.color = '#fff';
+      } else {
+        el.style.background = '';
+        const chan = CHANNELS.find((c) => c.key === elKey);
+        label.style.color = chan ? chan.color : '#000';
+      }
+    });
+  }
+
   function enterMode(modeKey) {
     if (currentMode === modeKey) return;
     prevMode = currentMode;
     currentMode = modeKey;
+    selectLegendItem(modeKey);
+
+    const scale = MODE_SCALES[modeKey] || MODE_SCALES.total;
 
     if (modeKey === 'total') {
-      // "Total" — scroll to top (1M at top), show only black lines.
+      applyScale(scale.yMax, scale.ticks);
       animatedScrollTo(0);
-      // Fade in total lines.
-      d3.selectAll(totalLines).transition().duration(600).style('opacity', 1);
-      // Fade out all mode lines — previous hovered one persists longer.
+      d3.selectAll(totalLines).transition('opacity').duration(600).style('opacity', 1);
       Object.keys(modeLines).forEach((key) => {
         const wasPrev = key === prevMode;
         d3.selectAll(modeLines[key])
-          .transition().delay(wasPrev ? 400 : 0).duration(wasPrev ? 800 : 600)
+          .transition('opacity').delay(wasPrev ? 400 : 0).duration(wasPrev ? 800 : 600)
           .style('opacity', 0);
       });
     } else {
-      // Scroll to bottom (0 at bottom) to show 0–600K range.
-      animatedScrollTo(-SCROLL_OFFSET);
-      // Hide total lines.
-      d3.selectAll(totalLines).transition().duration(600).style('opacity', 0);
-      // Fade in hovered method; fade out others with a delay
-      // so the previous set persists longer.
+      applyScale(scale.yMax, scale.ticks);
+      if (scale.yMax >= 1000000) {
+        animatedScrollTo(-currentScrollOffset);
+      } else {
+        animatedScrollTo(0);
+      }
+      d3.selectAll(totalLines).transition('opacity').duration(600).style('opacity', 0);
       Object.keys(modeLines).forEach((key) => {
         if (key === modeKey) {
-          // New hovered method — fade in.
           d3.selectAll(modeLines[key])
-            .transition().duration(600)
+            .transition('opacity').duration(600)
             .style('opacity', 1);
         } else if (key === prevMode) {
-          // Previous hovered method — persist then fade out.
           d3.selectAll(modeLines[key])
-            .transition().delay(400).duration(800)
+            .transition('opacity').delay(400).duration(800)
             .style('opacity', 0);
         } else {
-          // Already hidden — stay hidden.
           d3.selectAll(modeLines[key])
-            .transition().duration(600)
+            .transition('opacity').duration(600)
             .style('opacity', 0);
         }
       });
@@ -465,18 +531,20 @@ export function renderDowLines(container, daily, options = {}) {
   function exitMode() {
     if (currentMode === null) return;
     currentMode = null;
-    const t = d3.transition().duration(TRANSITION_MS);
-    // Restore all lines to full visibility. Scroll stays where it is.
-    d3.selectAll(totalLines).transition(t).style('opacity', 1);
+    selectLegendItem(null);
+    // Restore scale to 1M.
+    applyScale(MODE_SCALES.total.yMax, MODE_SCALES.total.ticks);
+    // Restore all lines to full visibility.
+    d3.selectAll(totalLines).transition('opacity').duration(TRANSITION_MS).style('opacity', 1);
     Object.keys(modeLines).forEach((key) => {
-      d3.selectAll(modeLines[key]).transition(t).style('opacity', 1);
+      d3.selectAll(modeLines[key]).transition('opacity').duration(TRANSITION_MS).style('opacity', 1);
     });
   }
 
   // Build legend items — "Total" first, then payment channels.
   const legend = d3.select(legendEl);
 
-  // "Total" item — black label, filters to show only total lines.
+  // "Daily Totals" item — black label, shows total ridership.
   const totalItem = legend.append('div')
     .attr('class', 'treemap-legend__item')
     .attr('data-key', 'total')
@@ -484,11 +552,12 @@ export function renderDowLines(container, daily, options = {}) {
   totalItem.append('span')
     .attr('class', 'treemap-legend__label')
     .style('color', '#000')
-    .text('Total');
+    .text('Daily Totals');
   totalItem.append('span').attr('class', 'treemap-legend__pct');
-  totalItem
-    .on('mouseenter', () => enterMode('total'))
-    .on('mouseleave', () => exitMode());
+  totalItem.on('click', () => {
+    if (currentMode === 'total') exitMode();
+    else enterMode('total');
+  });
 
   CHANNELS.forEach((c) => {
     const item = legend.append('div')
@@ -500,15 +569,26 @@ export function renderDowLines(container, daily, options = {}) {
       .style('color', c.color)
       .text(c.label);
     item.append('span').attr('class', 'treemap-legend__pct');
-    item
-      .on('mouseenter', () => enterMode(c.key))
-      .on('mouseleave', () => exitMode());
+    item.on('click', () => {
+      if (currentMode === c.key) exitMode();
+      else enterMode(c.key);
+    });
   });
+
+  // Click outside chart SVG and legend to deselect.
+  const svgEl = svg.node();
+  function onDocClick(e) {
+    if (currentMode === null) return;
+    if (svgEl.contains(e.target) || legendEl.contains(e.target)) return;
+    exitMode();
+  }
+  document.addEventListener('click', onDocClick);
 
   function update() {}
 
   function destroy() {
     if (scrollRAF) cancelAnimationFrame(scrollRAF);
+    document.removeEventListener('click', onDocClick);
     svg.remove();
     legendEl.remove();
     descEl.remove();
