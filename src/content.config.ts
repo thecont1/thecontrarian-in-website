@@ -158,7 +158,7 @@ const photogallerySchema = z.object({
   date: z.date().optional(),
   layoutType: z.enum(["tile", "one-up", "carousel"]).default("tile"),
   geography: z.array(geographyEnum).max(3).optional().default([]),
-  theme: z.array(themeEnum).max(6).optional().default([]),
+  theme: z.array(themeEnum).max(7).optional().default([]),
   images: z.array(z.object({
     src: z.string(),
     caption: z.string().optional(),

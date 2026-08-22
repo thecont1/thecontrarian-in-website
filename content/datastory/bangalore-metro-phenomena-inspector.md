@@ -5,7 +5,7 @@ metaDescription: "A tool to analyse Bengaluru Metro's official daily ridership d
 author: "Mahesh Shantaram"
 status: published
 date: 2025-04-05
-heroImage: "/library/throwaways/bengaluru-metro-bridge.jpg"
+heroImage: "/library/throwaways/homepage/bengaluru-metro-bridge.jpg"
 geography: ["bangalore", "india"]
 theme: ["datastory", "public transport", "data analysis"]
 format: notebook

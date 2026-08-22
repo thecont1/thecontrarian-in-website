@@ -44,39 +44,6 @@ export const FEATURED_ITEMS: FeaturedItem[] = [
 
 export const FEATURED_SECTIONS: FeaturedSection[] = [
   {
-    title: "Photography",
-    items: [
-      { type: "photogallery", slug: "ayodhya", label: "Album" },
-      { type: "photogallery", slug: "kashmir", label: "Album" },
-    ]
-  },
-
-  {
-    title: "A Life Worth Living Twice",
-    items: [
-      { type: "essay", slug: "ayodhya", label: "Politics" },
-      { type: "post", slug: "writefathername", label: "Patriarchy" },
-    ]
-  },
-
-  {
-    title: "MATRIMANIA",
-    items: [
-      { type: "essay", slug: "matrimania-bond-and-bondage", displayTitle: "Bond & Bondage: Essay", label: "Essay"},
-      { type: "photogallery", slug: "matrimania-series", label: "Series" },
-      { type: "photogallery", slug: "matrimania-photobook", label: "Book" },
-    ]
-  },
-
-  {
-    title: "The African Portraits",
-    items: [
-      { type: "photogallery", slug: "the-african-portraits", label: "Series" },
-      { type: "longform", slug: "the-burden-of-being-seen-and-heard", displayTitle: "The _____ Burden of Being Seen and Heard", label: "Long Read"},
-    ]
-  },
-
-  {
     title: "Data Science",
     items: [
       { type: "datastory", slug: "bangalore-metro-conspiracy-theory"},
@@ -97,4 +64,32 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
       { type: "code", slug: "ngl-storyteller"},
     ]
   },
+
+  {
+    title: "Tall Tales",
+    items: [
+      { type: "essay", slug: "ayodhya", label: "Politics" },
+      { type: "photogallery", slug: "kashmir", label: "Album" },
+      { type: "post", slug: "writefathername", label: "Patriarchy" },
+    ]
+  },
+
+  {
+    title: "MATRIMANIA",
+    items: [
+      { type: "essay", slug: "matrimania-bond-and-bondage", displayTitle: "Bond & Bondage: Essay", label: "Essay"},
+      { type: "photogallery", slug: "matrimania-series", label: "Series" },
+      { type: "photogallery", slug: "matrimania-photobook", label: "Book" },
+    ]
+  },
+
+  {
+    title: "The African Portraits",
+    items: [
+      { type: "photogallery", slug: "the-african-portraits", label: "Series" },
+      { type: "longform", slug: "the-burden-of-being-seen-and-heard", displayTitle: "The _____ Burden of Being Seen and Heard", label: "Long Read"},
+      { type: "photogallery", slug: "the-african-portraits-book", label: "Book" },
+    ]
+  },
+
 ];

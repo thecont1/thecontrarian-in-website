@@ -4,7 +4,7 @@ subtitle: "A system to monitor and analyse road traffic flow on pre-determined r
 author: "Mahesh Shantaram"
 status: published
 date: 2025-09-25
-heroImage: "/library/throwaways/image9-spacewoman.jpg"
+heroImage: "/library/throwaways/homepage/traffic-monitor-lizard.jpg"
 geography: ["bangalore", "india"]
 theme: ["traffic", "urban"]
 format: notebook
