@@ -5,7 +5,7 @@ title: "A Portrait of Racism in India"
 subtitle: "As a country, we can have a conversation about our racism without ever involving the Africans. Our guests are only doing us a favour by holding up a mirror to our society."
 author: "Mahesh Shantaram"
 metaDescription: ""
-heroImage: "https://library.thecontrarian.in/throwaways/homepage/MS201609-KhojResidency0039.jpg"
+heroImage: "/library/throwaways/homepage/MS201609-KhojResidency0039.jpg"
 date: 2018-05-07
 layoutType: carousel
 backgroundColor: "#9D91B5ff"
