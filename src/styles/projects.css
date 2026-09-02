@@ -361,9 +361,11 @@ body.in-projects .carousel-caption {
 .product-repo-link,
 .product-live-link {
   display: inline-flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.5ch;
   max-width: 100%;
+  white-space: nowrap;
   color: var(--muted);
   font-size: 0.85rem;
   line-height: 1.3;
