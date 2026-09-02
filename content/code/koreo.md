@@ -1,11 +1,11 @@
 ---
 status: published
 title: koreo
-description: An open-source tool comprising a Viewer and Studio to easily choreograph a section-based narrative progression (\"scrollytelling\") on a photograph. Inspired by ordinaryabundance.com.
+description: "An open-source tool comprising a Viewer and Studio to easily choreograph a section-based narrative progression (\"scrollytelling\") on a photograph. Inspired by ordinaryabundance.com."
 repoOwner: thecont1
 repoName: koreo
 repoEmail: ms@thecontrarian.in
-author: Mahesh Shantaram
+author: "Mahesh Shantaram"
 createdDate: 2026-08-15
 lastUpdated: 2026-08-23
 repoUrl: "https://github.com/thecont1/koreo"

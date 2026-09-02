@@ -1,11 +1,11 @@
 ---
 status: published
 title: TraffiCOracle
-description: Hyperlocal Road Traffic Monitor – compare current speeds with historical patterns across major routes. Know before you go.
+description: "Hyperlocal Road Traffic Monitor – compare current speeds with historical patterns across major routes. Know before you go."
 repoOwner: thecont1
 repoName: traffic-oracle
 repoEmail: ms@thecontrarian.in
-author: Mahesh Shantaram
+author: "Mahesh Shantaram"
 createdDate: 2026-06-25
 lastUpdated: 2026-08-09
 repoUrl: "https://github.com/thecont1/traffic-oracle"

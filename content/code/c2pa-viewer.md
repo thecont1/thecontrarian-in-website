@@ -1,11 +1,11 @@
 ---
 status: published
-title: C2PA Viewer
-description: Web app to verify C2PA content credentials and view EXIF/IPTC info embedded within an image. We do frontend as well as API call!
+title: "C2PA Viewer"
+description: "Web app to verify C2PA content credentials and view EXIF/IPTC info embedded within an image. We do frontend as well as API call!"
 repoOwner: thecont1
 repoName: c2pa-viewer
 repoEmail: ms@thecontrarian.in
-author: Mahesh Shantaram
+author: "Mahesh Shantaram"
 createdDate: 2026-06-25
 lastUpdated: 2026-07-02
 repoUrl: "https://github.com/thecont1/c2pa-viewer"

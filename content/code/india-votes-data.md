@@ -1,11 +1,11 @@
 ---
 status: published
-title: LET Live!
-description: 🇮🇳 Generate clean and fresh data from Indian parliamentary and assembly election results published by the Election Commission of India
+title: "LET Live!"
+description: "🇮🇳 Generate clean and fresh data from Indian parliamentary and assembly election results published by the Election Commission of India"
 repoOwner: thecont1
 repoName: india-votes-data
 repoEmail: ms@thecontrarian.in
-author: Mahesh Shantaram
+author: "Mahesh Shantaram"
 createdDate: 2026-06-25
 lastUpdated: 2026-06-20
 repoUrl: "https://github.com/thecont1/india-votes-data"

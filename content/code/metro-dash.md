@@ -1,11 +1,11 @@
 ---
 status: published
-title: Metro Dash
+title: "Metro Dash"
 description: "(WIP) Designing a super-powered dashboard to replace the one at https://english.bmrc.co.in/ridership/"
 repoOwner: thecont1
 repoName: metro-dash
 repoEmail: ms@thecontrarian.in
-author: Mahesh Shantaram
+author: "Mahesh Shantaram"
 createdDate: 2026-07-23
 lastUpdated: 2026-08-19
 repoUrl: "https://github.com/thecont1/metro-dash"

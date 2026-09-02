@@ -1,11 +1,11 @@
 ---
 status: published
 title: FlatWrite
-description: FlatWrite turns plain markdown into beautiful, shareable documents you actually enjoy reading. Makes markdown publishing feel effortless.
+description: "FlatWrite turns plain markdown into beautiful, shareable documents you actually enjoy reading. Makes markdown publishing feel effortless."
 repoOwner: thecont1
 repoName: flatwrite
 repoEmail: ms@thecontrarian.in
-author: Mahesh Shantaram
+author: "Mahesh Shantaram"
 createdDate: 2026-06-25
 lastUpdated: 2026-08-23
 repoUrl: "https://github.com/thecont1/flatwrite"

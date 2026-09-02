@@ -1,11 +1,11 @@
 ---
 status: published
 title: robby
-description: A tiny explainable compiler for text-based visual compositions, producing obverse and reverse images plus a process manifest.
+description: "A tiny explainable compiler for text-based visual compositions, producing obverse and reverse images plus a process manifest."
 repoOwner: thecont1
 repoName: robby
 repoEmail: ms@thecontrarian.in
-author: Mahesh Shantaram
+author: "Mahesh Shantaram"
 createdDate: 2026-08-17
 lastUpdated: 2026-08-22
 repoUrl: "https://github.com/thecont1/robby"

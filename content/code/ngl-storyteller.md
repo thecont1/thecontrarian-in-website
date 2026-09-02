@@ -1,11 +1,11 @@
 ---
 status: published
-title: ngl v1.0 😜 Not Gonna Lie
-description: Based on a true story. Your story. Go ahead, express yourself.
+title: "ngl v1.0 😜 Not Gonna Lie"
+description: "Based on a true story. Your story. Go ahead, express yourself."
 repoOwner: thecont1
 repoName: ngl-storyteller
 repoEmail: ms@thecontrarian.in
-author: Mahesh Shantaram
+author: "Mahesh Shantaram"
 createdDate: 2026-06-25
 lastUpdated: 2025-12-11
 repoUrl: "https://github.com/thecont1/ngl-storyteller"
