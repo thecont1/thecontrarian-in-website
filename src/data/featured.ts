@@ -58,9 +58,9 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
     title: "Tall Tales",
     items: [
       { type: "essay", slug: "ayodhya", label: "Politics" },
-      { type: "photogallery", slug: "kashmir", label: "Album" },
-      { type: "post", slug: "writefathername", label: "Patriarchy" },
       { type: "longform", slug: "suchitra-vijayan-political-animal", label: "Long Read" },
+      { type: "post", slug: "writefathername", label: "Patriarchy" },
+      { type: "photogallery", slug: "kashmir", label: "Album" },
     ]
   },
 
