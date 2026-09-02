@@ -300,7 +300,7 @@ const { selector = "main", gallery = true, includeHero = false } = Astro.props;
           { label: 'Artist', value: (() => {
             const DEFAULT_ARTIST = 'MAHESH SHANTARAM';
             const PLACEHOLDERS = new Set(['Unknown', 'No description available', 'None', 'N/A', 'n/a']);
-            const strip = (v) => {
+            const strip = (v: any) => {
               if (v === null || v === undefined) return '';
               const s = String(v).trim();
               if (!s || PLACEHOLDERS.has(s)) return '';
