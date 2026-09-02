@@ -64,8 +64,8 @@ const codeSchema = z.object({
   repoName: z.string(),
   repoEmail: z.string().optional(),
   author: z.string(),
-  createdDate: z.date().optional(),
-  lastUpdated: z.date().optional(),
+  createdDate: z.preprocess((val) => (val === "" ? undefined : val), z.coerce.date().optional()),
+  lastUpdated: z.preprocess((val) => (val === "" ? undefined : val), z.coerce.date().optional()),
   repoUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
   readmeUrl: z.string().url().or(z.literal("")).optional().transform(v => v || undefined),
   branch: z.string().optional().default("main"),
@@ -73,6 +73,7 @@ const codeSchema = z.object({
   heroImage: z.string().optional(),
   tags: z.array(z.string()).default([]),
   license: z.string().optional(),
+  order: z.number().optional().default(0),
 });
 
 // ---------------------------------------------------------------------------

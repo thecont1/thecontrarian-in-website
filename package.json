@@ -8,9 +8,10 @@
   ],
   "scripts": {
     "dev": "astro dev",
-    "predev": "node scripts/build_scrolly.mjs",
+    "predev": "node scripts/sync-products.mjs && node scripts/build_scrolly.mjs",
+    "sync:products": "node scripts/sync-products.mjs",
     "enrich": "node scripts/enrich-code.mjs",
-    "prebuild": "node scripts/enrich-code.mjs && node scripts/build_scrolly.mjs",
+    "prebuild": "node scripts/sync-products.mjs && node scripts/enrich-code.mjs && node scripts/build_scrolly.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",

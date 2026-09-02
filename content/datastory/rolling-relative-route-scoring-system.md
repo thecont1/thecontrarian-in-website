@@ -4,7 +4,7 @@ subtitle: "This notebook stress-tests the Rolling Relative Route Scoring System.
 author: "Mahesh Shantaram"
 status: published
 date: 2026-06-24
-heroImage: ""
+heroImage: "/library/throwaways/homepage/rolling-relative-route-scoring-system.png"
 geography: ["india"]
 theme: ["traffic", "statistics", "scoring"]
 toc: true

@@ -160,8 +160,8 @@ async function enrichCodeFile(filePath) {
       repoName: repo,
       repoEmail: repoEmail || '',
       author: authorName || '',
-      createdDate: fields.createdDate || repoData.created_at?.split('T')[0] || '',
-      lastUpdated: repoData.pushed_at?.split('T')[0] || fields.lastUpdated || '',
+      createdDate: fields.createdDate || repoData.created_at?.split('T')[0] || null,
+      lastUpdated: repoData.pushed_at?.split('T')[0] || fields.lastUpdated || null,
       repoUrl: `https://github.com/${owner}/${repo}`,
       readmeUrl: readmeUrl || '',
       branch: fields.branch || repoData.default_branch || 'main',
@@ -169,6 +169,7 @@ async function enrichCodeFile(filePath) {
       heroImage: fields.heroImage || '',
       tags,
       license: fields.license || repoData.license?.spdx_id || '',
+      order: fields.order || 0,
     };
 
     // Write frontmatter + preserved body

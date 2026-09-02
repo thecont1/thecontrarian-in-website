@@ -1,6 +1,6 @@
 ---
 status: published
-title: ngl-storyteller
+title: ngl v1.0 😜 Not Gonna Lie
 description: Based on a true story. Your story. Go ahead, express yourself.
 repoOwner: thecont1
 repoName: ngl-storyteller
@@ -11,8 +11,11 @@ lastUpdated: 2025-12-11
 repoUrl: "https://github.com/thecont1/ngl-storyteller"
 readmeUrl: "https://raw.githubusercontent.com/thecont1/ngl-storyteller/main/README.md"
 branch: main
-appUrl: "https://aistudio.google.com/apps/f3f1e8f6-6aaf-4baf-8d8a-7f813a8981a3?showPreview=true&showAssistant=true"
-heroImage: "https://library.thecontrarian.in/throwaways/homepage/ngl-storyteller.jpg"
-tags: []
+appUrl: "https://ngl-storyteller.ai.studio"
+heroImage: /assets/products/ngl-storyteller.png
+tags:
+  - "TypeScript"
+  - "HTML"
 license: NOASSERTION
+order: 9
 ---
