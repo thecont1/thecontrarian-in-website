@@ -49,8 +49,8 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
       { type: "datastory", slug: "bangalore-metro-conspiracy-theory"},
       { type: "datastory", slug: "bangalore-metro-phenomena-inspector"},
       { type: "datastory", slug: "traffic-monitor-lizard"},
-      { type: "datastory", slug: "rolling-relative-route-scoring-system"},
       { type: "datastory", slug: "aditya-L1-solar-explorer"},
+      { type: "datastory", slug: "rolling-relative-route-scoring-system"},
     ]
   },
 
@@ -60,6 +60,7 @@ export const FEATURED_SECTIONS: FeaturedSection[] = [
       { type: "essay", slug: "ayodhya", label: "Politics" },
       { type: "photogallery", slug: "kashmir", label: "Album" },
       { type: "post", slug: "writefathername", label: "Patriarchy" },
+      { type: "longform", slug: "suchitra-vijayan-political-animal", label: "Long Read" },
     ]
   },
 

@@ -4,7 +4,7 @@ subtitle: "She sold snake oil to those who wanted snake oil."
 author: "Mahesh Shantaram"
 status: published
 date: 2020-11-21
-heroImage: ""
+heroImage: "/library/throwaways/suchitra-vijayan-political-animal/image20.png"
 showhero: false
 toc: true
 lightbox:
