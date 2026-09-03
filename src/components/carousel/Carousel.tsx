@@ -1,10 +1,10 @@
 import { Fragment, Suspense, lazy, useEffect, useRef, useState } from "react";
-import CaptionToggle from "./CaptionToggle";
-import { cfImageUrl } from "../../utils/api";
-import { getImageMetadata } from "../../utils/exif";
-import { CR_LOGO_SVG } from "../icons/cr-logo-svg";
+import CaptionToggle from "./CaptionToggle.js";
+import { cfImageUrl } from "../../utils/api.js";
+import { getImageMetadata } from "../../utils/exif.js";
+import { CR_LOGO_SVG } from "../icons/cr-logo-svg.js";
 import { openC2PAOverlay } from "../../utils/c2pa.js";
-const InfoPanel = lazy(() => import("./InfoPanel"));
+const InfoPanel = lazy(() => import("./InfoPanel.js"));
 
 function placeholderSvg(w: number, h: number): string {
   return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'/%3E`;

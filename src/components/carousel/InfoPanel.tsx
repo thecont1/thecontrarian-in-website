@@ -1,4 +1,4 @@
-import { CR_LOGO_SVG } from "../icons/cr-logo-svg";
+import { CR_LOGO_SVG } from "../icons/cr-logo-svg.js";
 import { openC2PAOverlay } from "../../utils/c2pa.js";
 
 type ImageMetadata = {
