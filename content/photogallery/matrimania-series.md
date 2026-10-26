@@ -2,10 +2,9 @@
 status: published
 project: matrimania
 title: "MATRIMANIA"
-subtitle: "Photographer Mahesh Shantaram offers a prism into the complexities and contradictions of modern India. Everything that is great about a country and everything that is wrong with it can be summarized by a single wedding. Matrimania is a fictional photo series constructed from over 150 upper- and middle-class weddings to which he had privileged access, allowing for reflection on a deeply entrenched but problematic social institution."
+subtitle: "Everything that is great about a country and everything that's wrong with it can be summarized by a single wedding. Matrimania is a fictional photo series through one night at an Indian wedding."
 author: "Mahesh Shantaram"
-metaDescription: "Documentary photography exploring India's wedding industry, class, consumption, and social power through one dreary wedding night."
-heroImage: "https://library.thecontrarian.in/throwaways/homepage/_sa.jpg"
+heroImage: "/library/originals/MATRIMANIA/MS201111-SuchitaAnkit1491.jpg"
 date: 2015-06-01
 layoutType: carousel
 backgroundColor: "#ff44ee44"
