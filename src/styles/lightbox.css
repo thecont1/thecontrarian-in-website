@@ -131,8 +131,9 @@ body.toc-hidden .toc-toggle-btn {
 .lightbox-meta {
   transition: opacity 0.3s ease;
   opacity: 0; /* Hidden state */
-  padding: 1rem;
+  padding: 1rem 0;
   border-radius: 4px;
+  margin-top: auto; /* Anchor the info panel to the bottom, aligned with the controls row */
 }
 
 .lightbox-meta.is-active {

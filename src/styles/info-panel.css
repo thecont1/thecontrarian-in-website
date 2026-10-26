@@ -504,3 +504,56 @@
     font-size: 0.7rem;
   }
 }
+
+/* -----------------------------------------------------------------------------
+   Lightbox sidebar — light theme variant.
+   The rules above assume the dark floating panel used inside .carousel.
+   The Lightbox renders the same markup into its white sidebar, so
+   white-on-dark text colors read as invisible there.
+   ----------------------------------------------------------------------------- */
+.lightbox .carousel-info-panel {
+  color: var(--ink, #111);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.lightbox .info-panel-header {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.lightbox .info-panel-title {
+  color: var(--muted-2, #999);
+}
+
+.lightbox .info-panel-description {
+  color: var(--ink, #111);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.lightbox .info-panel-description::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.lightbox .info-panel-description::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.lightbox .info-panel-section-title {
+  color: var(--muted-2, #999);
+}
+
+.lightbox .info-panel-section-title::after {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.12), transparent);
+}
+
+.lightbox .info-panel-label {
+  color: var(--muted, #555);
+}
+
+.lightbox .info-panel-value {
+  color: var(--ink, #111);
+}
+
+.lightbox .loading-meta {
+  color: var(--muted, #555);
+}
