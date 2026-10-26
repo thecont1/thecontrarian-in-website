@@ -37,7 +37,7 @@ export interface ExifMetadata {
 
 /**
  * Get EXIF metadata for an image by its path.
- * Calls the hosted EXIF API at apps.thecontrarian.in.
+ * Calls the hosted EXIF API at c2pa.thecontrarian.in.
  * @param imagePath - Path to image (root-relative or full URL)
  * @returns EXIF metadata or null if not found
  */

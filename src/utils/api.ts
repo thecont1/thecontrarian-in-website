@@ -2,7 +2,7 @@
  * External API configuration
  * All C2PA and EXIF metadata requests go to the hosted verifier app.
  */
-export const C2PA_API_BASE = 'https://apps.thecontrarian.in/c2pa';
+export const C2PA_API_BASE = 'https://c2pa.thecontrarian.in';
 
 const CF_IMAGE_CDN = 'https://library.thecontrarian.in';
 

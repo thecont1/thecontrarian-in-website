@@ -148,7 +148,7 @@ const { selector = "main", gallery = true, includeHero = false } = Astro.props;
       `;
     };
 
-    const C2PA_API = 'https://apps.thecontrarian.in/c2pa';
+    const C2PA_API = 'https://c2pa.thecontrarian.in';
 
     const resolveImageUri = (imgPath: string): string => {
       if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
