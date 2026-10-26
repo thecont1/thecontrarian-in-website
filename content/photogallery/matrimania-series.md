@@ -28,17 +28,13 @@ images:
     - src: /library/originals/MATRIMANIA/MS201502-NehaVikul0879.jpg
     - src: /library/originals/MATRIMANIA/MS201502-NehaVikul0590.jpg
     - src: /library/originals/MATRIMANIA/MATRIMANIA022.jpg
-    - src: /library/originals/MATRIMANIA/MS201212-ShrutiNikhil0029.jpg
-    - src: /library/originals/MATRIMANIA/MS201202-DivyaMantar04-003.jpg
     - src: /library/originals/MATRIMANIA/MS201203-ManasaRaghavendra0159.jpg
     - src: /library/originals/MATRIMANIA/MS201002-SaranyaVinoth1384-2.jpg
-    - src: /library/originals/MATRIMANIA/MATRIMANIA026.jpg
     - src: /library/originals/MATRIMANIA/MS201002-SaranyaVinoth2173.jpg
-    - src: /library/originals/MATRIMANIA/200905-ChandrikaAnoop0651.jpg
+    - src: /library/originals/MATRIMANIA/MS200905-ChandrikaAnoop0651.jpg
     - src: /library/originals/MATRIMANIA/MS201111-AmrutaSameer1228.jpg
     - src: /library/originals/MATRIMANIA/MS201111-PragyaNiranjan0063.jpg
     - src: /library/originals/MATRIMANIA/MS201311-NikhilaAditya1219.jpg
-    - src: /library/originals/MATRIMANIA/MATRIMANIA024.jpg
     - src: /library/originals/MATRIMANIA/MATRIMANIA025.jpg
     - src: /library/originals/MATRIMANIA/MS201212-PriyalMihir0840.jpg
     - src: /library/originals/MATRIMANIA/MS201311-NehaLovedeep1408.jpg
@@ -77,7 +73,6 @@ images:
     - src: /library/originals/MATRIMANIA/MS201210-ChandniAashish2101.jpg
     - src: /library/originals/MATRIMANIA/MS201111-RuchiPratik1560.jpg
     - src: /library/originals/MATRIMANIA/MS201401-NidhiAbhimanyu0044.jpg
-    - src: /library/originals/MATRIMANIA/MS201312-NupurAkshay2343.jpg
     - src: /library/originals/MATRIMANIA/MS201312-NupurAkshay1064.jpg
     - src: /library/originals/MATRIMANIA/MS201212-ItyamSuyog0196.jpg
     - src: /library/originals/MATRIMANIA/MS201212-PriyalMihir2998.jpg
