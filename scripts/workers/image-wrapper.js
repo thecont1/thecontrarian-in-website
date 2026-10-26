@@ -148,10 +148,10 @@ async function proxyRawImage(path, env) {
 }
 
 /* ── Server-side OG metadata ── */
-const C2PA_API = "https://apps.thecontrarian.in/c2pa";
+const C2PA_API = "https://c2pa-viewer.fly.dev";
 
 // Fetch with a hard timeout — returns null on timeout instead of blocking
-function fetchWithTimeout(url, timeoutMs = 2000) {
+function fetchWithTimeout(url, timeoutMs = 10000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   return fetch(url, { signal: controller.signal })
@@ -790,7 +790,7 @@ function lightboxHtml(imgPublicUrl, altText, og = {}) {
   </main>
 
   <script>
-    const C2PA_API = 'https://apps.thecontrarian.in/c2pa';
+    const C2PA_API = 'https://c2pa.thecontrarian.in';
 
     /* ── DOM refs ── */
     const $ = (id) => document.getElementById(id);
