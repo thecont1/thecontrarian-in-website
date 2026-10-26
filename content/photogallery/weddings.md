@@ -1,13 +1,13 @@
 ---
 title: "India Comes Together"
-subtitle: "Keeping it real. Since 2006"
+subtitle: "Keeping it real. Wedding Photography since 2006."
 author: "Mahesh Shantaram"
 status: published
 date: 2025-10-25
-heroImage: ""
-metaDescription: ""
-geography: []
-theme: []
+heroImage: "/library/originals/WEDDINGS/MS201007-AartiAbhra0632.jpg"
+metaDescription: "Two decades of Indian wedding photography #NoFilters — chaotic, tender, extravagant, honest. Always real. By Mahesh Shantaram."
+geography: ["india"]
+theme: ["weddings", "photography"]
 layoutType: tile
 backgroundColor: "#ff99ee77"
 lightbox:
