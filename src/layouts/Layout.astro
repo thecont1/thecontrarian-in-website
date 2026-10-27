@@ -26,9 +26,22 @@ const { title, description, image, imageAlt, imageWidth, imageHeight, type = "we
 const siteName = "Mahesh Shantaram";
 const metaDescription = description || AUTHOR.description;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const ogImage = image
-  ? new URL(image, Astro.site).href
-  : new URL(AUTHOR.image, Astro.site).href;
+const ogImageRaw = image
+  ? new URL(image, Astro.site)
+  : new URL(AUTHOR.image, Astro.site);
+// library.thecontrarian.in serves a lightbox HTML page to non-image
+// fetches — social crawlers fetch og:image with Accept: */* and need
+// ?raw=1 to get image bytes back. Relative /library/ paths get the same
+// treatment because the site's _redirects forwards them to the CDN
+// (and the redirect would not carry a query param we add here).
+if (ogImageRaw.hostname === "library.thecontrarian.in") {
+  ogImageRaw.searchParams.set("raw", "1");
+} else if (ogImageRaw.pathname.startsWith("/library/")) {
+  ogImageRaw.hostname = "library.thecontrarian.in";
+  ogImageRaw.pathname = ogImageRaw.pathname.replace(/^\/library/, "");
+  ogImageRaw.searchParams.set("raw", "1");
+}
+const ogImage = ogImageRaw.href;
 
 const personJsonLd = {
   "@context": "https://schema.org",

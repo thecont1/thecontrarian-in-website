@@ -234,6 +234,9 @@ function lightboxHtml(imgPublicUrl, altText, og = {}) {
   const ogDesc = escHtml(descParts.join(" · "));
   const ogW = og.width ? `\n  <meta property="og:image:width" content="${og.width}" />` : "";
   const ogH = og.height ? `\n  <meta property="og:image:height" content="${og.height}" />` : "";
+  // og:image must fetch raw bytes — crawlers send Accept: */* and would
+  // otherwise get this same HTML page instead of the image.
+  const puRaw = pu + "?raw=1";
 
   return `<!doctype html>
 <html lang="en">
@@ -243,13 +246,13 @@ function lightboxHtml(imgPublicUrl, altText, og = {}) {
   <meta property="og:type" content="website" />
   <meta property="og:title" content="${ogTitle}" />
   <meta property="og:description" content="${ogDesc}" />
-  <meta property="og:image" content="${pu}" />
-  <meta property="og:image:secure_url" content="${pu}" />${ogW}${ogH}
+  <meta property="og:image" content="${puRaw}" />
+  <meta property="og:image:secure_url" content="${puRaw}" />${ogW}${ogH}
   <meta property="og:image:alt" content="${al}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${ogTitle}" />
   <meta name="twitter:description" content="${ogDesc}" />
-  <meta name="twitter:image" content="${pu}" />
+  <meta name="twitter:image" content="${puRaw}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -1434,6 +1437,14 @@ export default {
     // Only originals are eligible for lightbox HTML
     if (!isOriginals) {
       // Always serve raw image for non-originals directories
+      return proxyRawImage(r2Key, env);
+    }
+
+    // ?raw=1 forces raw image bytes regardless of request headers.
+    // Social crawlers (WhatsApp, Facebook, Twitter) fetch og:image
+    // with Accept: */* and no Sec-Fetch headers — without this they
+    // receive the lightbox HTML and the link preview shows no image.
+    if (url.searchParams.get("raw") === "1") {
       return proxyRawImage(r2Key, env);
     }
 
