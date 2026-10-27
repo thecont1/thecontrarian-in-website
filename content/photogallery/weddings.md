@@ -4,7 +4,7 @@ subtitle: "Keeping it real. Wedding Photography since 2006."
 author: "Mahesh Shantaram"
 status: published
 date: 2025-10-25
-heroImage: "/library/originals/WEDDINGS/MS201007-AartiAbhra0632.jpg"
+heroImage: "https://library.thecontrarian.in/originals/WEDDINGS/MS201007-AartiAbhra0632.jpg"
 metaDescription: "Two decades of Indian wedding photography #NoFilters — chaotic, tender, extravagant, honest. Always real. By Mahesh Shantaram."
 geography: ["india"]
 theme: ["weddings", "photography"]
